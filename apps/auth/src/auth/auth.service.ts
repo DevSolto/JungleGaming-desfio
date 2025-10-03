@@ -1,14 +1,11 @@
-import {
-  Injectable,
-  UnauthorizedException,
-  ConflictException,
-} from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../users/entities/user.entity';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
+import { RpcException } from '@nestjs/microservices';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
 import type {
   AuthLoginRequest,
@@ -31,7 +28,11 @@ export class AuthService {
       where: { email: createUserDto.email },
     });
 
-    if (exists) throw new ConflictException('email already in use');
+    if (exists)
+      throw new RpcException({
+        statusCode: HttpStatus.CONFLICT,
+        message: 'email already in use',
+      });
 
     const passwordHash = await this.hashPassword(createUserDto.password);
 
@@ -50,7 +51,10 @@ export class AuthService {
   }: AuthLoginRequest): Promise<AuthLoginResponse> {
     const user = await this.users.findOne({ where: { email: username } });
     if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
-      throw new UnauthorizedException('invalid credentials');
+      throw new RpcException({
+        statusCode: HttpStatus.UNAUTHORIZED,
+        message: 'invalid credentials',
+      });
     }
     const tokens = await this.createToken(user);
     return { user: this.toAuthUser(user), ...tokens };
