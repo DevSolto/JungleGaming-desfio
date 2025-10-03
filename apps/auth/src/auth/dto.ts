@@ -1,14 +1,33 @@
 import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
+import type {
+  AuthLoginRequest,
+  AuthRefreshRequest,
+  AuthRegisterRequest,
+} from '@repo/contracts';
 
-export class RegisterDto {
-  @IsEmail() email!: string;
-  @IsString() @MinLength(3) username!: string;
-  @IsString() @MinLength(6) password!: string;
+export class RegisterDto implements AuthRegisterRequest {
+  @IsEmail()
+  email!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  name!: string;
+
+  @IsString()
+  @MinLength(6)
+  password!: string;
 }
-export class LoginDto {
-  @IsString() @IsNotEmpty() username!: string; // ou email
-  @IsString() @MinLength(6) password!: string;
+export class LoginDto implements AuthLoginRequest {
+  @IsString()
+  @IsNotEmpty()
+  username!: string; // ou email
+
+  @IsString()
+  @MinLength(6)
+  password!: string;
 }
-export class RefreshDto {
-  @IsString() @IsNotEmpty() refreshToken!: string;
+export class RefreshDto implements AuthRefreshRequest {
+  @IsString()
+  @IsNotEmpty()
+  refreshToken!: string;
 }
