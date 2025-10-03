@@ -10,6 +10,9 @@ import { CreateUserDto } from 'src/users/dto/create-user.dto';
 import type {
   AuthLoginRequest,
   AuthLoginResponse,
+  AuthLogoutResponse,
+  AuthRefreshRequest,
+  AuthRefreshResponse,
   AuthRegisterResponse,
   AuthTokens,
   AuthUser,
@@ -40,7 +43,8 @@ export class AuthService {
       this.users.create({ ...createUserDto, passwordHash } as Partial<User>),
     );
 
-    const tokens = await this.createToken(user);
+    const tokens = await this.createTokens(user);
+    await this.persistRefreshToken(user.id, tokens.refreshToken);
 
     return { user: this.toAuthUser(user), ...tokens };
   }
@@ -56,8 +60,49 @@ export class AuthService {
         message: 'invalid credentials',
       });
     }
-    const tokens = await this.createToken(user);
+    const tokens = await this.createTokens(user);
+    await this.persistRefreshToken(user.id, tokens.refreshToken);
     return { user: this.toAuthUser(user), ...tokens };
+  }
+
+  async refresh({ refreshToken }: AuthRefreshRequest): Promise<AuthRefreshResponse> {
+    if (!refreshToken) {
+      throw this.buildUnauthorized('refresh token missing');
+    }
+
+    const payload = await this.verifyRefreshToken(refreshToken);
+    const user = await this.users.findOne({ where: { id: payload.sub } });
+
+    if (!user?.refreshTokenHash) {
+      throw this.buildUnauthorized('invalid refresh token');
+    }
+
+    const isCurrent = await bcrypt.compare(refreshToken, user.refreshTokenHash);
+
+    if (!isCurrent) {
+      await this.clearRefreshToken(payload.sub);
+      throw this.buildUnauthorized('invalid refresh token');
+    }
+
+    const tokens = await this.createTokens(user);
+    await this.persistRefreshToken(user.id, tokens.refreshToken);
+
+    return tokens;
+  }
+
+  async logout({ refreshToken }: AuthRefreshRequest): Promise<AuthLogoutResponse> {
+    if (!refreshToken) {
+      return { success: true };
+    }
+
+    try {
+      const payload = await this.verifyRefreshToken(refreshToken);
+      await this.clearRefreshToken(payload.sub);
+    } catch (error) {
+      // Swallow the error to avoid leaking token validity information
+    }
+
+    return { success: true };
   }
 
   private async hashPassword(password: string): Promise<string> {
@@ -65,17 +110,44 @@ export class AuthService {
     return bcrypt.hash(password, rounds);
   }
 
-  private async createToken(user: User): Promise<AuthTokens> {
+  private async createTokens(user: User): Promise<AuthTokens> {
     const payload = { sub: user.id, email: user.email, name: user.name };
     const refreshToken = await this.jwt.signAsync(payload, {
-      expiresIn: this.cfg.get('JWT_REFRESH_TTL', '7d'),
+      expiresIn: this.cfg.get('JWT_REFRESH_EXPIRES', this.cfg.get('JWT_REFRESH_TTL', '7d')),
       secret: this.cfg.get('JWT_REFRESH_SECRET', 'refreshSecretKey'),
     });
     const accessToken = await this.jwt.signAsync(payload, {
-      expiresIn: this.cfg.get('JWT_EXPIRES_IN', '15m'),
-      secret: this.cfg.get('JWT_SECRET', 'secretKey'),
+      expiresIn: this.cfg.get('JWT_ACCESS_EXPIRES', this.cfg.get('JWT_EXPIRES_IN', '15m')),
+      secret: this.cfg.get('JWT_ACCESS_SECRET', this.cfg.get('JWT_SECRET', 'secretKey')),
     });
     return { accessToken, refreshToken };
+  }
+
+  private async persistRefreshToken(userId: string, refreshToken: string): Promise<void> {
+    const rounds = Number(this.cfg.get('BCRYPT_SALT_ROUNDS', 10));
+    const refreshTokenHash = await bcrypt.hash(refreshToken, rounds);
+    await this.users.update({ id: userId }, { refreshTokenHash });
+  }
+
+  private async clearRefreshToken(userId: string): Promise<void> {
+    await this.users.update({ id: userId }, { refreshTokenHash: null });
+  }
+
+  private async verifyRefreshToken(refreshToken: string): Promise<{ sub: string }> {
+    try {
+      return await this.jwt.verifyAsync<{ sub: string }>(refreshToken, {
+        secret: this.cfg.get('JWT_REFRESH_SECRET', 'refreshSecretKey'),
+      });
+    } catch (error) {
+      throw this.buildUnauthorized('invalid refresh token');
+    }
+  }
+
+  private buildUnauthorized(message: string): RpcException {
+    return new RpcException({
+      statusCode: HttpStatus.UNAUTHORIZED,
+      message,
+    });
   }
 
   private toAuthUser(user: User): AuthUser {

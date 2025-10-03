@@ -3,11 +3,16 @@ import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import cookieParser from 'cookie-parser';
+import helmet from 'helmet';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   const config = app.get(ConfigService);
+
+  app.use(cookieParser());
+  app.use(helmet());
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -17,10 +22,16 @@ async function bootstrap() {
     }),
   );
 
-  const origin = config.get<string>('CORS_ORIGIN', '*');
+  const rawOrigins = config.get<string>('CORS_ORIGINS', '*');
+  const parsedOrigins = rawOrigins
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter((origin) => origin.length > 0);
+  const allowAllOrigins =
+    parsedOrigins.length === 0 || parsedOrigins.includes('*');
 
   app.enableCors({
-    origin: origin.split(','),
+    origin: allowAllOrigins ? true : parsedOrigins,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   });
@@ -42,4 +53,4 @@ async function bootstrap() {
   Logger.log(`API running on http://localhost:${port}/api`);
   Logger.log(`API docs available at http://localhost:${port}/api/docs`);
 }
-bootstrap();
+void bootstrap();

@@ -24,11 +24,17 @@ export interface AuthRefreshRequest {
   refreshToken: string;
 }
 
+export interface AuthRefreshResponse extends AuthTokens {}
+
 export interface AuthRegisterResponse extends AuthTokens {
   user: AuthUser;
 }
 
 export type AuthLoginResponse = AuthRegisterResponse;
+
+export interface AuthLogoutResponse {
+  success: boolean;
+}
 
 export interface AuthPingResponse {
   status: 'ok';

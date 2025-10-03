@@ -8,7 +8,9 @@ export class HealthController {
   constructor(private readonly healthService: HealthService) {}
 
   @Get()
-  @ApiOkResponse({ description: 'Aggregated healthcheck including microservices status' })
+  @ApiOkResponse({
+    description: 'Aggregated healthcheck including microservices status',
+  })
   check() {
     return this.healthService.check();
   }

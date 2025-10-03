@@ -1,11 +1,16 @@
 import { Controller } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { LoginDto } from './dto';
+import { LoginDto, RefreshDto } from './dto';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
 import { AUTH_MESSAGE_PATTERNS } from '@repo/contracts';
-import type { AuthLoginResponse, AuthRegisterResponse } from '@repo/contracts';
+import type {
+  AuthLoginResponse,
+  AuthLogoutResponse,
+  AuthRefreshResponse,
+  AuthRegisterResponse,
+} from '@repo/contracts';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -22,5 +27,15 @@ export class AuthController {
   @MessagePattern(AUTH_MESSAGE_PATTERNS.LOGIN)
   login(@Payload() dto: LoginDto): Promise<AuthLoginResponse> {
     return this.auth.login(dto);
+  }
+
+  @MessagePattern(AUTH_MESSAGE_PATTERNS.REFRESH)
+  refresh(@Payload() dto: RefreshDto): Promise<AuthRefreshResponse> {
+    return this.auth.refresh(dto);
+  }
+
+  @MessagePattern(AUTH_MESSAGE_PATTERNS.LOGOUT)
+  logout(@Payload() dto: RefreshDto): Promise<AuthLogoutResponse> {
+    return this.auth.logout(dto);
   }
 }

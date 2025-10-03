@@ -18,7 +18,10 @@ import { AuthModule } from './auth/auth.module';
       inject: [ConfigService],
       useFactory: (config: ConfigService) => {
         const ttl = parseInt(config.get<string>('RATE_LIMIT_TTL', '60'), 10);
-        const limit = parseInt(config.get<string>('RATE_LIMIT_LIMIT', '120'), 10);
+        const limit = parseInt(
+          config.get<string>('RATE_LIMIT_LIMIT', '120'),
+          10,
+        );
 
         const normalizedTtl = Number.isNaN(ttl) ? 60 : ttl;
         const normalizedLimit = Number.isNaN(limit) ? 120 : limit;

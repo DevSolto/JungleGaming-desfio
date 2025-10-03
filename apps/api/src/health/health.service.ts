@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { AuthService } from '../auth/auth.service';
+import { AuthGatewayService } from '../auth/auth-gateway.service';
 import type { AuthPingResponse } from '@repo/contracts';
 
 type DependencyHealth<T = unknown> = {
@@ -11,7 +11,7 @@ type DependencyHealth<T = unknown> = {
 
 @Injectable()
 export class HealthService {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthGatewayService) {}
 
   async check() {
     const now = new Date().toISOString();
