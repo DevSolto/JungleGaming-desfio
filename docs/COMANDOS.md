@@ -153,6 +153,41 @@ pnpm -F @apps/web dev
 ```
 > Sobe cada serviço localmente (útil para depurar sem containers).
 
+### Rodar todo o monorepo (Turbo / Make)
+
+```bash
+# opção 1 — usando pnpm (recomendado)
+pnpm dev
+
+# opção 2 — com npm (usa o mesmo script "dev" da raiz)
+npm run dev
+
+# opção 3 — Makefile (se tiver o alvo abaixo configurado)
+make dev
+```
+> Executa `turbo run dev`, disparando o script `dev` de cada app que o tiver definido.
+
+1. Certifique-se de que as dependências já foram instaladas (`pnpm install`).
+2. Garanta que as variáveis de ambiente existam (arquivo `.env` na raiz ou nos apps).
+3. Caso os serviços dependam de Postgres/RabbitMQ, suba a infra antes (`docker compose up -d`).
+4. Acompanhe os logs pelo Turbo: cada serviço aparece com um prefixo diferente.
+
+> 💡 Sugestão de alvo `dev` no `Makefile` (adicione na seção de atalhos descrita abaixo):
+
+```Makefile
+PNPM_COMMAND ?= pnpm
+
+dev:
+	$(PNPM_COMMAND) dev
+```
+
+#### Troubleshooting rápido
+
+- **Porta ocupada**: finalize o processo que está escutando (`lsof -i :3001` / `kill <pid>`). Se estiver usando o Makefile sugerido, crie um alvo `kill-<porta>`.
+- **Variáveis ausentes**: erros como `ECONNREFUSED` ou `Missing env` normalmente indicam `.env` faltando. Copie dos `*.env.example` e reinicie.
+- **Falha ao conectar no banco**: confirme se o container `db` está saudável (`docker compose ps`) e rode `docker exec -it db pg_isready -U postgres -d challenge_db`.
+- **Comandos duplicados pelo Turbo**: reinicie o processo (`Ctrl+C` e rode novamente) após ajustar dependências ou instalar novos pacotes.
+
 ### Build
 
 ```bash
