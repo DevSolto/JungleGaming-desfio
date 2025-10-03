@@ -10,10 +10,10 @@ Levantar esqueleto do projeto, DX e infra mínima para todos os serviços subire
 ### Tarefas
 - [x] Configurar Turborepo (workspaces, turbo.json, scripts build/dev) (Infra)
 - [x] Criar Dockerfiles dos 4 apps (targets dev) + compose com volumes e rede (Infra)
-- [ ] Criar .env.example para web, api-gateway, auth-service, tasks-service, notifications-service (Infra)
-- [ ] Scaffold Nest HTTP + Swagger placeholder + rate limiter (Gateway)
-- [ ] Criar @types (DTOs iniciais: User, Tokens, Task, Comment) (Packages)
-- [ ] Instruções de execução e troubleshooting (make dev / npm run dev) (Docs)
+- [x] Criar .env.example para web, api-gateway, auth-service, tasks-service, notifications-service (Infra)
+- [x] Scaffold Nest HTTP + Swagger placeholder + rate limiter (Gateway)
+- [x] Criar @types (DTOs iniciais: User, Tokens, Task, Comment) (Packages)
+- [x] Instruções de execução e troubleshooting (make dev / npm run dev) (Docs)
 
 ### Entregáveis
 - Monorepo apps/ e packages/ funcional
