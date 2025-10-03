@@ -12,4 +12,4 @@ ENV NODE_ENV=development
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
 COPY packages ./packages
 COPY apps/api ./apps/api
-CMD ["pnpm", "--filter", "api-gateway...", "dev"]
+CMD ["pnpm", "--filter", "api...", "dev"]

@@ -19,16 +19,16 @@ async function bootstrap() {
 
   const origin = config.get<string>('CORS_ORIGIN', '*');
 
-  app.setGlobalPrefix('api');
-
   app.enableCors({
     origin: origin.split(','),
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   });
 
+  app.setGlobalPrefix('api');
+
   const docConfig = new DocumentBuilder()
-    .setTitle('Jungle Tasks — API Gateway')
+    .setTitle('Jungle Gaming — API')
     .setDescription('HTTP entrypoint for Jungle microservices')
     .setVersion('0.1.0')
     .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' })
