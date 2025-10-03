@@ -12,9 +12,15 @@ import { User } from '../users/entities/user.entity';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET'),
+        secret: configService.get<string>(
+          'JWT_ACCESS_SECRET',
+          configService.get<string>('JWT_SECRET', 'secretKey'),
+        ),
         signOptions: {
-          expiresIn: configService.get<string | number>('JWT_EXPIRES_IN'),
+          expiresIn: configService.get<string | number>(
+            'JWT_ACCESS_EXPIRES',
+            configService.get<string | number>('JWT_EXPIRES_IN', '15m'),
+          ),
         },
       }),
       inject: [ConfigService],

@@ -54,7 +54,7 @@ describe('AppController (e2e)', () => {
         password: 'secret1',
       })
       .expect(HttpStatus.CONFLICT)
-      .expect(({ body }) => {
+      .expect(({ body }: { body: { message?: string } }) => {
         expect(body.message).toBe('email already in use');
       });
   });
@@ -74,7 +74,7 @@ describe('AppController (e2e)', () => {
       .post('/auth/login')
       .send({ username: 'player@junglegaming.dev', password: 'secret1' })
       .expect(HttpStatus.UNAUTHORIZED)
-      .expect(({ body }) => {
+      .expect(({ body }: { body: { message?: string } }) => {
         expect(body.message).toBe('invalid credentials');
       });
   });
