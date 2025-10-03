@@ -39,9 +39,120 @@ services:
       timeout: 5s
       retries: 5
 
+  auth:
+    build:
+      context: .
+      dockerfile: apps/auth/Dockerfile
+      target: dev
+    container_name: auth-service-dev
+    command: >-
+      sh -c "pnpm install --filter auth... --frozen-lockfile && pnpm --filter auth... dev"
+    working_dir: /workspace
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@db:5432/${POSTGRES_DB:-challenge_db}
+      JWT_SECRET: ${JWT_SECRET:-supersecret}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-15m}
+      BCRYPT_SALT_ROUNDS: ${BCRYPT_SALT_ROUNDS:-10}
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - .:/workspace
+      - pnpm-store:/pnpm/store
+      - root-node-modules:/workspace/node_modules
+      - auth-node-modules:/workspace/apps/auth/node_modules
+    networks: [challenge-net]
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: dev
+    container_name: api-gateway-dev
+    command: >-
+      sh -c "pnpm install --filter api-gateway... --frozen-lockfile && pnpm --filter api-gateway... dev"
+    working_dir: /workspace
+    environment:
+      NODE_ENV: development
+      PORT: ${API_PORT:-3001}
+      AUTH_SERVICE_HOST: auth
+      AUTH_SERVICE_PORT: 4010
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
+    depends_on:
+      db:
+        condition: service_healthy
+      auth:
+        condition: service_started
+    ports:
+      - "${API_PORT:-3001}:3001"
+    volumes:
+      - .:/workspace
+      - pnpm-store:/pnpm/store
+      - root-node-modules:/workspace/node_modules
+      - api-node-modules:/workspace/apps/api/node_modules
+    networks: [challenge-net]
+
+  tasks:
+    build:
+      context: .
+      dockerfile: apps/tasks/Dockerfile
+      target: dev
+    container_name: tasks-service-dev
+    command: >-
+      sh -c "pnpm install --filter tasks... --frozen-lockfile && pnpm --filter tasks... dev"
+    working_dir: /workspace
+    environment:
+      NODE_ENV: development
+      PORT: ${TASKS_PORT:-3003}
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-admin}:${RABBITMQ_PASS:-admin}@rabbitmq:5672
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    ports:
+      - "${TASKS_PORT:-3003}:3003"
+    volumes:
+      - .:/workspace
+      - pnpm-store:/pnpm/store
+      - root-node-modules:/workspace/node_modules
+      - tasks-node-modules:/workspace/apps/tasks/node_modules
+    networks: [challenge-net]
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: dev
+    container_name: web-app-dev
+    command: >-
+      sh -c "pnpm install --filter web... --frozen-lockfile && pnpm --filter web... dev"
+    working_dir: /workspace
+    environment:
+      NODE_ENV: development
+      PORT: ${WEB_PORT:-3000}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001/api}
+    depends_on:
+      api:
+        condition: service_started
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    volumes:
+      - .:/workspace
+      - pnpm-store:/pnpm/store
+      - root-node-modules:/workspace/node_modules
+      - web-node-modules:/workspace/apps/web/node_modules
+    networks: [challenge-net]
+
 volumes:
   postgres_data:
   rabbitmq_data:
+  pnpm-store:
+  root-node-modules:
+  auth-node-modules:
+  api-node-modules:
+  tasks-node-modules:
+  web-node-modules:
 
 networks:
   challenge-net:
