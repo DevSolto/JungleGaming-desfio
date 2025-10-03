@@ -1,5 +1,5 @@
-import { Body, Controller, HttpCode, Post } from '@nestjs/common';
-import { ApiTags, ApiOkResponse } from '@nestjs/swagger';
+import { Controller } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto';
 import { MessagePattern, Payload } from '@nestjs/microservices';
@@ -15,7 +15,7 @@ export class AuthController {
     return this.auth.register(createUserDto);
   }
 
-  @MessagePattern('register')
+  @MessagePattern('login')
   login(@Payload() dto: LoginDto) {
     return this.auth.login(dto.username, dto.password);
   }
