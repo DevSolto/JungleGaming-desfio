@@ -1,7 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
+import type { AuthRegisterRequest } from '@repo/contracts';
 
-export class RegisterDto {
+export class RegisterDto implements AuthRegisterRequest {
   @ApiProperty({ example: 'player@junglegaming.dev' })
   @IsEmail()
   email!: string;
