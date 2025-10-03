@@ -49,7 +49,7 @@ export class AuthService {
       };
       if (payload?.statusCode && payload?.message) {
         return throwError(
-          () => new HttpException(payload.message, payload.statusCode),
+          () => new HttpException(payload.message ?? 'Unknown error', payload.statusCode ?? 500),
         );
       }
     }

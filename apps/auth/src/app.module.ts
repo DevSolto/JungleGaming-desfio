@@ -20,7 +20,7 @@ import { AuthModule } from './auth/auth.module';
         type: 'postgres',
         url: cfg.get<string>('DATABASE_URL'),
         autoLoadEntities: true,
-        synchronize: false,      // migrations only
+        synchronize: true,
         migrationsRun: true,
       }),
     }),
