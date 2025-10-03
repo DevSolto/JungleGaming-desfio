@@ -8,8 +8,8 @@ Este documento consolida todas as sprints do projeto, facilitando o acompanhamen
 Levantar esqueleto do projeto, DX e infra mínima para todos os serviços subirem.
 
 ### Tarefas
-- [ ] Configurar Turborepo (workspaces, turbo.json, scripts build/dev) (Infra)
-- [ ] Criar Dockerfiles dos 4 apps (targets dev) + compose com volumes e rede (Infra)
+- [x] Configurar Turborepo (workspaces, turbo.json, scripts build/dev) (Infra)
+- [x] Criar Dockerfiles dos 4 apps (targets dev) + compose com volumes e rede (Infra)
 - [ ] Criar .env.example para web, api-gateway, auth-service, tasks-service, notifications-service (Infra)
 - [ ] Scaffold Nest HTTP + Swagger placeholder + rate limiter (Gateway)
 - [ ] Criar @types (DTOs iniciais: User, Tokens, Task, Comment) (Packages)
