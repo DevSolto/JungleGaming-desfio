@@ -35,9 +35,9 @@ Levantar esqueleto do projeto, DX e infra mínima para todos os serviços subire
 Implementar login/register com JWT (access/refresh), proteger rotas e documentar.
 
 ### Tarefas
-- [ ] Entities User e (opcional) RefreshToken; repositórios TypeORM e serviços (Auth)
-- [ ] Endpoints /auth/register, /auth/login, /auth/refresh (Auth)
-- [ ] Configurar estratégias de access/refresh + decorators @CurrentUser (Gateway)
+- [x] Entities User e RefreshToken; repositórios TypeORM e serviços (Auth)
+- [x] Endpoints /auth/register, /auth/login, /auth/refresh (Auth)
+- [x] Configurar estratégias de access/refresh + decorators @CurrentUser (Gateway)
 - [ ] Páginas Login/Register com validação, toasts, loading, persistência segura de tokens (Front)
 - [ ] Fluxos de sequência (Mermaid) para login/refresh (Docs)
 

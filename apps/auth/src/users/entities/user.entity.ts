@@ -14,6 +14,6 @@ export class User {
     @Column()
     passwordHash: string;
 
-    @Column({ nullable: true })
-    refreshTokenHash?: string | null;
+    @Column({ type: 'text', nullable: true })
+    refreshTokenHash: string | null;
 }
