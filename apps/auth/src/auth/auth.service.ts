@@ -21,7 +21,7 @@ export class AuthService {
     @InjectRepository(User) private users: Repository<User>,
     private jwt: JwtService,
     private cfg: ConfigService,
-  ) {}
+  ) { }
 
   async register(createUserDto: CreateUserDto): Promise<AuthRegisterResponse> {
     const exists = await this.users.findOne({
@@ -67,12 +67,15 @@ export class AuthService {
 
   private async createToken(user: User): Promise<AuthTokens> {
     const payload = { sub: user.id, email: user.email, name: user.name };
-    return {
-      access_token: await this.jwt.signAsync(payload, {
-        expiresIn: this.cfg.get('JWT_EXPIRES_IN', '15m'),
-        secret: this.cfg.get('JWT_SECRET', 'secretKey'),
-      }),
-    };
+    const refreshToken = await this.jwt.signAsync(payload, {
+      expiresIn: this.cfg.get('JWT_REFRESH_TTL', '7d'),
+      secret: this.cfg.get('JWT_REFRESH_SECRET', 'refreshSecretKey'),
+    });
+    const accessToken = await this.jwt.signAsync(payload, {
+      expiresIn: this.cfg.get('JWT_EXPIRES_IN', '15m'),
+      secret: this.cfg.get('JWT_SECRET', 'secretKey'),
+    });
+    return { accessToken, refreshToken };
   }
 
   private toAuthUser(user: User): AuthUser {

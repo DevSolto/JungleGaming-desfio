@@ -1,14 +1,8 @@
-import { HttpException, Inject, Injectable } from '@nestjs/common';
-import { ClientProxy, RpcException } from '@nestjs/microservices';
-import { catchError, lastValueFrom, throwError } from 'rxjs';
+import { Inject, Injectable } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
+import { lastValueFrom } from 'rxjs';
 import { AUTH_SERVICE } from './auth.constants';
 import { LoginDto, RegisterDto } from './dto';
-import { AUTH_MESSAGE_PATTERNS } from '@repo/contracts';
-import type {
-  AuthLoginResponse,
-  AuthPingResponse,
-  AuthRegisterResponse,
-} from '@repo/contracts';
 
 @Injectable()
 export class AuthService {
@@ -18,42 +12,14 @@ export class AuthService {
   ) {}
 
   register(dto: RegisterDto) {
-    return lastValueFrom<AuthRegisterResponse>(
-      this.authClient.send(AUTH_MESSAGE_PATTERNS.REGISTER, dto).pipe(
-        catchError((err) => this.handleRpcException(err)),
-      ),
-    );
+    return lastValueFrom(this.authClient.send('register', dto));
   }
 
   login(dto: LoginDto) {
-    return lastValueFrom<AuthLoginResponse>(
-      this.authClient.send(AUTH_MESSAGE_PATTERNS.LOGIN, dto).pipe(
-        catchError((err) => this.handleRpcException(err)),
-      ),
-    );
+    return lastValueFrom(this.authClient.send('login', dto));
   }
 
   ping() {
-    return lastValueFrom<AuthPingResponse>(
-      this.authClient.send(AUTH_MESSAGE_PATTERNS.PING, {}).pipe(
-        catchError((err) => this.handleRpcException(err)),
-      ),
-    );
-  }
-
-  private handleRpcException(error: unknown) {
-    if (error instanceof RpcException) {
-      const payload = error.getError() as {
-        statusCode?: number;
-        message?: string;
-      };
-      if (payload?.statusCode && payload?.message) {
-        return throwError(
-          () => new HttpException(payload.message ?? 'Unknown error', payload.statusCode ?? 500),
-        );
-      }
-    }
-
-    return throwError(() => error);
+    return lastValueFrom(this.authClient.send('ping', {}));
   }
 }
