@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { AuthService } from '../auth/auth.service';
+import type { AuthPingResponse } from '@repo/contracts';
 
 type DependencyHealth<T = unknown> = {
   status: 'ok' | 'error';
@@ -16,7 +17,7 @@ export class HealthService {
     const now = new Date().toISOString();
 
     const dependencies = {
-      auth: await this.probe(() => this.authService.ping()),
+      auth: await this.probe<AuthPingResponse>(() => this.authService.ping()),
     } satisfies Record<string, DependencyHealth>;
 
     const degraded = Object.values(dependencies).some(
@@ -37,7 +38,9 @@ export class HealthService {
     };
   }
 
-  private async probe<T>(factory: () => Promise<T>): Promise<DependencyHealth<T>> {
+  private async probe<T>(
+    factory: () => Promise<T>,
+  ): Promise<DependencyHealth<T>> {
     const startedAt = process.hrtime.bigint();
 
     try {

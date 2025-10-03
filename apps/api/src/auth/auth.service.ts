@@ -3,6 +3,12 @@ import { ClientProxy } from '@nestjs/microservices';
 import { lastValueFrom } from 'rxjs';
 import { AUTH_SERVICE } from './auth.constants';
 import { LoginDto, RegisterDto } from './dto';
+import { AUTH_MESSAGE_PATTERNS } from '@repo/contracts';
+import type {
+  AuthLoginResponse,
+  AuthPingResponse,
+  AuthRegisterResponse,
+} from '@repo/contracts';
 
 @Injectable()
 export class AuthService {
@@ -12,14 +18,20 @@ export class AuthService {
   ) {}
 
   register(dto: RegisterDto) {
-    return lastValueFrom(this.authClient.send('register', dto));
+    return lastValueFrom<AuthRegisterResponse>(
+      this.authClient.send(AUTH_MESSAGE_PATTERNS.REGISTER, dto),
+    );
   }
 
   login(dto: LoginDto) {
-    return lastValueFrom(this.authClient.send('login', dto));
+    return lastValueFrom<AuthLoginResponse>(
+      this.authClient.send(AUTH_MESSAGE_PATTERNS.LOGIN, dto),
+    );
   }
 
   ping() {
-    return lastValueFrom(this.authClient.send('ping', {}));
+    return lastValueFrom<AuthPingResponse>(
+      this.authClient.send(AUTH_MESSAGE_PATTERNS.PING, {}),
+    );
   }
 }
