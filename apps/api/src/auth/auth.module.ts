@@ -3,8 +3,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-
-export const AUTH_SERVICE = Symbol('AUTH_SERVICE');
+import { AUTH_SERVICE } from './auth.constants';
 
 @Module({
   imports: [

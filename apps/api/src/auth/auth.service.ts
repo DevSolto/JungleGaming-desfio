@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { lastValueFrom } from 'rxjs';
-import { AUTH_SERVICE } from './auth.module';
+import { AUTH_SERVICE } from './auth.constants';
 import { LoginDto, RegisterDto } from './dto';
 
 @Injectable()
