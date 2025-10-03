@@ -28,7 +28,7 @@ export class HealthService {
       status: degraded ? 'degraded' : 'ok',
       ts: now,
       services: {
-        gateway: {
+        api: {
           status: 'ok' as const,
           latencyMs: 0,
           details: { ts: now },

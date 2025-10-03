@@ -1,5 +1,5 @@
 {
-  "name": "api-gateway",
+  "name": "api",
   "version": "0.0.1",
   "description": "",
   "author": "",
@@ -78,6 +78,10 @@
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
+    },
+    "moduleNameMapper": {
+      "^@repo/contracts$": "<rootDir>/../test/__mocks__/repo-contracts.ts",
+      "^@repo/contracts/(.*)$": "<rootDir>/../test/__mocks__/repo-contracts/$1.ts"
     },
     "collectCoverageFrom": [
       "**/*.(t|j)s"
