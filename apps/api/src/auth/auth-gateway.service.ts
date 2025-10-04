@@ -22,7 +22,7 @@ export class AuthGatewayService {
   constructor(
     @Inject(AUTH_SERVICE)
     private readonly authClient: ClientProxy,
-  ) {}
+  ) { }
 
   async register(dto: RegisterDto): Promise<AuthRegisterResponse> {
     try {
@@ -86,6 +86,27 @@ export class AuthGatewayService {
       }
     }
 
+    // Sometimes microservices return plain objects (not RpcException instances)
+    // when proxied through the client. Handle those shapes here so status codes
+    // like 401/409 from the auth service are preserved instead of becoming 500.
+    if (typeof error === 'object' && error !== null && !(error instanceof Error)) {
+      const obj = error as Record<string, unknown>;
+
+      // If the object looks like an HTTP/RPC error (has message/status/statusCode/code),
+      // normalize and convert to HttpException preserving status code when possible.
+      if (
+        'message' in obj ||
+        'status' in obj ||
+        'statusCode' in obj ||
+        'error' in obj ||
+        'code' in obj
+      ) {
+        const body = this.normalizeBody({ ...(obj as Record<string, unknown>) });
+        const statusCode = this.extractStatusCode(body.statusCode ?? body.status);
+        return new HttpException(body, statusCode, { cause: error });
+      }
+    }
+
     if (error instanceof HttpException) {
       return error;
     }
@@ -114,10 +135,10 @@ export class AuthGatewayService {
 
   private normalizeRpcException(error: RpcException):
     | {
-        statusCode: number;
-        body: Record<string, unknown>;
-        cause?: unknown;
-      }
+      statusCode: number;
+      body: Record<string, unknown>;
+      cause?: unknown;
+    }
     | undefined {
     const rpcError = error.getError();
 

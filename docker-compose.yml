@@ -50,10 +50,13 @@ services:
     working_dir: /workspace
     environment:
       NODE_ENV: development
+      AUTH_SERVICE_PORT: ${AUTH_SERVICE_PORT:-4010}
       DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@db:5432/${POSTGRES_DB:-challenge_db}
       JWT_SECRET: ${JWT_SECRET:-supersecret}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-15m}
       BCRYPT_SALT_ROUNDS: ${BCRYPT_SALT_ROUNDS:-10}
+    ports:
+      - "${AUTH_SERVICE_PORT:-4010}:4010"
     depends_on:
       db:
         condition: service_healthy
@@ -91,6 +94,32 @@ services:
       - pnpm-store:/pnpm/store
       - root-node-modules:/workspace/node_modules
       - api-node-modules:/workspace/apps/api/node_modules
+    networks: [challenge-net]
+
+  notifications:
+    build:
+      context: .
+      dockerfile: apps/notifications/Dockerfile
+      target: dev
+    container_name: notifications-service-dev
+    command: >-
+      sh -c "pnpm install --filter @apps/notifications... --frozen-lockfile && pnpm --filter @apps/notifications... dev"
+    working_dir: /workspace
+    environment:
+      NODE_ENV: development
+      PORT: ${NOTIFICATIONS_PORT:-3005}
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-admin}:${RABBITMQ_PASS:-admin}@rabbitmq:5672
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    ports:
+      - "${NOTIFICATIONS_PORT:-3005}:3005"
+    volumes:
+      - .:/workspace
+      - pnpm-store:/pnpm/store
+      - root-node-modules:/workspace/node_modules
+      - web-node-modules:/workspace/apps/notifications/node_modules
     networks: [challenge-net]
 
   tasks:
