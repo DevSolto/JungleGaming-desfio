@@ -1,8 +1,8 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern } from '@nestjs/microservices';
 import { ApiTags } from '@nestjs/swagger';
-import { AUTH_MESSAGE_PATTERNS } from '@repo/contracts';
-import type { AuthPingResponse } from '@repo/contracts';
+import { AUTH_MESSAGE_PATTERNS } from '@contracts';
+import type { AuthPingResponse } from '@contracts';
 
 @ApiTags('health')
 @Controller('health')

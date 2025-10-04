@@ -1,5 +1,5 @@
 {
-  "name": "tasks",
+  "name": "@apps/tasks-service",
   "version": "0.0.1",
   "description": "",
   "author": "",
@@ -29,6 +29,7 @@
     "@nestjs/swagger": "^11.2.0",
     "@nestjs/terminus": "^11.0.0",
     "@nestjs/throttler": "^6.4.0",
+    "@contracts": "workspace:*",
     "amqp-connection-manager": "^5.0.0",
     "amqplib": "^0.10.9",
     "axios": "^1.12.2",

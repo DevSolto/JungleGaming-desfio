@@ -15,8 +15,11 @@ describe('AppController', () => {
   });
 
   describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
+    it('should return a sample notification contract', () => {
+      const notification = appController.getSampleNotification();
+
+      expect(notification.channel).toBeDefined();
+      expect(notification.message).toMatch(/Contracts/);
     });
   });
 });

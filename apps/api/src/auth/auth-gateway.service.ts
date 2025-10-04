@@ -10,7 +10,7 @@ import {
   type AuthRefreshResponse,
   type AuthRegisterResponse,
   type AuthRefreshRequest,
-} from '@repo/contracts';
+} from '@contracts';
 
 @Injectable()
 export class AuthGatewayService {
