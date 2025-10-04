@@ -254,7 +254,7 @@ docker exec -it rabbitmq rabbitmq-plugins list
 
 ```bash
 # registrar
-curl -X POST http://localhost:3001/api/auth/register   -H "Content-Type: application/json"   -d '{"email":"user@test.com","username":"user","password":"secret"}'
+curl -X POST http://localhost:3001/api/auth/register   -H "Content-Type: application/json"   -d '{"email":"user@test.com","name":"User","password":"secret"}'
 
 # login
 curl -X POST http://localhost:3001/api/auth/login   -H "Content-Type: application/json"   -d '{"email":"user@test.com","password":"secret"}'
