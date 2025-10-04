@@ -1,4 +1,9 @@
-import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { lastValueFrom } from 'rxjs';
 import { AUTH_SERVICE } from './auth.constants';
@@ -73,48 +78,24 @@ export class AuthGatewayService {
 
   private toHttpException(error: unknown): HttpException {
     if (error instanceof RpcException) {
-      const rpcError = error.getError();
-
-      if (
-        typeof rpcError === 'object' &&
-        rpcError !== null &&
-        'statusCode' in rpcError &&
-        typeof (rpcError as { statusCode?: unknown }).statusCode === 'number'
-      ) {
-        const { statusCode, message, code } = rpcError as {
-          statusCode: number;
-          message?: unknown;
-          code?: unknown;
-        };
-        const normalizedMessage =
-          typeof message === 'string'
-            ? message
-            : 'Internal server error';
-        const normalizedCode =
-          typeof code === 'string' ? code : undefined;
-
-        const responseBody: Record<string, unknown> = {
-          statusCode,
-          message: normalizedMessage,
-        };
-
-        if (normalizedCode) {
-          responseBody.code = normalizedCode;
-        }
-
-        return new HttpException(responseBody, statusCode, {
-          cause: rpcError,
+      const normalized = this.normalizeRpcException(error);
+      if (normalized) {
+        return new HttpException(normalized.body, normalized.statusCode, {
+          cause: normalized.cause,
         });
       }
+    }
 
-      if (typeof rpcError === 'string') {
-        return new HttpException(rpcError, HttpStatus.INTERNAL_SERVER_ERROR);
-      }
+    if (error instanceof HttpException) {
+      return error;
     }
 
     if (error instanceof Error) {
       return new HttpException(
-        error.message,
+        {
+          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: error.message ?? 'Internal server error',
+        },
         HttpStatus.INTERNAL_SERVER_ERROR,
         {
           cause: error,
@@ -123,8 +104,132 @@ export class AuthGatewayService {
     }
 
     return new HttpException(
-      'Internal server error',
+      {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: 'Internal server error',
+      },
       HttpStatus.INTERNAL_SERVER_ERROR,
     );
+  }
+
+  private normalizeRpcException(error: RpcException):
+    | {
+        statusCode: number;
+        body: Record<string, unknown>;
+        cause?: unknown;
+      }
+    | undefined {
+    const rpcError = error.getError();
+
+    if (rpcError instanceof HttpException) {
+      const statusCode = rpcError.getStatus();
+      const response = rpcError.getResponse();
+      const body = this.normalizeBody({
+        statusCode,
+        ...(typeof response === 'string'
+          ? { message: response }
+          : (response as Record<string, unknown>)),
+      });
+
+      return { statusCode, body, cause: rpcError }; // preserve original exception
+    }
+
+    if (rpcError instanceof Error) {
+      const statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
+      const body = this.normalizeBody({
+        statusCode,
+        message: rpcError.message ?? 'Internal server error',
+      });
+
+      return { statusCode, body, cause: rpcError };
+    }
+
+    if (typeof rpcError === 'string') {
+      const statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
+      const body = this.normalizeBody({
+        statusCode,
+        message: rpcError,
+      });
+
+      return { statusCode, body };
+    }
+
+    if (typeof rpcError === 'object' && rpcError !== null) {
+      const normalized = this.normalizeBody({
+        ...(rpcError as Record<string, unknown>),
+      });
+      const statusCode =
+        typeof normalized.statusCode === 'number'
+          ? normalized.statusCode
+          : HttpStatus.INTERNAL_SERVER_ERROR;
+
+      return {
+        statusCode,
+        body: normalized,
+        cause: rpcError,
+      };
+    }
+
+    return undefined;
+  }
+
+  private normalizeBody(source: Record<string, unknown>): Record<string, unknown> {
+    const body: Record<string, unknown> = { ...source };
+
+    const statusCode = this.extractStatusCode(body.statusCode ?? body.status);
+    body.statusCode = statusCode;
+
+    const message = this.extractMessage(body.message ?? body.error);
+    body.message = message;
+
+    const code = this.extractCode(body.code);
+    if (code) {
+      body.code = code;
+    } else {
+      delete body.code;
+    }
+
+    return body;
+  }
+
+  private extractStatusCode(rawStatus: unknown): number {
+    if (typeof rawStatus === 'number' && Number.isFinite(rawStatus)) {
+      return rawStatus;
+    }
+
+    if (typeof rawStatus === 'string') {
+      const parsed = Number.parseInt(rawStatus, 10);
+      if (Number.isFinite(parsed)) {
+        return parsed;
+      }
+    }
+
+    return HttpStatus.INTERNAL_SERVER_ERROR;
+  }
+
+  private extractMessage(rawMessage: unknown): string {
+    if (typeof rawMessage === 'string' && rawMessage.trim().length > 0) {
+      return rawMessage;
+    }
+
+    if (Array.isArray(rawMessage)) {
+      const parts = rawMessage
+        .map((part) => this.extractMessage(part))
+        .filter((part) => part.length > 0);
+
+      if (parts.length > 0) {
+        return parts.join(', ');
+      }
+    }
+
+    return 'Internal server error';
+  }
+
+  private extractCode(rawCode: unknown): string | undefined {
+    if (typeof rawCode === 'string' && rawCode.trim().length > 0) {
+      return rawCode;
+    }
+
+    return undefined;
   }
 }
