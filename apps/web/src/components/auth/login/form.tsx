@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { loginSchema } from "../../../schemas/loginSchema"
+import { login } from "@/features/auth/login"
 
 
 
@@ -30,8 +31,8 @@ export function LoginForm() {
     },
   })
 
-  const onSubmit = (values: LoginFormValues) => {
-    console.log(values)
+  const onSubmit = async (values: LoginFormValues) => {
+    await login({ email: values.email, password: values.password });
   }
 
   return (

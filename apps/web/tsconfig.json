@@ -32,6 +32,12 @@
       "@/*": [
         "./src/*"
       ],
+      "@contracts": [
+        "../../packages/contracts/src"
+      ],
+      "@contracts/*": [
+        "../../packages/contracts/src/*"
+      ],
     }
   }
 }

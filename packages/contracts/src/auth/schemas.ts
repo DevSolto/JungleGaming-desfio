@@ -16,7 +16,7 @@ export interface AuthRegisterRequest {
 }
 
 export interface AuthLoginRequest {
-  username: string;
+  email: string;
   password: string;
 }
 
@@ -24,7 +24,7 @@ export interface AuthRefreshRequest {
   refreshToken: string;
 }
 
-export interface AuthRefreshResponse extends AuthTokens {}
+export interface AuthRefreshResponse extends AuthTokens { }
 
 export interface AuthRegisterResponse extends AuthTokens {
   user: AuthUser;
