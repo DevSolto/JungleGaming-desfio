@@ -32,7 +32,8 @@ export function LoginForm() {
   })
 
   const onSubmit = async (values: LoginFormValues) => {
-    await login({ email: values.email, password: values.password });
+    const response = await login({ email: values.email, password: values.password });
+    console.log('Login response:', response);
   }
 
   return (

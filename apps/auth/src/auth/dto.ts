@@ -19,8 +19,9 @@ export class RegisterDto implements AuthRegisterRequest {
 }
 export class LoginDto implements AuthLoginRequest {
   @IsString()
+  @IsEmail()
   @IsNotEmpty()
-  username!: string; // ou email
+  email!: string; // ou email
 
   @IsString()
   @MinLength(6)

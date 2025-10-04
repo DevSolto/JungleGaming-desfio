@@ -55,14 +55,14 @@ export class AuthService {
   }
 
   async login({
-    username,
+    email,
     password,
   }: AuthLoginRequest): Promise<AuthLoginResponse> {
-    const user = await this.users.findOne({ where: { email: username } });
+    const user = await this.users.findOne({ where: { email: email } });
     if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
       throw new RpcException({
         statusCode: HttpStatus.UNAUTHORIZED,
-        message: 'Invalid username or password.',
+        message: 'Invalid email or password.',
         code: AUTH_INVALID_CREDENTIALS,
       });
     }
