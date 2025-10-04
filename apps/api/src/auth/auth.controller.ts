@@ -62,7 +62,7 @@ export class AuthController {
     const refreshToken = this.extractRefreshToken(req);
 
     if (!refreshToken) {
-      throw new UnauthorizedException('refresh token missing');
+      throw new UnauthorizedException('Refresh token is required.');
     }
 
     const { accessToken, refreshToken: rotatedRefreshToken } =

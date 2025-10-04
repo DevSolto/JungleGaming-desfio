@@ -41,7 +41,7 @@ describe('AppController (e2e)', () => {
         () =>
           new RpcException({
             statusCode: HttpStatus.CONFLICT,
-            message: 'email already in use',
+            message: 'Email address is already registered.',
           }),
       ),
     );
@@ -55,7 +55,7 @@ describe('AppController (e2e)', () => {
       })
       .expect(HttpStatus.CONFLICT)
       .expect(({ body }: { body: { message?: string } }) => {
-        expect(body.message).toBe('email already in use');
+        expect(body.message).toBe('Email address is already registered.');
       });
   });
 
@@ -65,7 +65,7 @@ describe('AppController (e2e)', () => {
         () =>
           new RpcException({
             statusCode: HttpStatus.UNAUTHORIZED,
-            message: 'invalid credentials',
+            message: 'Invalid username or password.',
           }),
       ),
     );
@@ -75,7 +75,7 @@ describe('AppController (e2e)', () => {
       .send({ username: 'player@junglegaming.dev', password: 'secret1' })
       .expect(HttpStatus.UNAUTHORIZED)
       .expect(({ body }: { body: { message?: string } }) => {
-        expect(body.message).toBe('invalid credentials');
+        expect(body.message).toBe('Invalid username or password.');
       });
   });
 });

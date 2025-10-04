@@ -1,5 +1,5 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
+import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { lastValueFrom } from 'rxjs';
 import { AUTH_SERVICE } from './auth.constants';
 import { LoginDto, RegisterDto } from './dto';
@@ -19,33 +19,98 @@ export class AuthGatewayService {
     private readonly authClient: ClientProxy,
   ) {}
 
-  register(dto: RegisterDto): Promise<AuthRegisterResponse> {
-    return lastValueFrom(
-      this.authClient.send(AUTH_MESSAGE_PATTERNS.REGISTER, dto),
-    );
+  async register(dto: RegisterDto): Promise<AuthRegisterResponse> {
+    try {
+      return await lastValueFrom(
+        this.authClient.send(AUTH_MESSAGE_PATTERNS.REGISTER, dto),
+      );
+    } catch (error) {
+      throw this.toHttpException(error);
+    }
   }
 
-  login(dto: LoginDto): Promise<AuthLoginResponse> {
-    return lastValueFrom(
-      this.authClient.send(AUTH_MESSAGE_PATTERNS.LOGIN, dto),
-    );
+  async login(dto: LoginDto): Promise<AuthLoginResponse> {
+    try {
+      return await lastValueFrom(
+        this.authClient.send(AUTH_MESSAGE_PATTERNS.LOGIN, dto),
+      );
+    } catch (error) {
+      throw this.toHttpException(error);
+    }
   }
 
-  refresh(refreshToken: string): Promise<AuthRefreshResponse> {
+  async refresh(refreshToken: string): Promise<AuthRefreshResponse> {
     const payload: AuthRefreshRequest = { refreshToken };
-    return lastValueFrom(
-      this.authClient.send(AUTH_MESSAGE_PATTERNS.REFRESH, payload),
-    );
+    try {
+      return await lastValueFrom(
+        this.authClient.send(AUTH_MESSAGE_PATTERNS.REFRESH, payload),
+      );
+    } catch (error) {
+      throw this.toHttpException(error);
+    }
   }
 
-  logout(refreshToken: string): Promise<AuthLogoutResponse> {
+  async logout(refreshToken: string): Promise<AuthLogoutResponse> {
     const payload: AuthRefreshRequest = { refreshToken };
-    return lastValueFrom(
-      this.authClient.send(AUTH_MESSAGE_PATTERNS.LOGOUT, payload),
-    );
+    try {
+      return await lastValueFrom(
+        this.authClient.send(AUTH_MESSAGE_PATTERNS.LOGOUT, payload),
+      );
+    } catch (error) {
+      throw this.toHttpException(error);
+    }
   }
 
-  ping() {
-    return lastValueFrom(this.authClient.send(AUTH_MESSAGE_PATTERNS.PING, {}));
+  async ping() {
+    try {
+      return await lastValueFrom(
+        this.authClient.send(AUTH_MESSAGE_PATTERNS.PING, {}),
+      );
+    } catch (error) {
+      throw this.toHttpException(error);
+    }
+  }
+
+  private toHttpException(error: unknown): HttpException {
+    if (error instanceof RpcException) {
+      const rpcError = error.getError();
+
+      if (
+        typeof rpcError === 'object' &&
+        rpcError !== null &&
+        'statusCode' in rpcError &&
+        typeof (rpcError as { statusCode?: unknown }).statusCode === 'number'
+      ) {
+        const { statusCode, message } = rpcError as {
+          statusCode: number;
+          message?: unknown;
+        };
+        const normalizedMessage =
+          typeof message === 'string'
+            ? message
+            : 'Internal server error';
+
+        return new HttpException(normalizedMessage, statusCode);
+      }
+
+      if (typeof rpcError === 'string') {
+        return new HttpException(rpcError, HttpStatus.INTERNAL_SERVER_ERROR);
+      }
+    }
+
+    if (error instanceof Error) {
+      return new HttpException(
+        error.message,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        {
+          cause: error,
+        },
+      );
+    }
+
+    return new HttpException(
+      'Internal server error',
+      HttpStatus.INTERNAL_SERVER_ERROR,
+    );
   }
 }
