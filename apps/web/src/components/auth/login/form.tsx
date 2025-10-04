@@ -13,16 +13,9 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import { loginSchema } from "../../../schemas/loginSchema"
 
-const loginSchema = z.object({
-  email: z
-    .string({ required_error: "Informe seu email" })
-    .min(1, "Informe seu email")
-    .email("Digite um email válido"),
-  password: z
-    .string({ required_error: "Digite sua senha" })
-    .min(8, "A senha precisa ter ao menos 8 caracteres"),
-})
+
 
 type LoginFormValues = z.infer<typeof loginSchema>
 
@@ -38,7 +31,6 @@ export function LoginForm() {
   })
 
   const onSubmit = (values: LoginFormValues) => {
-    // Apenas exibe os valores por enquanto; integração com API virá depois.
     console.log(values)
   }
 
