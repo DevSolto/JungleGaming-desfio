@@ -6,6 +6,10 @@ import { AppModule } from './../src/app.module';
 import { AUTH_SERVICE } from '../src/auth/auth.constants';
 import { RpcException } from '@nestjs/microservices';
 import { throwError } from 'rxjs';
+import {
+  AUTH_EMAIL_CONFLICT,
+  AUTH_INVALID_CREDENTIALS,
+} from '@contracts';
 
 describe('AppController (e2e)', () => {
   let app: INestApplication<App>;
@@ -42,6 +46,7 @@ describe('AppController (e2e)', () => {
           new RpcException({
             statusCode: HttpStatus.CONFLICT,
             message: 'Email address is already registered.',
+            code: AUTH_EMAIL_CONFLICT,
           }),
       ),
     );
@@ -54,8 +59,9 @@ describe('AppController (e2e)', () => {
         password: 'secret1',
       })
       .expect(HttpStatus.CONFLICT)
-      .expect(({ body }: { body: { message?: string } }) => {
+      .expect(({ body }: { body: { message?: string; code?: string } }) => {
         expect(body.message).toBe('Email address is already registered.');
+        expect(body.code).toBe(AUTH_EMAIL_CONFLICT);
       });
   });
 
@@ -66,6 +72,7 @@ describe('AppController (e2e)', () => {
           new RpcException({
             statusCode: HttpStatus.UNAUTHORIZED,
             message: 'Invalid username or password.',
+            code: AUTH_INVALID_CREDENTIALS,
           }),
       ),
     );
@@ -74,8 +81,9 @@ describe('AppController (e2e)', () => {
       .post('/auth/login')
       .send({ username: 'player@junglegaming.dev', password: 'secret1' })
       .expect(HttpStatus.UNAUTHORIZED)
-      .expect(({ body }: { body: { message?: string } }) => {
+      .expect(({ body }: { body: { message?: string; code?: string } }) => {
         expect(body.message).toBe('Invalid username or password.');
+        expect(body.code).toBe(AUTH_INVALID_CREDENTIALS);
       });
   });
 });

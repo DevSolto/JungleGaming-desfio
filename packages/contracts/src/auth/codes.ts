@@ -1,11 +1,3 @@
-export const AUTH_MESSAGE_PATTERNS = {
-  REGISTER: 'auth.register',
-  LOGIN: 'auth.login',
-  REFRESH: 'auth.refresh',
-  LOGOUT: 'auth.logout',
-  PING: 'auth.ping',
-};
-
 export const AUTH_EMAIL_CONFLICT = 'AUTH_EMAIL_CONFLICT';
 export const AUTH_INVALID_CREDENTIALS = 'AUTH_INVALID_CREDENTIALS';
 export const AUTH_REFRESH_TOKEN_MISSING = 'AUTH_REFRESH_TOKEN_MISSING';
@@ -16,4 +8,7 @@ export const AUTH_ERROR_CODES = {
   INVALID_CREDENTIALS: AUTH_INVALID_CREDENTIALS,
   REFRESH_TOKEN_MISSING: AUTH_REFRESH_TOKEN_MISSING,
   REFRESH_TOKEN_INVALID: AUTH_REFRESH_TOKEN_INVALID,
-};
+} as const;
+
+export type AuthErrorCode =
+  (typeof AUTH_ERROR_CODES)[keyof typeof AUTH_ERROR_CODES];
