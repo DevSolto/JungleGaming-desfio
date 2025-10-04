@@ -118,7 +118,7 @@ describe('AppController (e2e)', () => {
         () =>
           new RpcException({
             statusCode: HttpStatus.UNAUTHORIZED,
-            message: 'Invalid username or password.',
+            message: 'Invalid email or password.',
             code: AUTH_INVALID_CREDENTIALS,
           }),
       ),
@@ -126,10 +126,10 @@ describe('AppController (e2e)', () => {
 
     await request(app.getHttpServer())
       .post('/auth/login')
-      .send({ username: 'player@junglegaming.dev', password: 'secret1' })
+      .send({ email: 'player@junglegaming.dev', password: 'secret1' })
       .expect(HttpStatus.UNAUTHORIZED)
       .expect(({ body }: { body: { message?: string; code?: string } }) => {
-        expect(body.message).toBe('Invalid username or password.');
+        expect(body.message).toBe('Invalid email or password.');
         expect(body.code).toBe(AUTH_INVALID_CREDENTIALS);
       });
   });
