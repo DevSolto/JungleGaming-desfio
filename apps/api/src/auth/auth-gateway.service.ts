@@ -81,16 +81,30 @@ export class AuthGatewayService {
         'statusCode' in rpcError &&
         typeof (rpcError as { statusCode?: unknown }).statusCode === 'number'
       ) {
-        const { statusCode, message } = rpcError as {
+        const { statusCode, message, code } = rpcError as {
           statusCode: number;
           message?: unknown;
+          code?: unknown;
         };
         const normalizedMessage =
           typeof message === 'string'
             ? message
             : 'Internal server error';
+        const normalizedCode =
+          typeof code === 'string' ? code : undefined;
 
-        return new HttpException(normalizedMessage, statusCode);
+        const responseBody: Record<string, unknown> = {
+          statusCode,
+          message: normalizedMessage,
+        };
+
+        if (normalizedCode) {
+          responseBody.code = normalizedCode;
+        }
+
+        return new HttpException(responseBody, statusCode, {
+          cause: rpcError,
+        });
       }
 
       if (typeof rpcError === 'string') {

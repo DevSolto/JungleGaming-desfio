@@ -7,15 +7,19 @@ import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { RpcException } from '@nestjs/microservices';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
-import type {
-  AuthLoginRequest,
-  AuthLoginResponse,
-  AuthLogoutResponse,
-  AuthRefreshRequest,
-  AuthRefreshResponse,
-  AuthRegisterResponse,
-  AuthTokens,
-  AuthUser,
+import {
+  AUTH_EMAIL_CONFLICT,
+  AUTH_INVALID_CREDENTIALS,
+  AUTH_REFRESH_TOKEN_INVALID,
+  AUTH_REFRESH_TOKEN_MISSING,
+  type AuthLoginRequest,
+  type AuthLoginResponse,
+  type AuthLogoutResponse,
+  type AuthRefreshRequest,
+  type AuthRefreshResponse,
+  type AuthRegisterResponse,
+  type AuthTokens,
+  type AuthUser,
 } from '@contracts';
 
 @Injectable()
@@ -35,6 +39,7 @@ export class AuthService {
       throw new RpcException({
         statusCode: HttpStatus.CONFLICT,
         message: 'Email address is already registered.',
+        code: AUTH_EMAIL_CONFLICT,
       });
 
     const passwordHash = await this.hashPassword(createUserDto.password);
@@ -58,6 +63,7 @@ export class AuthService {
       throw new RpcException({
         statusCode: HttpStatus.UNAUTHORIZED,
         message: 'Invalid username or password.',
+        code: AUTH_INVALID_CREDENTIALS,
       });
     }
     const tokens = await this.createTokens(user);
@@ -67,21 +73,30 @@ export class AuthService {
 
   async refresh({ refreshToken }: AuthRefreshRequest): Promise<AuthRefreshResponse> {
     if (!refreshToken) {
-      throw this.buildUnauthorized('Refresh token is required.');
+      throw this.buildUnauthorized(
+        'Refresh token is required.',
+        AUTH_REFRESH_TOKEN_MISSING,
+      );
     }
 
     const payload = await this.verifyRefreshToken(refreshToken);
     const user = await this.users.findOne({ where: { id: payload.sub } });
 
     if (!user?.refreshTokenHash) {
-      throw this.buildUnauthorized('Refresh token is invalid or expired.');
+      throw this.buildUnauthorized(
+        'Refresh token is invalid or expired.',
+        AUTH_REFRESH_TOKEN_INVALID,
+      );
     }
 
     const isCurrent = await bcrypt.compare(refreshToken, user.refreshTokenHash);
 
     if (!isCurrent) {
       await this.clearRefreshToken(payload.sub);
-      throw this.buildUnauthorized('Refresh token is invalid or expired.');
+      throw this.buildUnauthorized(
+        'Refresh token is invalid or expired.',
+        AUTH_REFRESH_TOKEN_INVALID,
+      );
     }
 
     const tokens = await this.createTokens(user);
@@ -139,14 +154,18 @@ export class AuthService {
         secret: this.cfg.get('JWT_REFRESH_SECRET', 'refreshSecretKey'),
       });
     } catch (error) {
-      throw this.buildUnauthorized('Refresh token is invalid or expired.');
+      throw this.buildUnauthorized(
+        'Refresh token is invalid or expired.',
+        AUTH_REFRESH_TOKEN_INVALID,
+      );
     }
   }
 
-  private buildUnauthorized(message: string): RpcException {
+  private buildUnauthorized(message: string, code: string): RpcException {
     return new RpcException({
       statusCode: HttpStatus.UNAUTHORIZED,
       message,
+      code,
     });
   }
 
