@@ -1,12 +1,16 @@
 import type { AuthLoginRequest, AuthLoginResponse } from '@contracts'
 import { env } from '@/env'
 
-const API_BASE_URL = env.SERVER_URL?.replace(/\/$/, '') ?? ''
+
+const API_BASE_URL = env.VITE_API_BASE_URL?.replace(/\/$/, '') ?? ''
+const LOGIN_ENDPOINT = API_BASE_URL
+  ? `${API_BASE_URL}/api/auth/login`
+  : '/api/auth/login'
 
 export async function login(
   params: AuthLoginRequest,
 ): Promise<AuthLoginResponse> {
-  const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+  const response = await fetch(LOGIN_ENDPOINT, {
     method: 'POST',
     credentials: 'include',
     headers: {
