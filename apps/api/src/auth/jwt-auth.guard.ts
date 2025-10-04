@@ -25,7 +25,7 @@ export class JwtAuthGuard implements CanActivate {
     const token = this.extractTokenFromHeader(request);
 
     if (!token) {
-      throw new UnauthorizedException('access token missing');
+      throw new UnauthorizedException('Access token is required.');
     }
 
     try {
@@ -38,7 +38,7 @@ export class JwtAuthGuard implements CanActivate {
       request['user'] = payload;
       return true;
     } catch {
-      throw new UnauthorizedException('invalid access token');
+      throw new UnauthorizedException('Access token is invalid or expired.');
     }
   }
 
