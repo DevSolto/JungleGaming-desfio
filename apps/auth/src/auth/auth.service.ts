@@ -16,7 +16,7 @@ import type {
   AuthRegisterResponse,
   AuthTokens,
   AuthUser,
-} from '@repo/contracts';
+} from '@contracts';
 
 @Injectable()
 export class AuthService {

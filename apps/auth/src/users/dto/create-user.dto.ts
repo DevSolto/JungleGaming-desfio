@@ -1,5 +1,5 @@
 import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
-import type { AuthRegisterRequest } from '@repo/contracts';
+import type { AuthRegisterRequest } from '@contracts';
 
 export class CreateUserDto implements AuthRegisterRequest {
   @IsString({

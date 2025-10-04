@@ -15,8 +15,11 @@ describe('AppController', () => {
   });
 
   describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
+    it('should return a welcome task contract', () => {
+      const task = appController.getWelcomeTask();
+
+      expect(task.title).toContain('contracts');
+      expect(task.priority).toBeDefined();
     });
   });
 });

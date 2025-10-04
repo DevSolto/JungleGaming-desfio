@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { AuthGatewayService } from '../auth/auth-gateway.service';
-import type { AuthPingResponse } from '@repo/contracts';
+import type { AuthPingResponse } from '@contracts';
 
 type DependencyHealth<T = unknown> = {
   status: 'ok' | 'error';

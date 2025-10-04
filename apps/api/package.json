@@ -1,5 +1,5 @@
 {
-  "name": "api",
+  "name": "@apps/api-gateway",
   "version": "0.0.1",
   "description": "",
   "author": "",
@@ -30,7 +30,7 @@
     "@nestjs/swagger": "^11.2.0",
     "@nestjs/throttler": "^6.4.0",
     "@nestjs/typeorm": "^11.0.0",
-    "@repo/contracts": "workspace:*",
+    "@contracts": "workspace:*",
     "bcrypt": "^6.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
@@ -83,8 +83,7 @@
       "^.+\\.(t|j)s$": "ts-jest"
     },
     "moduleNameMapper": {
-      "^@repo/contracts$": "<rootDir>/../test/__mocks__/repo-contracts.ts",
-      "^@repo/contracts/(.*)$": "<rootDir>/../test/__mocks__/repo-contracts/$1.ts"
+      "^@contracts$": "<rootDir>/../test/__mocks__/contracts.ts"
     },
     "collectCoverageFrom": [
       "**/*.(t|j)s"

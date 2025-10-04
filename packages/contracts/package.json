@@ -1,18 +1,16 @@
 {
-  "name": "@repo/contracts",
-  "version": "0.0.0",
-  "private": true,
+  "name": "@contracts",
+  "version": "0.1.0",
+  "private": false,
   "type": "module",
-  "main": "./dist/index.js",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
-    },
-    "./*": {
-      "types": "./dist/*.d.ts",
-      "default": "./dist/*.js"
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
     }
   },
   "files": [
@@ -20,7 +18,7 @@
     "src"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsup",
     "lint": "eslint . --ext .ts --max-warnings 0",
     "check-types": "tsc --noEmit",
     "prepare": "pnpm run build"
@@ -30,6 +28,7 @@
     "@repo/typescript-config": "workspace:*",
     "@types/node": "^22.15.3",
     "eslint": "^9.34.0",
+    "tsup": "^8.3.5",
     "typescript": "5.9.2"
   }
 }

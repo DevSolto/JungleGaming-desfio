@@ -46,7 +46,7 @@ services:
       target: dev
     container_name: auth-service-dev
     command: >-
-      sh -c "pnpm install --filter auth... --frozen-lockfile && pnpm --filter auth... dev"
+      sh -c "pnpm install --filter @apps/auth-service... --frozen-lockfile && pnpm --filter @apps/auth-service... dev"
     working_dir: /workspace
     environment:
       NODE_ENV: development
@@ -71,7 +71,7 @@ services:
       target: dev
     container_name: api-gateway-dev
     command: >-
-      sh -c "pnpm install --filter api-gateway... --frozen-lockfile && pnpm --filter api-gateway... dev"
+      sh -c "pnpm install --filter @apps/api-gateway... --frozen-lockfile && pnpm --filter @apps/api-gateway... dev"
     working_dir: /workspace
     environment:
       NODE_ENV: development
@@ -100,7 +100,7 @@ services:
       target: dev
     container_name: tasks-service-dev
     command: >-
-      sh -c "pnpm install --filter tasks... --frozen-lockfile && pnpm --filter tasks... dev"
+      sh -c "pnpm install --filter @apps/tasks-service... --frozen-lockfile && pnpm --filter @apps/tasks-service... dev"
     working_dir: /workspace
     environment:
       NODE_ENV: development
@@ -126,7 +126,7 @@ services:
       target: dev
     container_name: web-app-dev
     command: >-
-      sh -c "pnpm install --filter web... --frozen-lockfile && pnpm --filter web... dev"
+      sh -c "pnpm install --filter @apps/web... --frozen-lockfile && pnpm --filter @apps/web... dev"
     working_dir: /workspace
     environment:
       NODE_ENV: development

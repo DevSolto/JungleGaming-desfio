@@ -1,3 +1,4 @@
+import { TASK_PRIORITIES, type TaskPriority } from '@contracts'
 import { createFileRoute } from '@tanstack/react-router'
 import logo from '../logo.svg'
 
@@ -6,6 +7,8 @@ export const Route = createFileRoute('/')({
 })
 
 function App() {
+  const priorities: TaskPriority[] = [...TASK_PRIORITIES]
+
   return (
     <div className="text-center">
       <header className="min-h-screen flex flex-col items-center justify-center bg-[#282c34] text-white text-[calc(10px+2vmin)]">
@@ -33,6 +36,16 @@ function App() {
         >
           Learn TanStack
         </a>
+        <div className="mt-8 text-left">
+          <p className="font-semibold">Shared task priorities:</p>
+          <ul className="list-disc list-inside text-base">
+            {priorities.map((priority) => (
+              <li key={priority} className="capitalize">
+                {priority.replace('_', ' ')}
+              </li>
+            ))}
+          </ul>
+        </div>
       </header>
     </div>
   )

@@ -4,13 +4,13 @@ import { AuthService } from './auth.service';
 import { LoginDto, RefreshDto } from './dto';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
-import { AUTH_MESSAGE_PATTERNS } from '@repo/contracts';
+import { AUTH_MESSAGE_PATTERNS } from '@contracts';
 import type {
   AuthLoginResponse,
   AuthLogoutResponse,
   AuthRefreshResponse,
   AuthRegisterResponse,
-} from '@repo/contracts';
+} from '@contracts';
 
 @ApiTags('auth')
 @Controller('auth')

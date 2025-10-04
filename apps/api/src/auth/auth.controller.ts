@@ -13,7 +13,7 @@ import type { Request, Response } from 'express';
 import { AuthGatewayService } from './auth-gateway.service';
 import { buildRefreshCookieOptions } from './cookie.options';
 import { LoginDto, RegisterDto } from './dto';
-import type { AuthLoginResponse, AuthRegisterResponse } from '@repo/contracts';
+import type { AuthLoginResponse, AuthRegisterResponse } from '@contracts';
 
 @ApiTags('auth')
 @Controller('auth')

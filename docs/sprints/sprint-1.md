@@ -13,8 +13,7 @@ Levantar o esqueleto do projeto, experiência de desenvolvimento e infraestrutur
 - Configuração padrão de lint, formatação e TypeScript compartilhada pelos pacotes internos. 【F:packages/eslint-config/package.json†L1-L26】【F:packages/typescript-config/package.json†L1-L20】
 
 ### 🧩 Pacotes compartilhados
-- `@repo/contracts` centraliza message patterns e contratos dos microserviços de autenticação (`auth.register`, `auth.login`, `auth.ping`). 【F:packages/contracts/src/auth/messages.ts†L1-L8】【F:packages/contracts/src/auth/schemas.ts†L1-L34】
-- `@repo/types` expõe DTOs iniciais (User, Tokens, Task, Comment) para reaproveitamento entre front e back-end. 【F:packages/types/src/dtos/index.ts†L1-L4】
+- `@contracts` centraliza message patterns e contratos compartilhados (Auth, DTOs de usuário, tarefa, comentários e notificações). 【F:packages/contracts/src/auth/messages.ts†L1-L8】【F:packages/contracts/src/common/dtos/index.ts†L1-L5】
 - `@repo/ui` fornece componentes React base para as aplicações Next.js. 【F:packages/ui/src/button.tsx†L1-L53】
 
 ### ☁️ Infraestrutura & Contêineres
@@ -69,11 +68,11 @@ Levantar o esqueleto do projeto, experiência de desenvolvimento e infraestrutur
 
 4. **Iniciar serviços em modo desenvolvimento**
    ```bash
-   pnpm --filter auth dev          # microserviço TCP (porta 4010)
-   pnpm --filter api dev           # gateway HTTP (http://localhost:3001/api)
-   pnpm --filter tasks dev         # placeholder com healthcheck
-   pnpm --filter notifications dev # placeholder
-   pnpm --filter web dev           # Next.js
+   pnpm --filter @apps/auth-service dev          # microserviço TCP (porta 4010)
+   pnpm --filter @apps/api-gateway dev           # gateway HTTP (http://localhost:3001/api)
+   pnpm --filter @apps/tasks-service dev         # placeholder com healthcheck
+   pnpm --filter @apps/notifications-service dev # placeholder
+   pnpm --filter @apps/web dev                   # Next.js
    ```
 
 5. **Validar healthchecks e autenticação**

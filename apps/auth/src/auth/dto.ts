@@ -3,7 +3,7 @@ import type {
   AuthLoginRequest,
   AuthRefreshRequest,
   AuthRegisterRequest,
-} from '@repo/contracts';
+} from '@contracts';
 
 export class RegisterDto implements AuthRegisterRequest {
   @IsEmail()
