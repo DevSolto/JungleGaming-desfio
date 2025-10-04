@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { HttpStatus, INestApplication } from '@nestjs/common';
+import { HttpStatus, INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
@@ -10,6 +10,7 @@ import {
   AUTH_EMAIL_CONFLICT,
   AUTH_INVALID_CREDENTIALS,
 } from '@contracts';
+import { validationExceptionFactory } from '../src/common/pipes/validation-exception.factory';
 
 describe('AppController (e2e)', () => {
   let app: INestApplication<App>;
@@ -25,6 +26,14 @@ describe('AppController (e2e)', () => {
       .compile();
 
     app = moduleFixture.createNestApplication();
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        transform: true,
+        forbidNonWhitelisted: true,
+        exceptionFactory: validationExceptionFactory,
+      }),
+    );
     await app.init();
   });
 
@@ -63,6 +72,44 @@ describe('AppController (e2e)', () => {
         expect(body.message).toBe('Email address is already registered.');
         expect(body.code).toBe(AUTH_EMAIL_CONFLICT);
       });
+  });
+
+  it('POST /auth/register returns validation errors with consistent shape', async () => {
+    await request(app.getHttpServer())
+      .post('/auth/register')
+      .send({
+        email: 'not-an-email',
+        name: '',
+        password: '123',
+      })
+      .expect(HttpStatus.BAD_REQUEST)
+      .expect(({ body }) => {
+        expect(body.statusCode).toBe(HttpStatus.BAD_REQUEST);
+        expect(body.message).toBe('Validation failed');
+        expect(Array.isArray(body.errors)).toBe(true);
+        expect(body.errors.length).toBeGreaterThan(0);
+        expect(body.errors).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              field: 'email',
+              code: 'isEmail',
+              message: expect.stringContaining('email'),
+            }),
+            expect.objectContaining({
+              field: 'name',
+              code: 'isNotEmpty',
+              message: expect.stringContaining('name'),
+            }),
+            expect.objectContaining({
+              field: 'password',
+              code: 'minLength',
+              message: expect.stringContaining('password'),
+            }),
+          ]),
+        );
+      });
+
+    expect(authClient.send).not.toHaveBeenCalled();
   });
 
   it('POST /auth/login returns 401 when credentials are invalid', async () => {

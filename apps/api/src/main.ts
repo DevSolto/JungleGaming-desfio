@@ -6,6 +6,7 @@ import { AppModule } from './app.module';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import { HttpExceptionCodeFilter } from './common/filters/http-exception-code.filter';
+import { validationExceptionFactory } from './common/pipes/validation-exception.factory';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -21,6 +22,7 @@ async function bootstrap() {
       whitelist: true,
       transform: true,
       forbidNonWhitelisted: true,
+      exceptionFactory: validationExceptionFactory,
     }),
   );
 
