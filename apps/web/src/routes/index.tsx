@@ -1,4 +1,4 @@
-import { TASK_PRIORITIES, type TaskPriority } from '@contracts'
+import { TASK_PRIORITIES, type TaskPriority } from '@repo/types'
 import { createFileRoute } from '@tanstack/react-router'
 import logo from '../logo.svg'
 

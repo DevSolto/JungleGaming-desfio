@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import type { CommentDTO, Task } from '@contracts'
+import type { CommentDTO, Task } from '@repo/types'
 
 import { Button } from '@/components/ui/button'
 import { toast } from '@/components/ui/use-toast'

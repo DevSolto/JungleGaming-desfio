@@ -1,4 +1,4 @@
-import type { NotificationDTO } from '@contracts'
+import type { NotificationDTO } from '@repo/types'
 
 import { notificationSchema } from '../schemas/notificationSchema'
 import { TASKS_ENDPOINT } from './getTasks'

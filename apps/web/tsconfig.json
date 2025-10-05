@@ -32,11 +32,11 @@
       "@/*": [
         "./src/*"
       ],
-      "@contracts": [
-        "../../packages/contracts/src"
+      "@repo/types": [
+        "../../packages/types/src"
       ],
-      "@contracts/*": [
-        "../../packages/contracts/src/*"
+      "@repo/types/*": [
+        "../../packages/types/src/*"
       ],
     }
   }

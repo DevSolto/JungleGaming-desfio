@@ -9,7 +9,7 @@ import { throwError } from 'rxjs';
 import {
   AUTH_EMAIL_CONFLICT,
   AUTH_INVALID_CREDENTIALS,
-} from '@contracts';
+} from '@repo/types';
 import { validationExceptionFactory } from '../src/common/pipes/validation-exception.factory';
 
 describe('AppController (e2e)', () => {

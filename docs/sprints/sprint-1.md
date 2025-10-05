@@ -8,12 +8,12 @@ Levantar o esqueleto do projeto, experiência de desenvolvimento e infraestrutur
 ## ✅ Entregas concluídas
 
 ### 🧱 Monorepo & Developer Experience
-- Turborepo configurado com workspaces `apps/` (`api`, `auth`, `tasks`, `notifications`, `web`) e `packages/` (`contracts`, `types`, `ui`, `eslint-config`, `typescript-config`). 【F:pnpm-workspace.yaml†L1-L15】【F:packages/contracts/src/auth/messages.ts†L1-L8】【F:packages/types/src/dtos/index.ts†L1-L4】
+- Turborepo configurado com workspaces `apps/` (`api`, `auth`, `tasks`, `notifications`, `web`) e `packages/` (`types`, `ui`, `eslint-config`, `typescript-config`). 【F:pnpm-workspace.yaml†L1-L15】【F:packages/types/src/index.ts†L1-L3】
 - Scripts globais `pnpm build|dev|lint|check-types` habilitando execução paralela dos projetos. 【F:package.json†L4-L14】
 - Configuração padrão de lint, formatação e TypeScript compartilhada pelos pacotes internos. 【F:packages/eslint-config/package.json†L1-L26】【F:packages/typescript-config/package.json†L1-L20】
 
 ### 🧩 Pacotes compartilhados
-- `@contracts` centraliza message patterns e contratos compartilhados (Auth, DTOs de usuário, tarefa, comentários e notificações). 【F:packages/contracts/src/auth/messages.ts†L1-L8】【F:packages/contracts/src/common/dtos/index.ts†L1-L5】
+- `@repo/types` centraliza DTOs, enums e contratos compartilhados (Auth, tarefas, comentários e notificações). 【F:packages/types/src/dto/index.ts†L1-L6】【F:packages/types/src/contracts/index.ts†L1-L4】
 - `@repo/ui` fornece componentes React base para as aplicações Next.js. 【F:packages/ui/src/button.tsx†L1-L53】
 
 ### ☁️ Infraestrutura & Contêineres

@@ -1,6 +1,6 @@
 import { Type } from 'class-transformer';
 import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
-import { TaskPriority, TaskStatus } from '@contracts';
+import { TaskPriority, TaskStatus } from '@repo/types';
 
 export class ListTasksDto {
   @IsOptional()

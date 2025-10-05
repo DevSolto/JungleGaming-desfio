@@ -1,4 +1,4 @@
-import type { CreateTask, Task } from '@contracts'
+import type { CreateTask, Task } from '@repo/types'
 
 import { createTaskSchema, taskSchema } from '../schemas/taskSchema'
 import { TASKS_ENDPOINT } from './getTasks'

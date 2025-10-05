@@ -6,3 +6,5 @@ export interface CommentDTO {
   createdAt: string;
   updatedAt: string;
 }
+
+export type Comment = CommentDTO;

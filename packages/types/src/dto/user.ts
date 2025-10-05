@@ -3,3 +3,5 @@ export interface UserDTO {
   email: string;
   name: string;
 }
+
+export type User = UserDTO;

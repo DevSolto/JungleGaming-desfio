@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { Task } from '@contracts'
+import type { Task } from '@repo/types'
 import { useQuery } from '@tanstack/react-query'
 import { Search as SearchIcon } from 'lucide-react'
 

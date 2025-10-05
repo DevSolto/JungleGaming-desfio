@@ -1,4 +1,4 @@
-import type { AuthSession, AuthUser } from '@contracts'
+import type { AuthSession, AuthUser } from '@repo/types'
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 import type { StateStorage } from 'zustand/middleware'
