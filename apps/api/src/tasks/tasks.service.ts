@@ -1,8 +1,14 @@
 import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
   HttpException,
   HttpStatus,
   Inject,
   Injectable,
+  NotFoundException,
+  UnauthorizedException,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { lastValueFrom } from 'rxjs';
@@ -73,13 +79,19 @@ export class TasksService {
     if (error instanceof RpcException) {
       const normalized = this.normalizeRpcException(error);
       if (normalized) {
-        return new HttpException(normalized.body, normalized.statusCode, {
-          cause: normalized.cause,
-        });
+        return this.createHttpException(
+          normalized.body,
+          normalized.statusCode,
+          normalized.cause,
+        );
       }
     }
 
-    if (typeof error === 'object' && error !== null && !(error instanceof Error)) {
+    if (
+      typeof error === 'object' &&
+      error !== null &&
+      !(error instanceof Error)
+    ) {
       const obj = error as Record<string, unknown>;
 
       if (
@@ -89,9 +101,13 @@ export class TasksService {
         'error' in obj ||
         'code' in obj
       ) {
-        const body = this.normalizeBody({ ...(obj as Record<string, unknown>) });
-        const statusCode = this.extractStatusCode(body.statusCode ?? body.status);
-        return new HttpException(body, statusCode, { cause: error });
+        const body = this.normalizeBody({
+          ...obj,
+        });
+        const statusCode = this.extractStatusCode(
+          body.statusCode ?? body.status,
+        );
+        return this.createHttpException(body, statusCode, error);
       }
     }
 
@@ -100,19 +116,17 @@ export class TasksService {
     }
 
     if (error instanceof Error) {
-      return new HttpException(
+      return this.createHttpException(
         {
           statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
           message: error.message ?? 'Internal server error',
         },
         HttpStatus.INTERNAL_SERVER_ERROR,
-        {
-          cause: error,
-        },
+        error,
       );
     }
 
-    return new HttpException(
+    return this.createHttpException(
       {
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
         message: 'Internal server error',
@@ -182,7 +196,9 @@ export class TasksService {
     return undefined;
   }
 
-  private normalizeBody(source: Record<string, unknown>): Record<string, unknown> {
+  private normalizeBody(
+    source: Record<string, unknown>,
+  ): Record<string, unknown> {
     const body: Record<string, unknown> = { ...source };
 
     const statusCode = this.extractStatusCode(body.statusCode ?? body.status);
@@ -240,5 +256,42 @@ export class TasksService {
     }
 
     return undefined;
+  }
+
+  private createHttpException(
+    body: Record<string, unknown>,
+    statusCode: number,
+    cause?: unknown,
+  ): HttpException {
+    const options = cause ? { cause } : undefined;
+
+    switch (statusCode) {
+      case HttpStatus.BAD_REQUEST:
+        return options
+          ? new BadRequestException(body, options)
+          : new BadRequestException(body);
+      case HttpStatus.UNAUTHORIZED:
+        return options
+          ? new UnauthorizedException(body, options)
+          : new UnauthorizedException(body);
+      case HttpStatus.FORBIDDEN:
+        return options
+          ? new ForbiddenException(body, options)
+          : new ForbiddenException(body);
+      case HttpStatus.NOT_FOUND:
+        return options
+          ? new NotFoundException(body, options)
+          : new NotFoundException(body);
+      case HttpStatus.CONFLICT:
+        return options
+          ? new ConflictException(body, options)
+          : new ConflictException(body);
+      case HttpStatus.UNPROCESSABLE_ENTITY:
+        return options
+          ? new UnprocessableEntityException(body, options)
+          : new UnprocessableEntityException(body);
+      default:
+        return new HttpException(body, statusCode, options ?? {});
+    }
   }
 }

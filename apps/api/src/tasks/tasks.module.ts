@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { TasksService } from './tasks.service';
 import { TASKS_RPC_CLIENT, TASKS_RPC_QUEUE } from './tasks.constants';
+import { TasksController } from './tasks.controller';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { TASKS_RPC_CLIENT, TASKS_RPC_QUEUE } from './tasks.constants';
       },
     ]),
   ],
+  controllers: [TasksController],
   providers: [TasksService],
   exports: [TasksService],
 })
