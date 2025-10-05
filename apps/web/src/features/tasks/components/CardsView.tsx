@@ -1,4 +1,4 @@
-import { type Task } from '@contracts'
+import { type Task } from '@repo/types'
 
 import { cn } from '@/lib/utils'
 

@@ -17,7 +17,7 @@ import type {
   AuthLoginResponse,
   AuthRegisterResponse,
   AuthSessionResponse,
-} from '@contracts';
+} from '@repo/types';
 
 @ApiTags('auth')
 @Controller('auth')

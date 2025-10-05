@@ -8,8 +8,8 @@ import {
   IsString,
   ValidateNested,
 } from 'class-validator';
-import type { CreateTask } from '@contracts';
-import { TaskPriority, TaskStatus } from '@contracts';
+import type { CreateTask } from '@repo/types';
+import { TaskPriority, TaskStatus } from '@repo/types';
 
 export class TaskAssigneeDto implements CreateTask['assignees'][number] {
   @IsString()

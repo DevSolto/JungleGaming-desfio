@@ -1,4 +1,4 @@
-import type { Task, TaskPriority, TaskStatus } from '@contracts'
+import type { Task, TaskPriority, TaskStatus } from '@repo/types'
 import { z } from 'zod'
 
 import { env } from '@/env'

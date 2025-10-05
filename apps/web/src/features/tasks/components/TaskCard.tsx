@@ -1,6 +1,6 @@
 import { type KeyboardEvent } from 'react'
 import { CalendarDays, Users } from 'lucide-react'
-import { type Task, TaskPriority } from '@contracts'
+import { type Task, TaskPriority } from '@repo/types'
 
 import { cn } from '@/lib/utils'
 

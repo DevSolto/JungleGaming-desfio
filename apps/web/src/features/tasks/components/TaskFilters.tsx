@@ -1,5 +1,5 @@
 import { type ChangeEvent } from 'react'
-import { TaskPriority, TaskStatus } from '@contracts'
+import { TaskPriority, TaskStatus } from '@repo/types'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'

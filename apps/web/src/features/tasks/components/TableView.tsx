@@ -1,4 +1,4 @@
-import { type Task, TaskPriority, TaskStatus } from '@contracts'
+import { type Task, TaskPriority, TaskStatus } from '@repo/types'
 
 import { cn } from '@/lib/utils'
 

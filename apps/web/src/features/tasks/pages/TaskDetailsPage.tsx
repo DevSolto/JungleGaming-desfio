@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { type CommentDTO, type NotificationDTO, TaskPriority, TaskStatus } from '@contracts'
+import { type CommentDTO, type NotificationDTO, TaskPriority, TaskStatus } from '@repo/types'
 import { Bell, CalendarDays, MessageSquare, Users } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'

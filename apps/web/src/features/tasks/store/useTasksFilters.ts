@@ -1,4 +1,4 @@
-import { TaskPriority, TaskStatus } from '@contracts'
+import { TaskPriority, TaskStatus } from '@repo/types'
 import { create } from 'zustand'
 
 type StatusFilter = 'ALL' | TaskStatus

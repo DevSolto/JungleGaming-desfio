@@ -1,13 +1,11 @@
 {
-  // "extends": "@repo/typescript-config/base.json",
+  "extends": "@repo/typescript-config/base.json",
   "compilerOptions": {
     "outDir": "dist",
     "declaration": true,
     "emitDeclarationOnly": false,
     "rootDir": "src",
     "composite": true,
-    "module": "nodenext",
-    "moduleResolution": "nodenext",
     "resolvePackageJsonExports": true,
     "incremental": true
   },

@@ -20,7 +20,7 @@ import {
   type AuthRegisterResponse,
   type AuthTokens,
   type AuthUser,
-} from '@contracts';
+} from '@repo/types';
 
 @Injectable()
 export class AuthService {

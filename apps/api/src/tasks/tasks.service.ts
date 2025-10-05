@@ -14,28 +14,17 @@ import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { lastValueFrom } from 'rxjs';
 import type {
   CreateTask,
+  PaginatedTasks as PaginatedTasksResult,
   Task,
-  TaskPriority,
-  TaskStatus,
+  TaskListFilters,
+  TasksMessagePattern,
   UpdateTask,
-} from '@contracts';
+} from '@repo/types';
+import { TASKS_MESSAGE_PATTERNS } from '@repo/types';
 import { TASKS_RPC_CLIENT } from './tasks.constants';
 
-export interface ListTasksFilters {
-  status?: TaskStatus;
-  priority?: TaskPriority;
-  search?: string;
-  assigneeId?: string;
-  page?: number;
-  limit?: number;
-}
-
-export interface PaginatedTasks {
-  data: Task[];
-  total: number;
-  page: number;
-  limit: number;
-}
+export type ListTasksFilters = TaskListFilters;
+export type PaginatedTasks = PaginatedTasksResult;
 
 @Injectable()
 export class TasksService {
@@ -45,27 +34,27 @@ export class TasksService {
   ) {}
 
   async create(payload: CreateTask): Promise<Task> {
-    return this.send<Task>('tasks.create', payload);
+    return this.send<Task>(TASKS_MESSAGE_PATTERNS.CREATE, payload);
   }
 
   async findAll(filters: ListTasksFilters = {}): Promise<PaginatedTasks> {
-    return this.send<PaginatedTasks>('tasks.findAll', filters);
+    return this.send<PaginatedTasks>(TASKS_MESSAGE_PATTERNS.FIND_ALL, filters);
   }
 
   async findById(id: string): Promise<Task> {
-    return this.send<Task>('tasks.findById', { id });
+    return this.send<Task>(TASKS_MESSAGE_PATTERNS.FIND_BY_ID, { id });
   }
 
   async update(id: string, data: UpdateTask): Promise<Task> {
-    return this.send<Task>('tasks.update', { id, data });
+    return this.send<Task>(TASKS_MESSAGE_PATTERNS.UPDATE, { id, data });
   }
 
   async remove(id: string): Promise<Task> {
-    return this.send<Task>('tasks.remove', { id });
+    return this.send<Task>(TASKS_MESSAGE_PATTERNS.REMOVE, { id });
   }
 
   private async send<TResponse>(
-    pattern: string,
+    pattern: TasksMessagePattern,
     payload: unknown,
   ): Promise<TResponse> {
     try {
