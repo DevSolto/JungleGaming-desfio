@@ -6,6 +6,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { HealthModule } from './health/health.module';
 import { AuthModule } from './auth/auth.module';
+import { TasksModule } from './tasks/tasks.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { AuthModule } from './auth/auth.module';
       },
     }),
     AuthModule,
+    TasksModule,
     HealthModule,
   ],
   controllers: [AppController],
