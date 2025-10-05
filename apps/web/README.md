@@ -17,6 +17,16 @@ To build this application for production:
 pnpm build
 ```
 
+## Environment variables
+
+Create a `.env` file based on `.env.example` to configure the web client.
+
+| Variable | Description |
+| --- | --- |
+| `VITE_APP_TITLE` | Optional custom title displayed in the browser tab. |
+| `VITE_API_BASE_URL` | Base URL for REST API requests. Defaults to the current origin when omitted. |
+| `VITE_WS_URL` | Optional WebSocket server URL. Falls back to the current origin when omitted. |
+
 ## Testing
 
 This project uses [Vitest](https://vitest.dev/) for testing. You can run the tests with:

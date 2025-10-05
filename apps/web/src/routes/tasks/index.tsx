@@ -1,9 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from '@tanstack/react-router'
+
+import { TasksPage } from '@/features/tasks/pages/TasksPage'
 
 export const Route = createFileRoute('/tasks/')({
-  component: Tasks,
+  component: TasksRoute,
 })
 
-export function Tasks() {
-  return <div>Tasks</div>
+function TasksRoute() {
+  return <TasksPage />
 }

@@ -15,6 +15,11 @@ export const env = createEnv({
   client: {
     VITE_APP_TITLE: z.string().min(1).optional(),
     VITE_API_BASE_URL: z.string().url().optional(),
+    /**
+     * Optional WebSocket server URL. Falls back to the current origin when
+     * running in the browser.
+     */
+    VITE_WS_URL: z.string().url().optional(),
   },
 
   /**
