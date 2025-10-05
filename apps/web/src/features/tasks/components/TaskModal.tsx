@@ -34,6 +34,7 @@ interface TaskModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   task?: Task | null
+  onSuccess?: (task: Task) => void
 }
 
 function formatTaskToFormValues(task?: Task | null): TaskSchema {
@@ -75,7 +76,7 @@ function normalizeFormValues(values: TaskSchema) {
   }
 }
 
-export function TaskModal({ open, onOpenChange, task }: TaskModalProps) {
+export function TaskModal({ open, onOpenChange, task, onSuccess }: TaskModalProps) {
   const queryClient = useQueryClient()
   const isEditing = Boolean(task)
 
@@ -104,10 +105,12 @@ export function TaskModal({ open, onOpenChange, task }: TaskModalProps) {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] })
+      queryClient.invalidateQueries({ queryKey: ['task', data.id] })
       toast({
         title: isEditing ? 'Tarefa atualizada' : 'Tarefa criada',
         description: `A tarefa "${data.title}" foi ${isEditing ? 'atualizada' : 'criada'} com sucesso.`,
       })
+      onSuccess?.(data)
       onOpenChange(false)
       form.reset(formatTaskToFormValues(isEditing ? data : null))
     },
