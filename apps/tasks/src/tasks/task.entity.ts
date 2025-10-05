@@ -5,7 +5,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { TaskPriority, TaskStatus } from '@contracts';
+import { TaskPriority, TaskStatus } from '@repo/types';
 
 export interface TaskAssignee {
   id: string;

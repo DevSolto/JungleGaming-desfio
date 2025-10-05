@@ -8,6 +8,8 @@ import { CreateTaskDto } from './create-task.dto';
 import { ListTasksDto } from './list-tasks.dto';
 import { UpdateTaskDto } from './update-task.dto';
 import { TASKS_EVENTS_CLIENT } from './tasks.constants';
+import { TASK_EVENT_PATTERNS } from '@repo/types';
+import type { TaskEventPattern } from '@repo/types';
 
 interface PaginatedTasks {
   data: Task[];
@@ -32,7 +34,7 @@ export class TasksService {
     });
 
     const saved = await this.tasksRepository.save(task);
-    await this.emitEvent('task.created', saved);
+    await this.emitEvent(TASK_EVENT_PATTERNS.CREATED, saved);
 
     return saved;
   }
@@ -104,7 +106,7 @@ export class TasksService {
 
     const saved = await this.tasksRepository.save(task);
 
-    await this.emitEvent('task.updated', saved);
+    await this.emitEvent(TASK_EVENT_PATTERNS.UPDATED, saved);
 
     return saved;
   }
@@ -113,12 +115,15 @@ export class TasksService {
     const task = await this.findById(id);
     const removed = await this.tasksRepository.remove(task);
 
-    await this.emitEvent('task.deleted', removed);
+    await this.emitEvent(TASK_EVENT_PATTERNS.DELETED, removed);
 
     return removed;
   }
 
-  private async emitEvent(pattern: string, payload: unknown): Promise<void> {
+  private async emitEvent(
+    pattern: TaskEventPattern,
+    payload: unknown,
+  ): Promise<void> {
     try {
       await lastValueFrom(
         this.eventsClient.emit(pattern, payload).pipe(defaultIfEmpty(undefined)),

@@ -7,6 +7,6 @@
     "^.+\\.(t|j)s$": "ts-jest"
   },
   "moduleNameMapper": {
-    "^@contracts$": "<rootDir>/__mocks__/contracts.ts"
+    "^@repo/types$": "<rootDir>/__mocks__/contracts.ts"
   }
 }

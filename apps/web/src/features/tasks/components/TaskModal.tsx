@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { type Task, TaskPriority, TaskStatus } from '@contracts'
+import { type Task, TaskPriority, TaskStatus } from '@repo/types'
 import { useForm } from 'react-hook-form'
 
 import { Button } from '@/components/ui/button'

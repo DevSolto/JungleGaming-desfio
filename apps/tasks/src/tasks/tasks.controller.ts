@@ -16,6 +16,7 @@ import { TasksService } from './tasks.service';
 import { CreateTaskDto } from './create-task.dto';
 import { ListTasksDto } from './list-tasks.dto';
 import { UpdateTaskDto } from './update-task.dto';
+import { TASKS_MESSAGE_PATTERNS } from '@repo/types';
 
 class TaskIdDto {
   @IsUUID()
@@ -38,7 +39,7 @@ class UpdateTaskPayloadDto {
 export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
 
-  @MessagePattern('tasks.create')
+  @MessagePattern(TASKS_MESSAGE_PATTERNS.CREATE)
   async create(@Payload() payload: unknown) {
     try {
       const dto = this.transformPayload(CreateTaskDto, payload);
@@ -48,7 +49,7 @@ export class TasksController {
     }
   }
 
-  @MessagePattern('tasks.findAll')
+  @MessagePattern(TASKS_MESSAGE_PATTERNS.FIND_ALL)
   async findAll(@Payload() payload: unknown) {
     try {
       const dto = this.transformPayload(ListTasksDto, payload ?? {});
@@ -58,7 +59,7 @@ export class TasksController {
     }
   }
 
-  @MessagePattern('tasks.findById')
+  @MessagePattern(TASKS_MESSAGE_PATTERNS.FIND_BY_ID)
   async findById(@Payload() payload: unknown) {
     try {
       const { id } = this.transformPayload(TaskIdDto, payload);
@@ -68,7 +69,7 @@ export class TasksController {
     }
   }
 
-  @MessagePattern('tasks.update')
+  @MessagePattern(TASKS_MESSAGE_PATTERNS.UPDATE)
   async update(@Payload() payload: unknown) {
     try {
       const { id, data } = this.transformPayload(UpdateTaskPayloadDto, payload);
@@ -78,7 +79,7 @@ export class TasksController {
     }
   }
 
-  @MessagePattern('tasks.remove')
+  @MessagePattern(TASKS_MESSAGE_PATTERNS.REMOVE)
   async remove(@Payload() payload: unknown) {
     try {
       const { id } = this.transformPayload(TaskIdDto, payload);

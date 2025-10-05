@@ -1,6 +1,10 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Ctx, EventPattern, Payload, RmqContext } from '@nestjs/microservices';
-import type { CommentDTO } from '@contracts';
+import type {
+  CommentDTO,
+  TaskCommentCreatedPayload,
+  TaskUpdatedForwardPayload,
+} from '@repo/types';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 
@@ -11,22 +15,6 @@ import {
   TASKS_UPDATED_PATTERN,
   TASK_UPDATED_EVENT,
 } from './notifications.constants';
-
-interface CommentCreatedPayload {
-  comment: CommentDTO;
-  recipients: string[];
-}
-
-interface TaskSnapshot {
-  id: string;
-  [key: string]: unknown;
-}
-
-interface TaskUpdatedPayload {
-  task: TaskSnapshot;
-  recipients: string[];
-  changes?: Record<string, unknown>;
-}
 
 @Injectable()
 export class NotificationsService {
@@ -39,7 +27,7 @@ export class NotificationsService {
 
   @EventPattern(TASKS_COMMENT_CREATED_PATTERN)
   async handleNewComment(
-    @Payload() payload: CommentCreatedPayload,
+    @Payload() payload: TaskCommentCreatedPayload,
     @Ctx() context: RmqContext,
   ): Promise<void> {
     const channel = context.getChannelRef();
@@ -61,7 +49,7 @@ export class NotificationsService {
 
   @EventPattern(TASKS_UPDATED_PATTERN)
   async handleTaskUpdated(
-    @Payload() payload: TaskUpdatedPayload,
+    @Payload() payload: TaskUpdatedForwardPayload,
     @Ctx() context: RmqContext,
   ): Promise<void> {
     const channel = context.getChannelRef();

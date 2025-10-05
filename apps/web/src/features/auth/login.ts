@@ -2,7 +2,7 @@ import type {
   AuthLoginRequest,
   AuthSessionResponse,
   UserDTO,
-} from '@contracts';
+} from '@repo/types';
 
 import { env } from '@/env';
 

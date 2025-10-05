@@ -1,4 +1,4 @@
-import { TaskPriority, TaskStatus } from '@contracts'
+import { TaskPriority, TaskStatus } from '@repo/types'
 import { z } from 'zod'
 
 export const taskStatusSchema = z.nativeEnum(TaskStatus)

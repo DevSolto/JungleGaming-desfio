@@ -12,7 +12,8 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import type { Server, Socket } from 'socket.io';
-import type { CommentDTO, Task } from '@contracts';
+import type { CommentDTO, Task } from '@repo/types';
+import { GATEWAY_EVENT_PATTERNS, TASK_EVENT_PATTERNS } from '@repo/types';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 const rawOrigins = process.env.CORS_ORIGINS ?? '*';
@@ -46,7 +47,7 @@ export class TasksGateway
     this.logger.debug(`Client disconnected: ${client.id}`);
   }
 
-  @EventPattern('task.created')
+  @EventPattern(TASK_EVENT_PATTERNS.CREATED)
   onTaskCreated(
     @Payload() task: Task,
     @Ctx() context: RmqContext,
@@ -54,7 +55,7 @@ export class TasksGateway
     this.forwardEvent('task:created', task, context);
   }
 
-  @EventPattern('task.updated')
+  @EventPattern(TASK_EVENT_PATTERNS.UPDATED)
   onTaskUpdated(
     @Payload() task: Task,
     @Ctx() context: RmqContext,
@@ -62,7 +63,7 @@ export class TasksGateway
     this.forwardEvent('task:updated', task, context);
   }
 
-  @EventPattern('task.deleted')
+  @EventPattern(TASK_EVENT_PATTERNS.DELETED)
   onTaskDeleted(
     @Payload() task: Task,
     @Ctx() context: RmqContext,
@@ -70,7 +71,7 @@ export class TasksGateway
     this.forwardEvent('task:deleted', task, context);
   }
 
-  @EventPattern('comment.new')
+  @EventPattern(GATEWAY_EVENT_PATTERNS.COMMENT_NEW)
   onCommentNew(
     @Payload() comment: CommentDTO,
     @Ctx() context: RmqContext,

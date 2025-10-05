@@ -17,7 +17,7 @@ import {
 } from './dto';
 import { TasksService } from './tasks.service';
 import type { PaginatedTasks } from './tasks.service';
-import type { Task } from '@contracts';
+import type { Task } from '@repo/types';
 
 interface ApiResponse<T> {
   data: T;

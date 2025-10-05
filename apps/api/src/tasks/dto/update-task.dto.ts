@@ -8,8 +8,8 @@ import {
   IsString,
   ValidateNested,
 } from 'class-validator';
-import type { UpdateTask } from '@contracts';
-import { TaskPriority, TaskStatus } from '@contracts';
+import type { UpdateTask } from '@repo/types';
+import { TaskPriority, TaskStatus } from '@repo/types';
 import { TaskAssigneeDto } from './create-task.dto';
 
 export class UpdateTaskDto implements UpdateTask {

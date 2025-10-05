@@ -15,7 +15,7 @@ import { buildRefreshCookieOptions } from './cookie.options';
 import { LoginDto, RegisterDto } from './dto';
 import type {
   AuthSessionResponse,
-} from '@contracts';
+} from '@repo/types';
 
 @ApiTags('auth')
 @Controller('auth')

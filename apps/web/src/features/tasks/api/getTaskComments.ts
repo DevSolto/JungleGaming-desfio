@@ -1,4 +1,4 @@
-import type { CommentDTO } from '@contracts'
+import type { CommentDTO } from '@repo/types'
 
 import { commentSchema } from '../schemas/commentSchema'
 import { TASKS_ENDPOINT } from './getTasks'
