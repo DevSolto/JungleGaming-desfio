@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
-import { z } from "zod"
+import { set, z } from "zod"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -15,6 +15,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { loginSchema } from "../../../schemas/loginSchema"
 import { login } from "@/features/auth/login"
+import { useState } from "react"
 
 
 
@@ -31,9 +32,15 @@ export function LoginForm() {
     },
   })
 
+  const [loginError, setLoginError]: [string, React.Dispatch<React.SetStateAction<string>>] = useState<string>('')
+
   const onSubmit = async (values: LoginFormValues) => {
+    setLoginError('')
     const response = await login({ email: values.email, password: values.password });
     console.log('Login response:', response);
+    if (typeof response == 'string') {
+      setLoginError(typeof response === 'string' ? response : '');
+    }
   }
 
   return (
@@ -90,6 +97,9 @@ export function LoginForm() {
               </FormItem>
             )}
           />
+          <p>
+            {loginError && <span className="text-sm text-red-600">{loginError}</span>}
+          </p>
 
           <Button
             type="submit"

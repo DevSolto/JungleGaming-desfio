@@ -1,4 +1,4 @@
-import type { AuthLoginRequest, AuthLoginResponse } from '@contracts'
+import type { AuthLoginRequest, AuthLoginResponse, UserDTO } from '@contracts'
 import { env } from '@/env'
 
 
@@ -9,7 +9,7 @@ const LOGIN_ENDPOINT = API_BASE_URL
 
 export async function login(
   params: AuthLoginRequest,
-): Promise<AuthLoginResponse> {
+): Promise<UserDTO|string> {
 
   console.log('Login params:', params);
 
@@ -23,22 +23,15 @@ export async function login(
   })
 
   if (!response.ok) {
-    throw new Error(await extractErrorMessage(response))
+    console.error('Erro na resposta de login:', response.status, response.statusText);
+    return extractErrorMessage(response);
   }
 
-  // safety: some responses may be 200 with empty body (or 204). Avoid
-  // calling response.json() directly because it throws on empty body.
-  const text = await response.text();
-  if (!text || text.trim().length === 0) {
-    throw new Error('Resposta vazia do servidor ao tentar realizar login.')
-  }
+  const data = await response.json() as AuthLoginResponse;
+  
+  console.log('Token:', data.accessToken);
+  return data.user as UserDTO;
 
-  try {
-    return JSON.parse(text) as AuthLoginResponse
-  } catch (err) {
-    console.error('Erro ao parsear JSON de login:', err)
-    throw new Error('Resposta inválida do servidor ao tentar realizar login.')
-  }
 }
 
 async function extractErrorMessage(response: Response) {
