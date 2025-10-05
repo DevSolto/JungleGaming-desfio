@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
-import { set, z } from "zod"
+import { z } from "zod"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input"
 import { loginSchema } from "../../../schemas/loginSchema"
 import { login } from "@/features/auth/login"
 import { useState } from "react"
+import { useNavigate } from "@tanstack/react-router"
 
 
 
@@ -34,12 +35,16 @@ export function LoginForm() {
 
   const [loginError, setLoginError]: [string, React.Dispatch<React.SetStateAction<string>>] = useState<string>('')
 
+  const navigate = useNavigate();
+
   const onSubmit = async (values: LoginFormValues) => {
     setLoginError('')
     const response = await login({ email: values.email, password: values.password });
     console.log('Login response:', response);
     if (typeof response == 'string') {
       setLoginError(typeof response === 'string' ? response : '');
+    } else {
+      navigate({ to: '/tasks' });
     }
   }
 
