@@ -11,5 +11,5 @@ FROM base AS dev
 ENV NODE_ENV=development
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
 COPY packages ./packages
-COPY apps/api ./apps/api
-CMD ["pnpm", "--filter", "@apps/api-gateway...", "dev"]
+COPY apps/notifications ./apps/notifications
+CMD ["pnpm", "--filter", "@apps/notifications-service...", "dev"]
