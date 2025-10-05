@@ -1,4 +1,8 @@
-import type { AuthLoginRequest, AuthLoginResponse, UserDTO } from '@contracts';
+import type {
+  AuthLoginRequest,
+  AuthSessionResponse,
+  UserDTO,
+} from '@contracts';
 
 import { env } from '@/env';
 
@@ -28,17 +32,11 @@ export async function login(
     return extractErrorMessage(response);
   }
 
-  const data = await response.json() as AuthLoginResponse;
+  const data = await response.json() as AuthSessionResponse;
 
   const { setAuth } = useAuthStore.getState();
 
-  setAuth({
-    user: data.user,
-    tokens: {
-      accessToken: data.accessToken,
-      refreshToken: data.refreshToken,
-    },
-  });
+  setAuth(data);
 
   return data.user as UserDTO;
 
