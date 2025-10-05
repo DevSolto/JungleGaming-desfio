@@ -2,10 +2,10 @@ import { io } from 'socket.io-client'
 
 import { env } from '@/env'
 
-const socketUrl =
-  typeof window !== 'undefined'
-    ? env.VITE_WS_URL ?? window.location.origin
-    : env.VITE_WS_URL ?? ''
+const defaultSocketUrl =
+  typeof window !== 'undefined' ? window.location.origin : ''
+
+const socketUrl = env.VITE_WS_URL ?? defaultSocketUrl
 
 export const socket = io(socketUrl, {
   auth: {
