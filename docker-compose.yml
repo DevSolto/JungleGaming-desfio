@@ -1,6 +1,9 @@
-version: "3.8"
+# docker-compose.yml
+# 🐋 JungleGaming Full-stack Challenge — Ambiente de Desenvolvimento
+# Stack: NestJS microservices + RabbitMQ + PostgreSQL + React (TanStack Router)
 
 services:
+  # 🗄️ Banco de dados Postgres
   db:
     image: postgres:17.5-alpine3.21
     container_name: db-challenge-jungle-gaming
@@ -13,13 +16,15 @@ services:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    networks: [challenge-net]
+    networks:
+      - challenge-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-challenge_db}"]
       interval: 10s
       timeout: 5s
       retries: 5
 
+  # 🐇 Broker de Mensagens RabbitMQ
   rabbitmq:
     image: rabbitmq:3.13-management-alpine
     container_name: rabbitmq-challenge-jungle-gaming
@@ -28,25 +33,27 @@ services:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-admin}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-admin}
     ports:
-      - "${RABBITMQ_AMQP_PORT:-5672}:5672"     # AMQP
-      - "${RABBITMQ_UI_PORT:-15672}:15672"     # Painel web
+      - "${RABBITMQ_AMQP_PORT:-5672}:5672"
+      - "${RABBITMQ_UI_PORT:-15672}:15672"
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
-    networks: [challenge-net]
+    networks:
+      - challenge-network
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "check_running"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  auth:
+  # 🔐 Serviço de Autenticação
+  auth-service:
     build:
       context: .
       dockerfile: apps/auth/Dockerfile
       target: dev
     container_name: auth-service-dev
     command: >-
-      sh -c "pnpm install --filter @apps/auth-service... --frozen-lockfile && pnpm --filter @apps/auth-service... dev"
+      sh -c "pnpm install --filter @apps/auth... --frozen-lockfile && pnpm --filter @apps/auth... dev"
     working_dir: /workspace
     environment:
       NODE_ENV: development
@@ -55,37 +62,39 @@ services:
       JWT_SECRET: ${JWT_SECRET:-supersecret}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-15m}
       BCRYPT_SALT_ROUNDS: ${BCRYPT_SALT_ROUNDS:-10}
-    ports:
-      - "${AUTH_SERVICE_PORT:-4010}:4010"
     depends_on:
       db:
         condition: service_healthy
+    ports:
+      - "${AUTH_SERVICE_PORT:-4010}:4010"
     volumes:
       - .:/workspace
       - pnpm-store:/pnpm/store
       - root-node-modules:/workspace/node_modules
       - auth-node-modules:/workspace/apps/auth/node_modules
-    networks: [challenge-net]
+    networks:
+      - challenge-network
 
-  api:
+  # ⚙️ API Gateway
+  api-gateway:
     build:
       context: .
       dockerfile: apps/api/Dockerfile
       target: dev
     container_name: api-gateway-dev
     command: >-
-      sh -c "pnpm install --filter @apps/api-gateway... --frozen-lockfile && pnpm --filter @apps/api-gateway... dev"
+      sh -c "pnpm install --filter @apps/api... --frozen-lockfile && pnpm --filter @apps/api... dev"
     working_dir: /workspace
     environment:
       NODE_ENV: development
       PORT: ${API_PORT:-3001}
-      AUTH_SERVICE_HOST: auth
+      AUTH_SERVICE_HOST: auth-service
       AUTH_SERVICE_PORT: 4010
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
     depends_on:
       db:
         condition: service_healthy
-      auth:
+      auth-service:
         condition: service_started
     ports:
       - "${API_PORT:-3001}:3001"
@@ -94,9 +103,42 @@ services:
       - pnpm-store:/pnpm/store
       - root-node-modules:/workspace/node_modules
       - api-node-modules:/workspace/apps/api/node_modules
-    networks: [challenge-net]
+    networks:
+      - challenge-network
 
-  notifications:
+  # 🧩 Serviço de Tarefas
+  tasks-service:
+    build:
+      context: .
+      dockerfile: apps/tasks/Dockerfile
+      target: dev
+    container_name: tasks-service-dev
+    command: >-
+      sh -c "pnpm install --filter @apps/tasks... --frozen-lockfile && pnpm --filter @apps/tasks... dev"
+    working_dir: /workspace
+    environment:
+      NODE_ENV: development
+      PORT: ${TASKS_PORT:-3003}
+      DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@db:5432/${POSTGRES_DB:-challenge_db}
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-admin}:${RABBITMQ_PASS:-admin}@rabbitmq:5672
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    ports:
+      - "${TASKS_PORT:-3003}:3003"
+    volumes:
+      - .:/workspace
+      - pnpm-store:/pnpm/store
+      - root-node-modules:/workspace/node_modules
+      - tasks-node-modules:/workspace/apps/tasks/node_modules
+    networks:
+      - challenge-network
+
+  # 🔔 Serviço de Notificações
+  notifications-service:
     build:
       context: .
       dockerfile: apps/notifications/Dockerfile
@@ -119,35 +161,11 @@ services:
       - .:/workspace
       - pnpm-store:/pnpm/store
       - root-node-modules:/workspace/node_modules
-      - web-node-modules:/workspace/apps/notifications/node_modules
-    networks: [challenge-net]
+      - notifications-node-modules:/workspace/apps/notifications/node_modules
+    networks:
+      - challenge-network
 
-  tasks:
-    build:
-      context: .
-      dockerfile: apps/tasks/Dockerfile
-      target: dev
-    container_name: tasks-service-dev
-    command: >-
-      sh -c "pnpm install --filter @apps/tasks-service... --frozen-lockfile && pnpm --filter @apps/tasks-service... dev"
-    working_dir: /workspace
-    environment:
-      NODE_ENV: development
-      PORT: ${TASKS_PORT:-3003}
-      RABBITMQ_URL: amqp://${RABBITMQ_USER:-admin}:${RABBITMQ_PASS:-admin}@rabbitmq:5672
-      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-    ports:
-      - "${TASKS_PORT:-3003}:3003"
-    volumes:
-      - .:/workspace
-      - pnpm-store:/pnpm/store
-      - root-node-modules:/workspace/node_modules
-      - tasks-node-modules:/workspace/apps/tasks/node_modules
-    networks: [challenge-net]
-
+  # 🌐 Front-end React (TanStack Router + shadcn/ui)
   web:
     build:
       context: .
@@ -162,7 +180,7 @@ services:
       PORT: ${WEB_PORT:-3000}
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001/api}
     depends_on:
-      api:
+      api-gateway:
         condition: service_started
     ports:
       - "${WEB_PORT:-3000}:3000"
@@ -171,8 +189,10 @@ services:
       - pnpm-store:/pnpm/store
       - root-node-modules:/workspace/node_modules
       - web-node-modules:/workspace/apps/web/node_modules
-    networks: [challenge-net]
+    networks:
+      - challenge-network
 
+# 🧱 Volumes persistentes
 volumes:
   postgres_data:
   rabbitmq_data:
@@ -181,8 +201,10 @@ volumes:
   auth-node-modules:
   api-node-modules:
   tasks-node-modules:
+  notifications-node-modules:
   web-node-modules:
 
+# 🌐 Rede compartilhada entre todos os serviços
 networks:
-  challenge-net:
+  challenge-network:
     driver: bridge
