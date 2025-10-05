@@ -37,11 +37,13 @@ async function bootstrap() {
       queueOptions: {
         durable: true,
         prefetchCount: 10,
-      }
+      },
     },
   });
   await app.startAllMicroservices();
   await app.listen(process.env.PORT ?? 3003);
-  Logger.log(`API docs available at http://localhost:${process.env.PORT ?? 3003}/api/docs`);
+  Logger.log(
+    `API docs available at http://localhost:${process.env.PORT ?? 3003}/api/docs`,
+  );
 }
-bootstrap();
+void bootstrap();
