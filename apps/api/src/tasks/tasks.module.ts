@@ -4,10 +4,13 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { TasksService } from './tasks.service';
 import { TASKS_RPC_CLIENT, TASKS_RPC_QUEUE } from './tasks.constants';
 import { TasksController } from './tasks.controller';
+import { TasksGateway } from './tasks.gateway';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
     ConfigModule,
+    AuthModule,
     ClientsModule.registerAsync([
       {
         name: TASKS_RPC_CLIENT,
@@ -32,7 +35,7 @@ import { TasksController } from './tasks.controller';
     ]),
   ],
   controllers: [TasksController],
-  providers: [TasksService],
+  providers: [TasksService, TasksGateway],
   exports: [TasksService],
 })
 export class TasksModule {}
