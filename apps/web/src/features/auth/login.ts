@@ -1,5 +1,8 @@
-import type { AuthLoginRequest, AuthLoginResponse, UserDTO } from '@contracts'
-import { env } from '@/env'
+import type { AuthLoginRequest, AuthLoginResponse, UserDTO } from '@contracts';
+
+import { env } from '@/env';
+
+import { useAuthStore } from './store';
 
 
 const API_BASE_URL = env.VITE_API_BASE_URL?.replace(/\/$/, '') ?? ''
@@ -28,8 +31,17 @@ export async function login(
   }
 
   const data = await response.json() as AuthLoginResponse;
-  
-  console.log('Token:', data.accessToken);
+
+  const { setAuth } = useAuthStore.getState();
+
+  setAuth({
+    user: data.user,
+    tokens: {
+      accessToken: data.accessToken,
+      refreshToken: data.refreshToken,
+    },
+  });
+
   return data.user as UserDTO;
 
 }
