@@ -9,6 +9,13 @@ export interface AuthTokens {
   refreshToken: string;
 }
 
+export interface AuthSession {
+  user: AuthUser;
+  accessToken: string;
+}
+
+export type AuthSessionResponse = AuthSession;
+
 export interface AuthRegisterRequest {
   email: string;
   name: string;

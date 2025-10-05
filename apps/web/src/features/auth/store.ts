@@ -1,13 +1,13 @@
-import type { AuthTokens, AuthUser } from '@contracts'
+import type { AuthSession, AuthUser } from '@contracts'
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 import type { StateStorage } from 'zustand/middleware'
 
 interface AuthState {
   user: AuthUser | null
-  tokens: AuthTokens | null
+  session: AuthSession | null
   isAuthenticated: boolean
-  setAuth: (payload: { user: AuthUser; tokens: AuthTokens }) => void
+  setAuth: (session: AuthSession) => void
   clearAuth: () => void
 }
 
@@ -33,18 +33,18 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       user: null,
-      tokens: null,
+      session: null,
       isAuthenticated: false,
-      setAuth: ({ user, tokens }) =>
+      setAuth: (session) =>
         set({
-          user,
-          tokens,
+          user: session.user,
+          session,
           isAuthenticated: true,
         }),
       clearAuth: () =>
         set({
           user: null,
-          tokens: null,
+          session: null,
           isAuthenticated: false,
         }),
     }),
@@ -53,7 +53,7 @@ export const useAuthStore = create<AuthState>()(
       storage: createJSONStorage(createStorage),
       partialize: (state) => ({
         user: state.user,
-        tokens: state.tokens,
+        session: state.session,
         isAuthenticated: state.isAuthenticated,
       }),
     },

@@ -13,7 +13,11 @@ import type { Request, Response } from 'express';
 import { AuthGatewayService } from './auth-gateway.service';
 import { buildRefreshCookieOptions } from './cookie.options';
 import { LoginDto, RegisterDto } from './dto';
-import type { AuthLoginResponse, AuthRegisterResponse } from '@contracts';
+import type {
+  AuthLoginResponse,
+  AuthRegisterResponse,
+  AuthSessionResponse,
+} from '@contracts';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -26,7 +30,7 @@ export class AuthController {
   async register(
     @Body() dto: RegisterDto,
     @Res({ passthrough: true }) res: Response,
-  ): Promise<Omit<AuthRegisterResponse, 'refreshToken'>> {
+  ): Promise<AuthSessionResponse> {
     const { user, accessToken, refreshToken } =
       await this.authService.register(dto);
 
@@ -42,7 +46,7 @@ export class AuthController {
   async login(
     @Body() dto: LoginDto,
     @Res({ passthrough: true }) res: Response,
-  ): Promise<Omit<AuthLoginResponse, 'refreshToken'>> {
+  ): Promise<AuthSessionResponse> {
     const { user, accessToken, refreshToken } =
       await this.authService.login(dto);
 
