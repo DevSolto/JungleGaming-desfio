@@ -14,8 +14,6 @@ export async function login(
   params: AuthLoginRequest,
 ): Promise<UserDTO|string> {
 
-  console.log('Login params:', params);
-
   const response = await fetch(LOGIN_ENDPOINT, {
     method: 'POST',
     credentials: 'include',
@@ -56,7 +54,6 @@ async function extractErrorMessage(response: Response) {
       | undefined)
 
     if (Array.isArray(data?.message)) {
-      console.error('Erro de validação:', data.message)
       return (data.message as string[]).join(', ')
     }
 

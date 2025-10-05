@@ -36,7 +36,6 @@ export function LoginForm() {
   const onSubmit = async (values: LoginFormValues) => {
     setLoginError('')
     const response = await login({ email: values.email, password: values.password });
-    console.log('Login response:', response);
     if (typeof response == 'string') {
       setLoginError(typeof response === 'string' ? response : '');
     }
