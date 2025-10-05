@@ -14,7 +14,11 @@ export interface AuthSession {
   accessToken: string;
 }
 
-export type AuthSessionResponse = AuthSession;
+// Explicit interface export to ensure the symbol is emitted in the package types
+export interface AuthSessionResponse {
+  user: AuthUser;
+  accessToken: string;
+}
 
 export interface AuthRegisterRequest {
   email: string;

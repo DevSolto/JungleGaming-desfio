@@ -38,8 +38,6 @@ export async function login(
 
   setAuth(data);
 
-  
-
   return data.user as UserDTO;
 
 }
