@@ -6,6 +6,15 @@ import { UsersModule } from './users/users.module';
 import { User } from './users/entities/user.entity';
 import { AuthModule } from './auth/auth.module';
 
+const validateEnv = (config: Record<string, unknown>) => {
+  const databaseUrl = config['DATABASE_URL'];
+
+  if (typeof databaseUrl !== 'string' || databaseUrl.trim().length === 0) {
+    throw new Error('DATABASE_URL must be defined as a non-empty string');
+  }
+
+  return config;
+};
 
 @Module({
   imports: [
@@ -13,12 +22,13 @@ import { AuthModule } from './auth/auth.module';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: ['.env'],
+      validate: validateEnv,
     }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (cfg: ConfigService) => ({
         type: 'postgres',
-        url: cfg.get<string>('DATABASE_URL'),
+        url: cfg.getOrThrow<string>('DATABASE_URL'),
         autoLoadEntities: true,
         synchronize: true,
         migrationsRun: true,
