@@ -1,4 +1,8 @@
-import type { AuthLoginRequest, AuthLoginResponse, UserDTO } from '@contracts';
+import type {
+  AuthLoginRequest,
+  AuthSessionResponse,
+  UserDTO,
+} from '@contracts';
 
 import { env } from '@/env';
 
@@ -14,8 +18,6 @@ export async function login(
   params: AuthLoginRequest,
 ): Promise<UserDTO|string> {
 
-  console.log('Login params:', params);
-
   const response = await fetch(LOGIN_ENDPOINT, {
     method: 'POST',
     credentials: 'include',
@@ -30,17 +32,11 @@ export async function login(
     return extractErrorMessage(response);
   }
 
-  const data = await response.json() as AuthLoginResponse;
+  const data = await response.json() as AuthSessionResponse;
 
   const { setAuth } = useAuthStore.getState();
 
-  setAuth({
-    user: data.user,
-    tokens: {
-      accessToken: data.accessToken,
-      refreshToken: data.refreshToken,
-    },
-  });
+  setAuth(data);
 
   
 
@@ -58,7 +54,6 @@ async function extractErrorMessage(response: Response) {
       | undefined)
 
     if (Array.isArray(data?.message)) {
-      console.error('Erro de validação:', data.message)
       return (data.message as string[]).join(', ')
     }
 
