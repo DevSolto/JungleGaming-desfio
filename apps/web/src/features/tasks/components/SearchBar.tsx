@@ -82,12 +82,14 @@ interface SearchBarProps {
   className?: string
   placeholder?: string
   onTaskSelect?: (taskId: string) => void
+  onSearchTermChange?: (term: string) => void
 }
 
 export function SearchBar({
   className,
   placeholder = DEFAULT_PLACEHOLDER,
   onTaskSelect = onSelectTask,
+  onSearchTermChange,
 }: SearchBarProps) {
   const [open, setOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
@@ -102,6 +104,10 @@ export function SearchBar({
       window.clearTimeout(timeout)
     }
   }, [searchTerm])
+
+  useEffect(() => {
+    onSearchTermChange?.(debouncedTerm)
+  }, [debouncedTerm, onSearchTermChange])
 
   const shouldSearch = debouncedTerm.length > 0
 
@@ -140,6 +146,7 @@ export function SearchBar({
     setOpen(false)
     setSearchTerm('')
     setDebouncedTerm('')
+    onSearchTermChange?.('')
   }
 
   return (
@@ -150,7 +157,8 @@ export function SearchBar({
           <Input
             value={searchTerm}
             onChange={(event) => {
-              setSearchTerm(event.target.value)
+              const value = event.target.value
+              setSearchTerm(value)
               if (!open) {
                 setOpen(true)
               }
