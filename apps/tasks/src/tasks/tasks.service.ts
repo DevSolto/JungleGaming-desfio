@@ -11,7 +11,7 @@ import { TASKS_EVENTS_CLIENT } from './tasks.constants';
 import { TASK_EVENT_PATTERNS } from '@repo/types';
 import type { TaskEventPattern } from '@repo/types';
 
-interface PaginatedTasks {
+export interface PaginatedTasks {
   data: Task[];
   total: number;
   page: number;
@@ -94,13 +94,11 @@ export class TasksService {
   async update(id: string, dto: UpdateTaskDto): Promise<Task> {
     const task = await this.findById(id);
 
+    const { dueDate, ...restDto } = dto;
     const updatePayload: Partial<Task> = {
-      ...dto,
+      ...restDto,
+      dueDate: dueDate !== undefined ? (dueDate ? new Date(dueDate) : null) : undefined,
     };
-
-    if (dto.dueDate !== undefined) {
-      updatePayload.dueDate = dto.dueDate ? new Date(dto.dueDate) : null;
-    }
 
     this.tasksRepository.merge(task, updatePayload);
 

@@ -12,7 +12,7 @@ import {
   ValidateNested,
   validateSync,
 } from 'class-validator';
-import { TasksService } from './tasks.service';
+import { TasksService, PaginatedTasks } from './tasks.service';
 import { CreateTaskDto } from './create-task.dto';
 import { ListTasksDto } from './list-tasks.dto';
 import { UpdateTaskDto } from './update-task.dto';
@@ -50,7 +50,7 @@ export class TasksController {
   }
 
   @MessagePattern(TASKS_MESSAGE_PATTERNS.FIND_ALL)
-  async findAll(@Payload() payload: unknown) {
+  async findAll(@Payload() payload: unknown): Promise<PaginatedTasks> {
     try {
       const dto = this.transformPayload(ListTasksDto, payload ?? {});
       return await this.tasksService.findAll(dto);
