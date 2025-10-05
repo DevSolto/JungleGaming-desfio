@@ -1,8 +1,10 @@
-import { useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import type { Task } from '@contracts'
+import { useEffect, useMemo, useRef } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import type { CommentDTO, Task } from '@contracts'
 
 import { Button } from '@/components/ui/button'
+import { toast } from '@/components/ui/use-toast'
+import { socket } from '@/lib/ws-client'
 import { router } from '@/router'
 
 import { getTasks, type GetTasksFilters } from '../api/getTasks'
@@ -33,6 +35,8 @@ export function TasksPage() {
   } = useTasksFilters()
   const { viewMode } = useTasksView()
   const creationModal = useTaskCreationModal()
+  const queryClient = useQueryClient()
+  const wasDisconnectedRef = useRef(false)
 
   const filters = useMemo<Pick<GetTasksFilters, 'status' | 'priority' | 'dueDate' | 'searchTerm'>>(
     () => ({ status, priority, dueDate, searchTerm }),
@@ -65,6 +69,112 @@ export function TasksPage() {
       : tasksQuery.isError
         ? 'Não foi possível carregar as tarefas. Tente novamente.'
         : null
+
+  useEffect(() => {
+    const handleTaskCreated = () => {
+      void queryClient.invalidateQueries({ queryKey: ['tasks'] })
+    }
+
+    const handleTaskUpdated = (updatedTask: Task) => {
+      queryClient.setQueriesData<Task[] | undefined>(
+        { queryKey: ['tasks'] },
+        (oldTasks) => {
+          if (!oldTasks) {
+            return oldTasks
+          }
+
+          return oldTasks.map((task) =>
+            task.id === updatedTask.id ? updatedTask : task,
+          )
+        },
+      )
+
+      queryClient.setQueryData<Task>(['task', updatedTask.id], updatedTask)
+    }
+
+    const handleCommentNew = (comment: CommentDTO) => {
+      queryClient.setQueryData<CommentDTO[] | undefined>(
+        ['task', comment.taskId, 'comments'],
+        (previousComments) => {
+          if (!previousComments) {
+            return previousComments
+          }
+
+          const alreadyExists = previousComments.some(
+            (existingComment) => existingComment.id === comment.id,
+          )
+
+          if (alreadyExists) {
+            return previousComments
+          }
+
+          return [...previousComments, comment]
+        },
+      )
+
+      void queryClient.invalidateQueries({
+        queryKey: ['task', comment.taskId, 'notifications'],
+      })
+
+      void queryClient.invalidateQueries({
+        queryKey: ['task', comment.taskId],
+      })
+
+      toast({
+        title: 'Novo comentário',
+        description: comment.message,
+      })
+    }
+
+    const handleDisconnect = () => {
+      wasDisconnectedRef.current = true
+
+      toast({
+        variant: 'destructive',
+        title: 'Conexão perdida',
+        description: 'Tentando reconectar ao servidor em tempo real...',
+      })
+    }
+
+    const handleConnect = () => {
+      if (!wasDisconnectedRef.current) {
+        return
+      }
+
+      wasDisconnectedRef.current = false
+
+      toast({
+        title: 'Conexão restabelecida',
+        description: 'As atualizações em tempo real foram reativadas.',
+      })
+
+      void queryClient.invalidateQueries({ queryKey: ['tasks'] })
+    }
+
+    const handleConnectError = (error: Error) => {
+      toast({
+        variant: 'destructive',
+        title: 'Erro na conexão em tempo real',
+        description: error.message,
+      })
+    }
+
+    socket.on('task:created', handleTaskCreated)
+    socket.on('task:updated', handleTaskUpdated)
+    socket.on('comment:new', handleCommentNew)
+    socket.on('disconnect', handleDisconnect)
+    socket.on('connect', handleConnect)
+    socket.on('connect_error', handleConnectError)
+
+    return () => {
+      socket.off('task:created', handleTaskCreated)
+      socket.off('task:updated', handleTaskUpdated)
+      socket.off('comment:new', handleCommentNew)
+      socket.off('disconnect', handleDisconnect)
+      socket.off('connect', handleConnect)
+      socket.off('connect_error', handleConnectError)
+    }
+  }, [queryClient])
 
   return (
     <main className={containerClassName}>
