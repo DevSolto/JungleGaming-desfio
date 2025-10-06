@@ -3,11 +3,31 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 
+import {
+  resolveWaitForDatabaseOptions,
+  waitForDatabase,
+} from './database/wait-for-database';
+
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const logger = new Logger('TasksBootstrap');
   const configService = new ConfigService();
+
+  const databaseUrl = configService.get<string>('DATABASE_URL');
+  if (databaseUrl && databaseUrl.trim().length > 0) {
+    try {
+      const options = resolveWaitForDatabaseOptions(process.env, databaseUrl);
+      await waitForDatabase(options);
+    } catch (error) {
+      logger.error(
+        'Failed to establish an initial connection to PostgreSQL. Aborting startup.',
+      );
+      throw error;
+    }
+  } else {
+    logger.warn('DATABASE_URL is not defined. Skipping PostgreSQL availability checks.');
+  }
 
   const rabbitMqUrl = configService.get<string>(
     'RABBITMQ_URL',

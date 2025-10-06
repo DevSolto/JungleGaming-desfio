@@ -11,7 +11,9 @@ import {
 import type { CreateTask } from '@repo/types';
 import { TaskPriority, TaskStatus } from '@repo/types';
 
-export class TaskAssigneeDto implements CreateTask['assignees'][number] {
+type TaskAssignee = CreateTask['assignees'][number];
+
+export class TaskAssigneeDto implements TaskAssignee {
   @IsString()
   @IsNotEmpty()
   id: string;

@@ -17,8 +17,27 @@ import {
  * - Forwarded WebSocket events are published to `NOTIFICATIONS_GATEWAY_QUEUE`
  *   using the `COMMENT_NEW_EVENT` and `TASK_UPDATED_EVENT` topics.
  */
+const logger = new Logger('NotificationsBootstrap');
+
+function parseNumberEnv(value: string | undefined, fallback: number) {
+  if (!value) {
+    return fallback;
+  }
+
+  const parsed = Number.parseInt(value, 10);
+  return Number.isNaN(parsed) ? fallback : parsed;
+}
+
+function isConnectionRefused(error: unknown): error is NodeJS.ErrnoException {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    (error as NodeJS.ErrnoException).code === 'ECONNREFUSED'
+  );
+}
+
 async function bootstrap() {
-  const logger = new Logger('NotificationsBootstrap');
   const configService = new ConfigService();
 
   const rabbitMqUrl = configService.get<string>(
@@ -29,30 +48,69 @@ async function bootstrap() {
     'RABBITMQ_QUEUE',
     NOTIFICATIONS_SERVICE_QUEUE,
   );
-  const prefetchRaw = configService.get<string>('RABBITMQ_PREFETCH', '10');
-  const prefetch = Number.isNaN(Number(prefetchRaw))
-    ? 10
-    : Number(prefetchRaw);
+  const prefetch = parseNumberEnv(
+    configService.get<string>('RABBITMQ_PREFETCH'),
+    10,
+  );
+  const retryDelay = parseNumberEnv(
+    configService.get<string>('RABBITMQ_RETRY_DELAY_MS'),
+    3_000,
+  );
+  const retryDelayMax = Math.max(
+    retryDelay,
+    parseNumberEnv(
+      configService.get<string>('RABBITMQ_RETRY_MAX_DELAY_MS'),
+      30_000,
+    ),
+  );
 
-  const app = await NestFactory.createMicroservice<MicroserviceOptions>(
-    AppModule,
-    {
-      transport: Transport.RMQ,
-      options: {
-        urls: [rabbitMqUrl],
-        queue,
-        queueOptions: {
-          durable: true,
-        },
-        prefetchCount: prefetch,
+  const microserviceOptions: MicroserviceOptions = {
+    transport: Transport.RMQ,
+    options: {
+      urls: [rabbitMqUrl],
+      queue,
+      queueOptions: {
+        durable: true,
       },
+      prefetchCount: prefetch,
     },
-  );
+  };
 
-  await app.listen();
-  logger.log(
-    `Notifications microservice connected to ${rabbitMqUrl} on queue "${queue}" (prefetch ${prefetch}). Gateway consumes queue "${NOTIFICATIONS_GATEWAY_QUEUE}" for events "${COMMENT_NEW_EVENT}" and "${TASK_UPDATED_EVENT}".`,
-  );
+  let attempt = 0;
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    attempt += 1;
+    const app = await NestFactory.createMicroservice<MicroserviceOptions>(
+      AppModule,
+      microserviceOptions,
+    );
+
+    try {
+      await app.listen();
+      logger.log(
+        `Notifications microservice connected to ${rabbitMqUrl} on queue "${queue}" (prefetch ${prefetch}) after ${attempt} attempt(s). Gateway consumes queue "${NOTIFICATIONS_GATEWAY_QUEUE}" for events "${COMMENT_NEW_EVENT}" and "${TASK_UPDATED_EVENT}".`,
+      );
+      break;
+    } catch (error) {
+      await app.close().catch(() => undefined);
+
+      if (!isConnectionRefused(error)) {
+        throw error;
+      }
+
+      const delay = Math.min(
+        retryDelayMax,
+        retryDelay * 2 ** Math.max(0, attempt - 1),
+      );
+      const message = error instanceof Error ? error.message : String(error);
+      logger.error(
+        `RabbitMQ connection attempt #${attempt} failed (${message}). Retrying in ${Math.round(
+          delay / 1000,
+        )}s.`,
+      );
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
 }
 
 void bootstrap();
