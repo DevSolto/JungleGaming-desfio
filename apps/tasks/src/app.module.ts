@@ -29,7 +29,7 @@ const validateEnv = (config: Record<string, unknown>) => {
         type: 'postgres',
         url: configService.getOrThrow<string>('DATABASE_URL'),
         autoLoadEntities: true,
-        synchronize: false,
+        synchronize: true,
         entities: [Task],
       }),
     }),

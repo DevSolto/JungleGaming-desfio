@@ -57,7 +57,7 @@ async function bootstrap() {
     }),
   );
 
-  const rawOrigins = config.get<string>('CORS_ORIGINS', '*');
+  const rawOrigins = config.get<string>('*', '*');
   const parsedOrigins = rawOrigins
     .split(',')
     .map((origin) => origin.trim())

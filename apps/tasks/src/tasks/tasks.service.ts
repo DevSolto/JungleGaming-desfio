@@ -4,12 +4,9 @@ import { ClientProxy } from '@nestjs/microservices';
 import { defaultIfEmpty, lastValueFrom } from 'rxjs';
 import { Repository } from 'typeorm';
 import { Task } from './task.entity';
-import { CreateTaskDto } from './create-task.dto';
-import { ListTasksDto } from './list-tasks.dto';
-import { UpdateTaskDto } from './update-task.dto';
 import { TASKS_EVENTS_CLIENT } from './tasks.constants';
 import { TASK_EVENT_PATTERNS } from '@repo/types';
-import type { TaskEventPattern } from '@repo/types';
+import type { CreateTaskDTO, TaskEventPattern, TaskListFiltersDTO, UpdateTaskDTO } from '@repo/types';
 
 export interface PaginatedTasks {
   data: Task[];
@@ -27,7 +24,7 @@ export class TasksService {
     private readonly eventsClient: ClientProxy,
   ) {}
 
-  async create(dto: CreateTaskDto): Promise<Task> {
+  async create(dto: CreateTaskDTO): Promise<Task> {
     const task = this.tasksRepository.create({
       ...dto,
       dueDate: dto.dueDate ? new Date(dto.dueDate) : null,
@@ -39,7 +36,7 @@ export class TasksService {
     return saved;
   }
 
-  async findAll(filters: ListTasksDto): Promise<PaginatedTasks> {
+  async findAll(filters: TaskListFiltersDTO): Promise<PaginatedTasks> {
     const page = filters.page && filters.page > 0 ? filters.page : 1;
     const limit = filters.limit && filters.limit > 0 ? filters.limit : 10;
 
@@ -91,7 +88,7 @@ export class TasksService {
     return task;
   }
 
-  async update(id: string, dto: UpdateTaskDto): Promise<Task> {
+  async update(id: string, dto: UpdateTaskDTO): Promise<Task> {
     const task = await this.findById(id);
 
     const { dueDate, ...restDto } = dto;

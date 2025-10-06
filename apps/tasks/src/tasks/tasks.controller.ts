@@ -13,10 +13,10 @@ import {
   validateSync,
 } from 'class-validator';
 import { TasksService, PaginatedTasks } from './tasks.service';
-import { CreateTaskDto } from './create-task.dto';
-import { ListTasksDto } from './list-tasks.dto';
-import { UpdateTaskDto } from './update-task.dto';
 import { TASKS_MESSAGE_PATTERNS } from '@repo/types';
+import type { UpdateTaskDTO } from '@repo/types';
+
+
 
 class TaskIdDto {
   @IsUUID()
@@ -31,8 +31,8 @@ class UpdateTaskPayloadDto {
 
   @ValidateNested()
   @IsNotEmptyObject({ nullable: false })
-  @Type(() => UpdateTaskDto)
-  data: UpdateTaskDto;
+  @Type(() => UpdateTaskDTO)
+  data: UpdateTaskDTO;
 }
 
 @Controller()
