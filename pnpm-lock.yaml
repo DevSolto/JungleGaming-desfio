@@ -759,6 +759,13 @@ importers:
         version: 8.40.0(eslint@9.34.0(jiti@2.6.1))(typescript@5.9.2)
 
   packages/types:
+    dependencies:
+      class-transformer:
+        specifier: ^0.5.1
+        version: 0.5.1
+      class-validator:
+        specifier: ^0.14.2
+        version: 0.14.2
     devDependencies:
       '@repo/eslint-config':
         specifier: workspace:*

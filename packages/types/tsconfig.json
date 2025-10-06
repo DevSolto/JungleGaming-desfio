@@ -7,7 +7,9 @@
     "rootDir": "src",
     "composite": true,
     "resolvePackageJsonExports": true,
-    "incremental": true
+    "incremental": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
   },
   "include": ["src/**/*.ts", "src/**/*.d.ts"],
   "exclude": ["dist", "node_modules"]
