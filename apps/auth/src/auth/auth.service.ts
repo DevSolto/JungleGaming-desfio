@@ -8,10 +8,6 @@ import * as bcrypt from 'bcrypt';
 import { RpcException } from '@nestjs/microservices';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
 import {
-  AUTH_EMAIL_CONFLICT,
-  AUTH_INVALID_CREDENTIALS,
-  AUTH_REFRESH_TOKEN_INVALID,
-  AUTH_REFRESH_TOKEN_MISSING,
   type AuthLoginRequest,
   type AuthLoginResponse,
   type AuthLogoutResponse,
@@ -21,6 +17,12 @@ import {
   type AuthTokens,
   type AuthUser,
 } from '@repo/types';
+
+// Error code constants
+const AUTH_EMAIL_CONFLICT = 'AUTH_EMAIL_CONFLICT';
+const AUTH_INVALID_CREDENTIALS = 'AUTH_INVALID_CREDENTIALS';
+const AUTH_REFRESH_TOKEN_MISSING = 'AUTH_REFRESH_TOKEN_MISSING';
+const AUTH_REFRESH_TOKEN_INVALID = 'AUTH_REFRESH_TOKEN_INVALID';
 
 @Injectable()
 export class AuthService {
