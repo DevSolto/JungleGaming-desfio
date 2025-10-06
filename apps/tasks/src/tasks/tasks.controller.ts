@@ -4,36 +4,16 @@ import {
   HttpException,
 } from '@nestjs/common';
 import { MessagePattern, Payload, RpcException } from '@nestjs/microservices';
-import { plainToInstance, Type } from 'class-transformer';
-import {
-  IsNotEmpty,
-  IsNotEmptyObject,
-  IsUUID,
-  ValidateNested,
-  validateSync,
-} from 'class-validator';
+import { plainToInstance } from 'class-transformer';
+import { validateSync } from 'class-validator';
 import { TasksService, PaginatedTasks } from './tasks.service';
-import { TASKS_MESSAGE_PATTERNS } from '@repo/types';
-import type { UpdateTaskDTO } from '@repo/types';
-
-
-
-class TaskIdDto {
-  @IsUUID()
-  @IsNotEmpty()
-  id: string;
-}
-
-class UpdateTaskPayloadDto {
-  @IsUUID()
-  @IsNotEmpty()
-  id: string;
-
-  @ValidateNested()
-  @IsNotEmptyObject({ nullable: false })
-  @Type(() => UpdateTaskDTO)
-  data: UpdateTaskDTO;
-}
+import {
+  CreateTaskDto,
+  ListTasksDto,
+  TaskIdDto,
+  TASKS_MESSAGE_PATTERNS,
+  UpdateTaskPayloadDto,
+} from '@repo/types';
 
 @Controller()
 export class TasksController {

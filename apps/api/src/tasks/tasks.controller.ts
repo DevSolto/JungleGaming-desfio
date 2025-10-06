@@ -14,7 +14,7 @@ import {
   ListTasksQueryDto,
   TaskIdParamDto,
   UpdateTaskDto,
-} from './dto';
+} from '@repo/types';
 import { TasksService } from './tasks.service';
 import type { PaginatedTasks } from './tasks.service';
 import type { Task } from '@repo/types';
