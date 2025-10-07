@@ -46,3 +46,6 @@ dist/
 coverage/
 
 *.tsbuildinfo
+
+dist-cjs/
+v8-compile-cache-*/
