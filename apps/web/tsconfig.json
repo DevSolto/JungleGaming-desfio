@@ -33,11 +33,11 @@
         "./src/*"
       ],
       "@repo/types": [
-        "../../packages/types/src"
+        "../../packages/types/src/index.ts"
       ],
       "@repo/types/*": [
         "../../packages/types/src/*"
-      ],
+      ]
     }
   }
 }
