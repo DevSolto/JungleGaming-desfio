@@ -32,11 +32,17 @@
       "@/*": [
         "./src/*"
       ],
-      "@repo/types": [
-        "../../packages/types/src/index.ts"
+      "@nestjs/swagger": [
+        "./src/shims/nest-swagger.ts"
       ],
-      "@repo/types/*": [
-        "../../packages/types/src/*"
+      "@nestjs/swagger/*": [
+        "./src/shims/nest-swagger.ts"
+      ],
+      "class-transformer/storage": [
+        "./src/shims/empty-module.ts"
+      ],
+      "@grpc/proto-loader": [
+        "./src/shims/empty-module.ts"
       ]
     }
   }
