@@ -1,25 +1,24 @@
 import type {
-  AuthLoginRequest,
+  AuthRegisterRequest,
   AuthSessionResponse,
   UserDTO,
 } from '@repo/types';
 
 import { env } from '@/env';
 
-import { useAuthStore } from './store';
 import { extractErrorMessage } from './errors';
+import { useAuthStore } from './store';
 
 
 const API_BASE_URL = env.VITE_API_BASE_URL?.replace(/\/$/, '') ?? ''
-const LOGIN_ENDPOINT = API_BASE_URL
-  ? `${API_BASE_URL}/auth/login`
-  : '/api/auth/login'
+const REGISTER_ENDPOINT = API_BASE_URL
+  ? `${API_BASE_URL}/auth/register`
+  : '/api/auth/register'
 
-export async function login(
-  params: AuthLoginRequest,
+export async function register(
+  params: AuthRegisterRequest,
 ): Promise<UserDTO | string> {
-
-  const response = await fetch(LOGIN_ENDPOINT, {
+  const response = await fetch(REGISTER_ENDPOINT, {
     method: 'POST',
     credentials: 'include',
     headers: {
@@ -29,11 +28,11 @@ export async function login(
   })
 
   if (!response.ok) {
-    console.error('Erro na resposta de login:', response.status, response.statusText);
+    console.error('Erro na resposta de cadastro:', response.status, response.statusText);
     return extractErrorMessage(
       response,
-      'Não foi possível realizar login. Tente novamente mais tarde.',
-      'login',
+      'Não foi possível concluir o cadastro. Tente novamente mais tarde.',
+      'cadastro',
     );
   }
 
@@ -44,6 +43,4 @@ export async function login(
   setAuth(data);
 
   return data.user as UserDTO;
-
 }
-
