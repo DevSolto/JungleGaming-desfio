@@ -14,23 +14,12 @@ import {
   ListTasksQueryDto,
   TaskIdParamDto,
   UpdateTaskDto,
+  type ApiResponse,
+  type PaginatedResponse,
 } from '@repo/types';
 import { TasksService } from './tasks.service';
 import type { PaginatedTasks } from './tasks.service';
 import type { Task } from '@repo/types';
-
-interface ApiResponse<T> {
-  data: T;
-}
-
-interface PaginatedResponse<T> extends ApiResponse<T[]> {
-  meta: {
-    total: number;
-    page: number;
-    size: number;
-    totalPages: number;
-  };
-}
 
 @ApiTags('tasks')
 @Controller('tasks')
