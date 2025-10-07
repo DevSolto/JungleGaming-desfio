@@ -6,11 +6,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { TaskPriority, TaskStatus } from '@repo/types';
-
-export interface TaskAssignee {
-  id: string;
-  username: string;
-}
+import type { TaskAssigneeDTO } from '@repo/types';
 
 @Entity({ name: 'tasks' })
 export class Task {
@@ -33,7 +29,7 @@ export class Task {
   dueDate?: Date | null;
 
   @Column({ type: 'jsonb', default: () => "'[]'::jsonb" })
-  assignees: TaskAssignee[];
+  assignees: TaskAssigneeDTO[];
 
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
