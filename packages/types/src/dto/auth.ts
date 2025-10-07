@@ -1,9 +1,9 @@
 import type { TokensDTO } from "./tokens.js";
 import type { UserDTO } from "./user.js";
 
-export interface AuthUserDTO extends UserDTO {}
+export type AuthUserDTO = UserDTO;
 
-export interface AuthTokensDTO extends TokensDTO {}
+export type AuthTokensDTO = TokensDTO;
 
 export type AuthUser = AuthUserDTO;
 export type AuthTokens = AuthTokensDTO;
@@ -43,7 +43,7 @@ export interface AuthRegisterResponseDTO extends AuthTokensDTO {
 
 export type AuthLoginResponseDTO = AuthRegisterResponseDTO;
 
-export interface AuthRefreshResponseDTO extends AuthTokensDTO {}
+export type AuthRefreshResponseDTO = AuthTokensDTO;
 
 export type AuthRegisterResponse = AuthRegisterResponseDTO;
 export type AuthLoginResponse = AuthLoginResponseDTO;

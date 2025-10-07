@@ -6,7 +6,12 @@ import { Repository } from 'typeorm';
 import { Task } from './task.entity';
 import { TASKS_EVENTS_CLIENT } from './tasks.constants';
 import { TASK_EVENT_PATTERNS } from '@repo/types';
-import type { CreateTaskDTO, TaskEventPattern, TaskListFiltersDTO, UpdateTaskDTO } from '@repo/types';
+import type {
+  CreateTaskDTO,
+  TaskEventPattern,
+  TaskListFiltersDTO,
+  UpdateTaskDTO,
+} from '@repo/types';
 
 export interface PaginatedTasks {
   data: Task[];
@@ -47,7 +52,9 @@ export class TasksService {
     }
 
     if (filters.priority) {
-      query.andWhere('task.priority = :priority', { priority: filters.priority });
+      query.andWhere('task.priority = :priority', {
+        priority: filters.priority,
+      });
     }
 
     if (filters.search) {
@@ -94,7 +101,12 @@ export class TasksService {
     const { dueDate, ...restDto } = dto;
     const updatePayload: Partial<Task> = {
       ...restDto,
-      dueDate: dueDate !== undefined ? (dueDate ? new Date(dueDate) : null) : undefined,
+      dueDate:
+        dueDate !== undefined
+          ? dueDate
+            ? new Date(dueDate)
+            : null
+          : undefined,
     };
 
     this.tasksRepository.merge(task, updatePayload);
@@ -121,9 +133,11 @@ export class TasksService {
   ): Promise<void> {
     try {
       await lastValueFrom(
-        this.eventsClient.emit(pattern, payload).pipe(defaultIfEmpty(undefined)),
+        this.eventsClient
+          .emit(pattern, payload)
+          .pipe(defaultIfEmpty(undefined)),
       );
-    } catch (error) {
+    } catch {
       // Intentionally swallow errors to avoid breaking the main workflow
     }
   }

@@ -1,5 +1,6 @@
 import { Logger } from '@nestjs/common';
 import { Client } from 'pg';
+import type { ClientConfig } from 'pg';
 
 const DEFAULT_INITIAL_DELAY_MS = 500;
 const DEFAULT_MAX_DELAY_MS = 5000;
@@ -8,7 +9,20 @@ const DEFAULT_CONNECTION_TIMEOUT_MS = 3000;
 
 const logger = new Logger('TasksDatabaseBootstrap');
 
-const parsePositiveInt = (value: string | undefined, fallback: number): number => {
+interface PgClient {
+  connect(): Promise<void>;
+  end(): Promise<void>;
+}
+
+type PgClientConstructor = new (config: ClientConfig) => PgClient;
+
+const isPgClientConstructor = (value: unknown): value is PgClientConstructor =>
+  typeof value === 'function';
+
+const parsePositiveInt = (
+  value: string | undefined,
+  fallback: number,
+): number => {
   if (!value) {
     return fallback;
   }
@@ -46,7 +60,13 @@ export const waitForDatabase = async ({
     attempt += 1;
 
     try {
-      const client = new Client({
+      const clientCtor: unknown = Client;
+
+      if (!isPgClientConstructor(clientCtor)) {
+        throw new TypeError('Invalid PostgreSQL client constructor.');
+      }
+
+      const client = new clientCtor({
         connectionString,
         connectionTimeoutMillis: connectionTimeoutMs,
       });
@@ -56,9 +76,12 @@ export const waitForDatabase = async ({
 
       logger.log(`Successfully connected to PostgreSQL on attempt ${attempt}.`);
       return;
-    } catch (error) {
+    } catch (error: unknown) {
       if (attempt >= maxAttempts) {
-        logger.error('Exhausted all attempts to reach PostgreSQL.', error as Error);
+        logger.error(
+          'Exhausted all attempts to reach PostgreSQL.',
+          error as Error,
+        );
         throw error;
       }
 
@@ -79,15 +102,18 @@ export const resolveWaitForDatabaseOptions = (
 ): WaitForDatabaseOptions => ({
   connectionString,
   initialDelayMs: parsePositiveInt(
-    env.TASKS_DATABASE_BOOTSTRAP_INITIAL_DELAY_MS ?? env.DATABASE_BOOTSTRAP_INITIAL_DELAY_MS,
+    env.TASKS_DATABASE_BOOTSTRAP_INITIAL_DELAY_MS ??
+      env.DATABASE_BOOTSTRAP_INITIAL_DELAY_MS,
     DEFAULT_INITIAL_DELAY_MS,
   ),
   maxDelayMs: parsePositiveInt(
-    env.TASKS_DATABASE_BOOTSTRAP_MAX_DELAY_MS ?? env.DATABASE_BOOTSTRAP_MAX_DELAY_MS,
+    env.TASKS_DATABASE_BOOTSTRAP_MAX_DELAY_MS ??
+      env.DATABASE_BOOTSTRAP_MAX_DELAY_MS,
     DEFAULT_MAX_DELAY_MS,
   ),
   maxAttempts: parsePositiveInt(
-    env.TASKS_DATABASE_BOOTSTRAP_MAX_ATTEMPTS ?? env.DATABASE_BOOTSTRAP_MAX_ATTEMPTS,
+    env.TASKS_DATABASE_BOOTSTRAP_MAX_ATTEMPTS ??
+      env.DATABASE_BOOTSTRAP_MAX_ATTEMPTS,
     DEFAULT_MAX_ATTEMPTS,
   ),
   connectionTimeoutMs: parsePositiveInt(
