@@ -1,11 +1,17 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
-import { App } from 'supertest/types';
+import request from 'supertest';
+import type { App } from 'supertest/types';
+
 import { AppModule } from './../src/app.module';
 
+const isSupertestApp = (value: unknown): value is App =>
+  typeof value === 'function' ||
+  typeof value === 'string' ||
+  (typeof value === 'object' && value !== null);
+
 describe('AppController (e2e)', () => {
-  let app: INestApplication<App>;
+  let app: INestApplication;
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -16,10 +22,15 @@ describe('AppController (e2e)', () => {
     await app.init();
   });
 
-  it('/ (GET)', () => {
-    return request(app.getHttpServer())
-      .get('/')
-      .expect(200)
-      .expect('Hello World!');
+  it('/ (GET)', async () => {
+    const httpServer: unknown = app.getHttpServer();
+
+    if (!isSupertestApp(httpServer)) {
+      throw new TypeError(
+        'Invalid HTTP server instance received from Nest application.',
+      );
+    }
+
+    await request(httpServer).get('/').expect(200).expect('Hello World!');
   });
 });

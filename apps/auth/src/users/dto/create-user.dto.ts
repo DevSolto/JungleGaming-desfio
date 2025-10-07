@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
 import type { AuthRegisterRequest } from '@repo/types';
 
 export class CreateUserDto implements AuthRegisterRequest {
@@ -26,6 +26,9 @@ export class CreateUserDto implements AuthRegisterRequest {
   })
   @IsNotEmpty({
     message: 'password must not be empty',
+  })
+  @MinLength(6, {
+    message: 'password must be at least 6 characters long',
   })
   password!: string;
 }

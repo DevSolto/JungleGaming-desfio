@@ -1,4 +1,5 @@
 import { LoginForm } from '@/components/auth/login/form'
+import { RegisterForm } from '@/components/auth/register/form'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { createFileRoute } from '@tanstack/react-router'
 
@@ -18,7 +19,7 @@ function Index() {
           <LoginForm />
         </TabsContent>
         <TabsContent value="register">
-          register
+          <RegisterForm />
         </TabsContent>
       </Tabs>
     </main>

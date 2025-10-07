@@ -7,6 +7,7 @@ import type {
 import { env } from '@/env';
 
 import { useAuthStore } from './store';
+import { extractErrorMessage } from './errors';
 
 
 const API_BASE_URL = env.VITE_API_BASE_URL?.replace(/\/$/, '') ?? ''
@@ -16,7 +17,7 @@ const LOGIN_ENDPOINT = API_BASE_URL
 
 export async function login(
   params: AuthLoginRequest,
-): Promise<UserDTO|string> {
+): Promise<UserDTO | string> {
 
   const response = await fetch(LOGIN_ENDPOINT, {
     method: 'POST',
@@ -29,7 +30,11 @@ export async function login(
 
   if (!response.ok) {
     console.error('Erro na resposta de login:', response.status, response.statusText);
-    return extractErrorMessage(response);
+    return extractErrorMessage(
+      response,
+      'Não foi possível realizar login. Tente novamente mais tarde.',
+      'login',
+    );
   }
 
   const data = await response.json() as AuthSessionResponse;
@@ -40,27 +45,5 @@ export async function login(
 
   return data.user as UserDTO;
 
-}
-
-async function extractErrorMessage(response: Response) {
-  try {
-    const text = await response.text()
-    if (!text) return 'Não foi possível realizar login. Tente novamente mais tarde.'
-
-    const data = (JSON.parse(text) as
-      | { message?: string | string[]; error?: string }
-      | undefined)
-
-    if (Array.isArray(data?.message)) {
-      return (data.message as string[]).join(', ')
-    }
-
-    if (typeof data?.message === 'string') return data.message
-    if (typeof data?.error === 'string') return data.error
-  } catch (error) {
-    console.error('Erro ao interpretar resposta de login:', error)
-  }
-
-  return 'Não foi possível realizar login. Tente novamente mais tarde.'
 }
 

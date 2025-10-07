@@ -25,4 +25,7 @@ export default defineConfig({
   optimizeDeps: {
     include: ['zod', 'zod/v4', 'zod/v4/core'],
   },
+  test: {
+    environment: 'jsdom',
+  },
 })
