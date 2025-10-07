@@ -5,10 +5,11 @@ import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 import { AUTH_SERVICE } from '../src/auth/auth.constants';
 import { RpcException } from '@nestjs/microservices';
-import { throwError } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import {
   AUTH_EMAIL_CONFLICT,
   AUTH_INVALID_CREDENTIALS,
+  type AuthRegisterResponse,
 } from '@repo/types';
 import { validationExceptionFactory } from '../src/common/pipes/validation-exception.factory';
 
@@ -72,6 +73,43 @@ describe('AppController (e2e)', () => {
         expect(body.message).toBe('Email address is already registered.');
         expect(body.code).toBe(AUTH_EMAIL_CONFLICT);
       });
+  });
+
+  it('POST /auth/register succeeds, returns session and sets refresh cookie', async () => {
+    const mockResponse: AuthRegisterResponse = {
+      user: {
+        id: 'user-1',
+        email: 'player@junglegaming.dev',
+        name: 'Player One',
+      },
+      accessToken: 'access-token',
+      refreshToken: 'refresh-token',
+    };
+
+    authClient.send.mockReturnValueOnce(of(mockResponse));
+
+    await request(app.getHttpServer())
+      .post('/auth/register')
+      .send({
+        email: 'player@junglegaming.dev',
+        name: 'Player One',
+        password: 'secret1',
+      })
+      .expect(HttpStatus.CREATED)
+      .expect(({ body, headers }) => {
+        expect(body).toEqual({
+          user: mockResponse.user,
+          accessToken: mockResponse.accessToken,
+        });
+
+        const setCookieHeader = headers['set-cookie'];
+        expect(Array.isArray(setCookieHeader)).toBe(true);
+        expect(setCookieHeader.some((value: string) =>
+          value.startsWith(`refreshToken=${mockResponse.refreshToken}`),
+        )).toBe(true);
+      });
+
+    expect(authClient.send).toHaveBeenCalledTimes(1);
   });
 
   it('POST /auth/register returns validation errors with consistent shape', async () => {
