@@ -20,10 +20,20 @@ export default defineConfig({
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
       'zod/v4/core': zodV4CorePath,
+      '@nestjs/swagger': fileURLToPath(
+        new URL('./src/shims/nest-swagger.ts', import.meta.url),
+      ),
+      'class-transformer/storage': fileURLToPath(
+        new URL('./src/shims/empty-module.ts', import.meta.url),
+      ),
+      '@grpc/proto-loader': fileURLToPath(
+        new URL('./src/shims/empty-module.ts', import.meta.url),
+      ),
     },
   },
   optimizeDeps: {
     include: ['zod', 'zod/v4', 'zod/v4/core'],
+    exclude: ['@nestjs/swagger', 'class-transformer/storage', '@grpc/proto-loader'],
   },
   test: {
     environment: 'jsdom',
