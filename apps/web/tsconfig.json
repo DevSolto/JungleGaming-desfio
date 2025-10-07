@@ -4,6 +4,9 @@
     "**/*.tsx"
   ],
   "compilerOptions": {
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "useDefineForClassFields": false,
     "target": "ES2022",
     "jsx": "react-jsx",
     "module": "ESNext",

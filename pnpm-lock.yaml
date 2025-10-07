@@ -642,6 +642,9 @@ importers:
       react-hook-form:
         specifier: ^7.63.0
         version: 7.63.0(react@19.2.0)
+      reflect-metadata:
+        specifier: ^0.2.2
+        version: 0.2.2
       socket.io-client:
         specifier: ^4.8.1
         version: 4.8.1
