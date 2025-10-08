@@ -17,7 +17,7 @@ import {
 } from '@repo/types';
 
 export interface PaginatedComments extends PaginatedCommentsDTO {
-  data: Comment[];
+  data: CommentDTO[];
 }
 
 @Injectable()
@@ -56,7 +56,7 @@ export class CommentsService {
     });
 
     return {
-      data,
+      data: data.map((comment) => this.toCommentDTO(comment)),
       total,
       page,
       limit,

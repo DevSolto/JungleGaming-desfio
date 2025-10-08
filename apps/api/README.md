@@ -42,3 +42,51 @@ curl -H "Authorization: Bearer $ACCESS_TOKEN" \
 ```
 
 Para renovar o token, utilize `POST /auth/refresh`. O gateway lerá o `refreshToken` do cookie e responderá com um novo `accessToken` pronto para ser enviado no header acima.
+
+## Comentários de tarefas
+
+O gateway expõe endpoints autenticados para criação e listagem paginada de comentários vinculados a uma tarefa.
+
+### Listar comentários com paginação
+
+```bash
+curl -H "Authorization: Bearer $ACCESS_TOKEN" \
+     "http://localhost:3000/tasks/<TASK_ID>/comments?page=2&limit=5"
+```
+
+Resposta (resumida):
+
+```json
+{
+  "data": [
+    {
+      "id": "f4f3...",
+      "taskId": "<TASK_ID>",
+      "authorId": "<USER_ID>",
+      "message": "Comentário mais recente",
+      "createdAt": "2024-06-01T12:34:56.000Z",
+      "updatedAt": "2024-06-01T12:34:56.000Z"
+    }
+  ],
+  "meta": {
+    "page": 2,
+    "size": 5,
+    "total": 17,
+    "totalPages": 4
+  }
+}
+```
+
+Os parâmetros `page` e `limit` são opcionais (padrões: `1` e `10`). A ordenação é decrescente por data de criação.
+
+### Criar um novo comentário
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Comentário inicial da tarefa"}' \
+  http://localhost:3000/tasks/<TASK_ID>/comments
+```
+
+O corpo deve conter somente o campo `message` (máximo de 500 caracteres). O gateway atribui o autor com base no usuário autenticado e, ao salvar, o serviço publica `tasks.comment.created`, que o próprio gateway retransmite para os clientes WebSocket como `comment:new`.

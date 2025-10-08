@@ -7,19 +7,22 @@ export async function createTestDataSource(
 ): Promise<DataSource> {
   const db = newDb({ autoCreateForeignKeyIndices: true });
 
+  const textType = db.public.getType('text');
+  const uuidType = db.public.getType('uuid');
+
   db.public.registerFunction({
     name: 'version',
-    returns: 'text',
+    returns: textType,
     implementation: () => 'PostgreSQL 13.3',
   });
   db.public.registerFunction({
     name: 'current_database',
-    returns: 'text',
+    returns: textType,
     implementation: () => 'test',
   });
   db.public.registerFunction({
     name: 'uuid_generate_v4',
-    returns: 'uuid',
+    returns: uuidType,
     implementation: () => randomUUID(),
     impure: true,
   });
