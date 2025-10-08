@@ -10,7 +10,7 @@
 
 * [x] Como usuário autenticado, quero **criar tarefas** com título, descrição, prazo, prioridade e status, para organizar meu trabalho. — feita
 * [x] Como usuário, quero **listar tarefas** com **paginação**, para navegar por grandes volumes eficientemente. — feita
-* [ ] Como usuário, quero **filtrar/buscar** por status, prioridade, prazo e título, para encontrar tarefas rapidamente. _(Observação: filtros de status/prioridade/busca existem, mas o filtro de prazo não é processado no serviço de tarefas.)_
+* [x] Como usuário, quero **filtrar/buscar** por status, prioridade, prazo e título, para encontrar tarefas rapidamente. _(Observação: o serviço de tarefas agora interpreta o filtro de prazo considerando o fuso padrão das tarefas, permitindo pesquisas por dia.)_
 * [x] Como usuário, quero **editar** uma tarefa (campos e status), para manter as informações atualizadas. — feita
 * [x] Como usuário, quero **excluir** uma tarefa, para remover itens obsoletos. — feita
 * [x] Como usuário, quero **atribuir/desatribuir** uma tarefa a **múltiplos usuários**, para distribuir o trabalho. — feita
