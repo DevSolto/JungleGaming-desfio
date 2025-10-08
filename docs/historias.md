@@ -14,7 +14,7 @@
 * [x] Como usuário, quero **editar** uma tarefa (campos e status), para manter as informações atualizadas. — feita
 * [x] Como usuário, quero **excluir** uma tarefa, para remover itens obsoletos. — feita
 * [x] Como usuário, quero **atribuir/desatribuir** uma tarefa a **múltiplos usuários**, para distribuir o trabalho. — feita
-* [ ] Como participante da tarefa, quero **comentar** e **ver comentários** com paginação, para colaborar no contexto da tarefa. _(Observação: a API ainda não expõe endpoints de comentários; o front-end apenas consulta um endpoint inexistente.)_
+* [x] Como participante da tarefa, quero **comentar** e **ver comentários** com paginação, para colaborar no contexto da tarefa. _(Observação: o gateway agora expõe `GET /tasks/:id/comments` e `POST /tasks/:id/comments`, entregando respostas paginadas para a UI atualizar imediatamente a lista local.)_
 * [ ] Como sistema, quero **registrar histórico** (audit log) de alterações de tarefa, para rastrear quem mudou o quê e quando. _(Pendente: não há registro de audit log no serviço de tarefas.)_
 
 # Épico: Integração entre Gateway e Microserviços
@@ -33,7 +33,7 @@
 * [x] Como usuário autenticado, quero me **conectar ao WebSocket** do Gateway, para receber notificações em tempo real. — feita
 * [x] Como usuário atribuído a uma tarefa recém-criada, quero receber **`task:created`**, para ser avisado imediatamente. — feita
 * [x] Como usuário envolvido numa tarefa, quero receber **`task:updated`** quando o status mudar, para acompanhar o progresso. — feita
-* [ ] Como participante/comentado de uma tarefa, quero receber **`comment:new`**, para não perder discussões importantes. _(Observação: o gateway está pronto para propagar o evento, mas ele nunca é disparado porque não existe fluxo de criação de comentários.)_
+* [x] Como participante/comentado de uma tarefa, quero receber **`comment:new`**, para não perder discussões importantes. _(Observação: a criação de comentários agora dispara `tasks.comment.created` no serviço de tarefas, que é encaminhado pelo gateway como `comment:new`, atualizando a lista e exibindo toast no front-end.)_
 
 # Épico: Front-end (React + TanStack Router + shadcn/ui)
 
