@@ -61,7 +61,7 @@ Modelar e expor CRUD de tarefas, atribuições, comentários e audit log via Nes
 ### Tarefas
 - [ ] Criar entities e índices (status, prazo, prioridade) (Tasks)
 - [ ] Use-cases: create/read/update/delete; assign/unassign; addComment/listComments; AuditLog automático (Tasks)
-- [ ] Definir canais/filas: tasks.rpc (RPC) e tasks.events (pub) (Messaging)
+- [x] Definir canais/filas: tasks.rpc (RPC) e tasks.events (pub) (Messaging)
 - [ ] Rotas HTTP: /api/tasks, /api/tasks/:id, /api/tasks/:id/comments com paginação (Gateway)
 - [ ] Tabela de mensagens (topic, payload, publisher/consumer) (Docs)
 
@@ -84,7 +84,7 @@ Consumir eventos, persistir notificações e entregar em tempo real via WebSocke
 
 ### Tarefas
 - [ ] Entity Notification (userId, type, payload, readAt=null) (Notifications)
-- [ ] Consumer com ack manual e requeue on error (Broker)
+- [x] Consumer com ack manual e requeue on error (Broker)
 - [ ] Guards de socket (JWT) e rooms user:{id} (Gateway WS)
 - [ ] Emitir eventos WS para assignments/autor/participantes (Gateway WS)
 - [ ] Diagrama pub/sub (ASCII) do fluxo de notificações (Docs)
@@ -107,11 +107,11 @@ Consumir eventos, persistir notificações e entregar em tempo real via WebSocke
 Construir UI funcional com boa UX e integrar WS.
 
 ### Tarefas
-- [ ] Layout base e rotas /login, /tasks, /tasks/:id (Web)
-- [ ] Lista com filtros (status, prioridade, prazo) e busca por título (Web)
-- [ ] Form de criação/edição com zod schemas compartilhados de @types (Web)
+- [x] Layout base e rotas /login, /tasks, /tasks/:id (Web)
+- [x] Lista com filtros (status, prioridade, prazo) e busca por título (Web)
+- [x] Form de criação/edição com zod schemas compartilhados de @types (Web)
 - [ ] Aba de comentários com paginação (infinita ou carregar mais) (Web)
-- [ ] Integração WS: toasts/badges e atualização em tempo real (Web)
+- [x] Integração WS: toasts/badges e atualização em tempo real (Web)
 - [ ] GIF/roteiro demonstrando fluxo E2E (Docs)
 
 ### Entregáveis
