@@ -19,6 +19,8 @@ import {
   createTaskFixture,
   createUpdateTaskDtoFixture,
 } from './__mocks__/tasks.fixtures';
+import { JwtService } from '@nestjs/jwt';
+import { MOCK_AUTHORIZATION_HEADER } from './utils/auth.constants';
 
 describe('AppController (e2e)', () => {
   let app: INestApplication<App>;
@@ -35,6 +37,8 @@ describe('AppController (e2e)', () => {
       .useValue(authClient)
       .overrideProvider(TASKS_RPC_CLIENT)
       .useValue(tasksClient)
+      .overrideProvider(JwtService)
+      .useValue({ verifyAsync: jest.fn().mockResolvedValue({ sub: 'user-1' }) })
       .compile();
 
     app = moduleFixture.createNestApplication();
@@ -191,6 +195,7 @@ describe('AppController (e2e)', () => {
 
     await request(app.getHttpServer())
       .post('/tasks')
+      .set('Authorization', MOCK_AUTHORIZATION_HEADER)
       .send(createPayload)
       .expect(HttpStatus.CREATED)
       .expect(({ body }) => {
@@ -220,6 +225,7 @@ describe('AppController (e2e)', () => {
 
     await request(app.getHttpServer())
       .post('/tasks')
+      .set('Authorization', MOCK_AUTHORIZATION_HEADER)
       .send(createPayload)
       .expect(HttpStatus.UNPROCESSABLE_ENTITY)
       .expect(({ body }) => {
@@ -248,6 +254,7 @@ describe('AppController (e2e)', () => {
 
     await request(app.getHttpServer())
       .put(`/tasks/${taskId}`)
+      .set('Authorization', MOCK_AUTHORIZATION_HEADER)
       .send(updatePayload)
       .expect(HttpStatus.OK)
       .expect(({ body }) => {
@@ -269,6 +276,7 @@ describe('AppController (e2e)', () => {
 
     await request(app.getHttpServer())
       .delete(`/tasks/${taskId}`)
+      .set('Authorization', MOCK_AUTHORIZATION_HEADER)
       .expect(HttpStatus.OK)
       .expect(({ body }) => {
         expect(body).toEqual({ data: removedTask });
@@ -279,5 +287,54 @@ describe('AppController (e2e)', () => {
       TASKS_MESSAGE_PATTERNS.REMOVE,
       { id: taskId },
     );
+  });
+
+  it('GET /tasks returns a paginated list when authorized', async () => {
+    const task = createTaskFixture();
+    const paginatedResponse = {
+      data: [task],
+      total: 1,
+      page: 1,
+      limit: 10,
+    };
+
+    tasksClient.send.mockReturnValueOnce(of(paginatedResponse));
+
+    await request(app.getHttpServer())
+      .get('/tasks')
+      .set('Authorization', MOCK_AUTHORIZATION_HEADER)
+      .expect(HttpStatus.OK)
+      .expect(({ body }) => {
+        expect(body).toEqual({
+          data: paginatedResponse.data,
+          meta: {
+            total: paginatedResponse.total,
+            page: paginatedResponse.page,
+            size: paginatedResponse.limit,
+            totalPages: 1,
+          },
+        });
+      });
+
+    expect(tasksClient.send).toHaveBeenCalledTimes(1);
+    expect(tasksClient.send).toHaveBeenCalledWith(
+      TASKS_MESSAGE_PATTERNS.FIND_ALL,
+      expect.objectContaining({
+        page: 1,
+        limit: 10,
+      }),
+    );
+  });
+
+  it('GET /tasks returns 401 Unauthorized without Authorization header', async () => {
+    await request(app.getHttpServer())
+      .get('/tasks')
+      .expect(HttpStatus.UNAUTHORIZED)
+      .expect(({ body }) => {
+        expect(body.statusCode).toBe(HttpStatus.UNAUTHORIZED);
+        expect(body.message).toBe('Access token is required.');
+      });
+
+    expect(tasksClient.send).not.toHaveBeenCalled();
   });
 });
