@@ -1,12 +1,40 @@
-import type { CommentDTO } from '@repo/types'
+import type { CommentDTO, PaginatedResponse } from '@repo/types'
+
+import { fetchWithAuth } from '@/lib/apiClient'
+import { paginatedResponseSchema } from '@/schemas/paginatedResponse'
 
 import { commentSchema } from '../schemas/commentSchema'
-import { fetchWithAuth } from '@/lib/apiClient'
-
 import { TASKS_ENDPOINT } from './getTasks'
 
-export async function getTaskComments(taskId: string): Promise<CommentDTO[]> {
-  const response = await fetchWithAuth(`${TASKS_ENDPOINT}/${taskId}/comments`, {
+export interface GetTaskCommentsParams {
+  page?: number
+  size?: number
+}
+
+const paginatedCommentsSchema = paginatedResponseSchema(commentSchema)
+
+function buildCommentsUrl(taskId: string, params?: GetTaskCommentsParams) {
+  const searchParams = new URLSearchParams()
+
+  if (params?.page) {
+    searchParams.set('page', params.page.toString())
+  }
+
+  if (params?.size) {
+    searchParams.set('limit', params.size.toString())
+  }
+
+  const query = searchParams.toString()
+  const baseUrl = `${TASKS_ENDPOINT}/${taskId}/comments`
+
+  return query ? `${baseUrl}?${query}` : baseUrl
+}
+
+export async function getTaskComments(
+  taskId: string,
+  params?: GetTaskCommentsParams,
+): Promise<PaginatedResponse<CommentDTO>> {
+  const response = await fetchWithAuth(buildCommentsUrl(taskId, params), {
     method: 'GET',
   })
 
@@ -17,7 +45,7 @@ export async function getTaskComments(taskId: string): Promise<CommentDTO[]> {
   }
 
   const data = await response.json()
-  const payload = 'data' in data ? data.data : data
+  const parsed = paginatedCommentsSchema.parse(data)
 
-  return commentSchema.array().parse(payload)
+  return parsed
 }

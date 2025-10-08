@@ -93,24 +93,9 @@ export function TasksPage() {
     }
 
     const handleCommentNew = (comment: CommentDTO) => {
-      queryClient.setQueryData<CommentDTO[] | undefined>(
-        ['task', comment.taskId, 'comments'],
-        (previousComments) => {
-          if (!previousComments) {
-            return previousComments
-          }
-
-          const alreadyExists = previousComments.some(
-            (existingComment) => existingComment.id === comment.id,
-          )
-
-          if (alreadyExists) {
-            return previousComments
-          }
-
-          return [...previousComments, comment]
-        },
-      )
+      void queryClient.invalidateQueries({
+        queryKey: ['task', comment.taskId, 'comments'],
+      })
 
       void queryClient.invalidateQueries({
         queryKey: ['task', comment.taskId, 'notifications'],

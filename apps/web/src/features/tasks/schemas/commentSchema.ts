@@ -1,3 +1,4 @@
+import { COMMENT_MESSAGE_MAX_LENGTH } from '@repo/types'
 import { z } from 'zod'
 
 export const commentSchema = z.object({
@@ -9,4 +10,15 @@ export const commentSchema = z.object({
   updatedAt: z.string(),
 })
 
+export const commentFormSchema = z.object({
+  message: z
+    .string()
+    .min(1, 'Digite um comentário')
+    .max(
+      COMMENT_MESSAGE_MAX_LENGTH,
+      `O comentário deve ter no máximo ${COMMENT_MESSAGE_MAX_LENGTH} caracteres`,
+    ),
+})
+
 export type CommentSchema = z.infer<typeof commentSchema>
+export type CommentFormSchema = z.infer<typeof commentFormSchema>
