@@ -6,6 +6,11 @@ import { Repository } from 'typeorm';
 import { Task } from './task.entity';
 import { TASKS_EVENTS_CLIENT } from './tasks.constants';
 import { TASK_EVENT_PATTERNS } from '@repo/types';
+import {
+  getDayRangeInTimezone,
+  getDefaultTaskTimezone,
+  parseDateInTimezone,
+} from '@repo/types/utils/datetime';
 import type {
   CreateTaskDTO,
   TaskEventPattern,
@@ -22,6 +27,8 @@ export interface PaginatedTasks {
 
 @Injectable()
 export class TasksService {
+  private readonly taskTimezone = getDefaultTaskTimezone();
+
   constructor(
     @InjectRepository(Task)
     private readonly tasksRepository: Repository<Task>,
@@ -32,7 +39,9 @@ export class TasksService {
   async create(dto: CreateTaskDTO): Promise<Task> {
     const task = this.tasksRepository.create({
       ...dto,
-      dueDate: dto.dueDate ? new Date(dto.dueDate) : null,
+      dueDate: dto.dueDate
+        ? parseDateInTimezone(dto.dueDate, this.taskTimezone)
+        : null,
     });
 
     const saved = await this.tasksRepository.save(task);
@@ -70,6 +79,17 @@ export class TasksService {
       });
     }
 
+    if (filters.dueDate) {
+      const { start, end } = getDayRangeInTimezone(
+        filters.dueDate,
+        this.taskTimezone,
+      );
+      query.andWhere('task.dueDate >= :start AND task.dueDate < :end', {
+        start,
+        end,
+      });
+    }
+
     query.orderBy('task.createdAt', 'DESC');
 
     const [data, total] = await query
@@ -104,7 +124,7 @@ export class TasksService {
       dueDate:
         dueDate !== undefined
           ? dueDate
-            ? new Date(dueDate)
+            ? parseDateInTimezone(dueDate, this.taskTimezone)
             : null
           : undefined,
     };
