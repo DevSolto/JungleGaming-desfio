@@ -3,13 +3,13 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "main": "./dist/index.js",
+  "main": "./dist/index.cjs",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
-      "require": "./dist-cjs/index.js",
+      "require": "./dist-cjs/index.cjs",
       "default": "./dist/index.js"
     },
     "./*": {
@@ -25,7 +25,8 @@
     "src"
   ],
   "scripts": {
-    "build": "pnpm run build:esm && pnpm run build:cjs",
+    "build": "tsc -p tsconfig.json && tsc -p tsconfig.cjs.json",
+    "watch": "tsc -p tsconfig.json --watch",
     "build:esm": "tsc -p tsconfig.json",
     "build:cjs": "tsc -p tsconfig.cjs.json && node ./scripts/ensure-cjs-package.cjs",
     "lint": "eslint . --ext .ts --max-warnings 0",
