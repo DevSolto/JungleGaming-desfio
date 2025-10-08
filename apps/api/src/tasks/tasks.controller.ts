@@ -7,8 +7,14 @@ import {
   Post,
   Put,
   Query,
+  UseGuards,
 } from '@nestjs/common';
-import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import {
   CreateTaskDto,
   ListTasksQueryDto,
@@ -20,7 +26,10 @@ import {
 import { TasksService } from './tasks.service';
 import type { PaginatedTasks } from './tasks.service';
 import type { Task } from '@repo/types';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
+@UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
 @ApiTags('tasks')
 @Controller('tasks')
 export class TasksController {
