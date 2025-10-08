@@ -1,4 +1,10 @@
 import type {
+  CommentDTO,
+  CreateCommentDTO,
+  PaginatedCommentsDTO,
+  TaskCommentListFiltersDTO,
+} from "../../dto/comment.js";
+import type {
   CreateTaskDTO,
   PaginatedTasksDTO,
   TaskDTO,
@@ -12,6 +18,8 @@ export const TASKS_MESSAGE_PATTERNS = {
   FIND_BY_ID: "tasks.findById",
   UPDATE: "tasks.update",
   REMOVE: "tasks.remove",
+  COMMENT_CREATE: "tasks.comment.create",
+  COMMENT_FIND_ALL: "tasks.comment.findAll",
 } as const;
 
 export type TasksMessagePattern =
@@ -39,6 +47,12 @@ export interface TasksRemovePayload {
 }
 export type TasksRemoveResult = TaskDTO;
 
+export type TasksCommentsCreatePayload = CreateCommentDTO;
+export type TasksCommentsCreateResult = CommentDTO;
+
+export type TasksCommentsFindAllPayload = TaskCommentListFiltersDTO;
+export type TasksCommentsFindAllResult = PaginatedCommentsDTO;
+
 export interface TasksRpcContractMap {
   [TASKS_MESSAGE_PATTERNS.CREATE]: {
     payload: TasksCreatePayload;
@@ -59,5 +73,13 @@ export interface TasksRpcContractMap {
   [TASKS_MESSAGE_PATTERNS.REMOVE]: {
     payload: TasksRemovePayload;
     response: TasksRemoveResult;
+  };
+  [TASKS_MESSAGE_PATTERNS.COMMENT_CREATE]: {
+    payload: TasksCommentsCreatePayload;
+    response: TasksCommentsCreateResult;
+  };
+  [TASKS_MESSAGE_PATTERNS.COMMENT_FIND_ALL]: {
+    payload: TasksCommentsFindAllPayload;
+    response: TasksCommentsFindAllResult;
   };
 }

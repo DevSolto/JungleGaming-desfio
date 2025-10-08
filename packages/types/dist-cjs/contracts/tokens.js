@@ -1,0 +1,6 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.NOTIFICATIONS_GATEWAY_CLIENT = exports.TASKS_EVENTS_CLIENT = exports.TASKS_RPC_CLIENT = void 0;
+exports.TASKS_RPC_CLIENT = "TASKS_RPC_CLIENT";
+exports.TASKS_EVENTS_CLIENT = "TASKS_EVENTS_CLIENT";
+exports.NOTIFICATIONS_GATEWAY_CLIENT = "NOTIFICATIONS_GATEWAY_CLIENT";

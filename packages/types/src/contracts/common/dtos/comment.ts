@@ -1,1 +1,10 @@
-export { type Comment, type CommentDTO } from "../../../dto/comment.js";
+export {
+  type Comment,
+  type CommentDTO,
+  type CreateComment,
+  type CreateCommentDTO,
+  type PaginatedComments,
+  type PaginatedCommentsDTO,
+  type TaskCommentListFilters,
+  type TaskCommentListFiltersDTO,
+} from "../../../dto/comment.js";

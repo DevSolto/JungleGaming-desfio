@@ -29,6 +29,8 @@ describe("@repo/types runtime contract", () => {
         FIND_BY_ID: "tasks.findById",
         UPDATE: "tasks.update",
         REMOVE: "tasks.remove",
+        COMMENT_CREATE: "tasks.comment.create",
+        COMMENT_FIND_ALL: "tasks.comment.findAll",
       }),
     );
 
