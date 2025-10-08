@@ -1,18 +1,42 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { type CommentDTO, type NotificationDTO, TaskPriority, TaskStatus } from '@repo/types'
+import {
+  type CommentDTO,
+  type NotificationDTO,
+  type PaginationMeta,
+  COMMENT_MESSAGE_MAX_LENGTH,
+  TaskPriority,
+  TaskStatus,
+} from '@repo/types'
 import { Bell, CalendarDays, MessageSquare, Users } from 'lucide-react'
+import { useForm } from 'react-hook-form'
 
 import { Button } from '@/components/ui/button'
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
+import { Textarea } from '@/components/ui/textarea'
 import { toast } from '@/components/ui/use-toast'
 import { router } from '@/router'
 
 import { deleteTask } from '../api/deleteTask'
 import { getTaskById } from '../api/getTaskById'
+import { createTaskComment } from '../api/createTaskComment'
 import { getTaskComments } from '../api/getTaskComments'
 import { getTaskNotifications } from '../api/getTaskNotifications'
 import { LoadingSkeleton } from '../components/LoadingSkeleton'
 import { TaskModal } from '../components/TaskModal'
+import {
+  commentFormSchema,
+  type CommentFormSchema,
+} from '../schemas/commentSchema'
 
 interface TaskDetailsPageProps {
   taskId: string
@@ -70,9 +94,27 @@ function formatDateTime(value?: string | null) {
   }).format(date)
 }
 
+export function getCommentsDisplayRange(
+  meta: PaginationMeta | undefined,
+  count: number,
+) {
+  if (!meta || meta.total === 0 || count === 0) {
+    return { start: 0, end: 0, total: meta?.total ?? 0 }
+  }
+
+  const start = (meta.page - 1) * meta.size + 1
+  const end = Math.min(meta.total, start + count - 1)
+
+  return { start, end, total: meta.total }
+}
+
 export function TaskDetailsPage({ taskId }: TaskDetailsPageProps) {
   const queryClient = useQueryClient()
   const [isEditing, setIsEditing] = useState(false)
+  const [commentPage, setCommentPage] = useState(1)
+  const [pageSize] = useState(5)
+
+  const numberFormatter = useMemo(() => new Intl.NumberFormat('pt-BR'), [])
 
   const taskQuery = useQuery({
     queryKey: ['task', taskId],
@@ -80,15 +122,54 @@ export function TaskDetailsPage({ taskId }: TaskDetailsPageProps) {
   })
 
   const commentsQuery = useQuery({
-    queryKey: ['task', taskId, 'comments'],
-    queryFn: () => getTaskComments(taskId),
+    queryKey: ['task', taskId, 'comments', { page: commentPage, size: pageSize }],
+    queryFn: () => getTaskComments(taskId, { page: commentPage, size: pageSize }),
     enabled: taskQuery.isSuccess,
+    keepPreviousData: true,
   })
 
   const notificationsQuery = useQuery({
     queryKey: ['task', taskId, 'notifications'],
     queryFn: () => getTaskNotifications(taskId),
     enabled: taskQuery.isSuccess,
+  })
+
+  const commentForm = useForm<CommentFormSchema>({
+    resolver: zodResolver(commentFormSchema),
+    defaultValues: { message: '' },
+  })
+
+  const createCommentMutation = useMutation({
+    mutationFn: (values: CommentFormSchema) =>
+      createTaskComment(taskId, values),
+    onSuccess: () => {
+      toast({
+        title: 'Comentário publicado',
+        description: 'Seu comentário foi enviado com sucesso.',
+      })
+
+      setCommentPage(1)
+      commentForm.reset()
+      queryClient.invalidateQueries({ queryKey: ['task', taskId, 'comments'] })
+      queryClient.invalidateQueries({ queryKey: ['task', taskId, 'notifications'] })
+      queryClient.invalidateQueries({ queryKey: ['task', taskId] })
+    },
+    onError: (error: unknown) => {
+      const description =
+        error instanceof Error
+          ? error.message
+          : 'Não foi possível enviar o comentário. Tente novamente.'
+
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao publicar comentário',
+        description,
+      })
+    },
+  })
+
+  const handleSubmitComment = commentForm.handleSubmit((values) => {
+    createCommentMutation.mutate(values)
   })
 
   const deleteMutation = useMutation({
@@ -154,7 +235,8 @@ export function TaskDetailsPage({ taskId }: TaskDetailsPageProps) {
 
   const task = taskQuery.data
 
-  const comments = commentsQuery.data ?? []
+  const commentsData = commentsQuery.data
+  const comments = commentsData?.data ?? []
   const notifications = notificationsQuery.data ?? []
 
   const commentsError =
@@ -168,6 +250,14 @@ export function TaskDetailsPage({ taskId }: TaskDetailsPageProps) {
     (notificationsQuery.error instanceof Error
       ? notificationsQuery.error.message
       : 'Não foi possível carregar as notificações.')
+
+  const commentsMeta = commentsData?.meta
+  const commentsTotal = commentsMeta?.total ?? 0
+  const commentsRange = getCommentsDisplayRange(commentsMeta, comments.length)
+  const currentCommentsPage = commentsMeta?.page ?? commentPage
+  const totalPages = commentsMeta?.totalPages ?? (commentsTotal > 0 ? currentCommentsPage : 0)
+  const isFirstPage = currentCommentsPage <= 1
+  const isLastPage = commentsTotal === 0 || currentCommentsPage >= totalPages
 
   return (
     <main className={containerClassName}>
@@ -284,19 +374,62 @@ export function TaskDetailsPage({ taskId }: TaskDetailsPageProps) {
             ) : null}
           </header>
 
+          <Form {...commentForm}>
+            <form onSubmit={handleSubmitComment} className="space-y-4">
+              <FormField
+                control={commentForm.control}
+                name="message"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Adicionar comentário</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Escreva aqui o que deseja registrar"
+                        {...field}
+                        value={field.value ?? ''}
+                        disabled={createCommentMutation.isPending}
+                        className="min-h-[120px]"
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Máximo de {numberFormatter.format(COMMENT_MESSAGE_MAX_LENGTH)} caracteres por
+                      comentário.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="flex items-center justify-end gap-4">
+                <Button
+                  type="submit"
+                  disabled={createCommentMutation.isPending}
+                  className="ml-auto"
+                >
+                  {createCommentMutation.isPending ? 'Enviando...' : 'Publicar comentário'}
+                </Button>
+              </div>
+            </form>
+          </Form>
+
           {commentsQuery.isPending ? (
-            <div className="space-y-3">
+            <div className="space-y-3" role="status" aria-live="polite">
               <LoadingSkeleton className="h-16" />
               <LoadingSkeleton className="h-16" />
             </div>
           ) : commentsError ? (
             <p className="text-sm text-destructive">{commentsError}</p>
           ) : comments.length > 0 ? (
-            <ul className="space-y-4">
+            <ul className="space-y-4" aria-live="polite">
               {comments.map((comment: CommentDTO) => (
-                <li key={comment.id} className="rounded-md border border-border bg-background/80 p-4">
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>Autor: {comment.authorId}</span>
+                <li
+                  key={comment.id}
+                  className="rounded-md border border-border bg-background/80 p-4"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+                    <span>
+                      Autor: <span className="font-medium text-foreground">{comment.authorId}</span>
+                    </span>
                     <span>{formatDateTime(comment.createdAt)}</span>
                   </div>
                   <p className="mt-2 text-sm text-foreground">{comment.message}</p>
@@ -308,6 +441,40 @@ export function TaskDetailsPage({ taskId }: TaskDetailsPageProps) {
               Nenhum comentário registrado para esta tarefa.
             </p>
           )}
+
+          <footer className="flex flex-col gap-3 border-t border-border/60 pt-3 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+            <span aria-live="polite">
+              {commentsTotal > 0
+                ? `Exibindo ${numberFormatter.format(commentsRange.start)}–${numberFormatter.format(
+                    commentsRange.end,
+                  )} de ${numberFormatter.format(commentsRange.total)} comentários`
+                : 'Nenhum comentário disponível'}
+            </span>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setCommentPage((page) => Math.max(1, page - 1))}
+                disabled={isFirstPage || commentsQuery.isFetching}
+                aria-label="Página anterior de comentários"
+              >
+                Anterior
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  setCommentPage((page) => (isLastPage ? page : page + 1))
+                }
+                disabled={isLastPage || commentsQuery.isFetching || comments.length === 0}
+                aria-label="Próxima página de comentários"
+              >
+                Próxima
+              </Button>
+            </div>
+          </footer>
         </div>
 
         <div className="flex flex-col gap-4 rounded-lg border border-border bg-card/60 p-6 shadow-sm">
