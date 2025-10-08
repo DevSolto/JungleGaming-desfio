@@ -1,12 +1,11 @@
 import type { ClientProxy } from '@nestjs/microservices';
-import { randomUUID } from 'node:crypto';
 import { of } from 'rxjs';
 import { DataSource, Repository } from 'typeorm';
-import { newDb } from 'pg-mem';
 import { TaskPriority, TaskStatus, TASK_EVENT_PATTERNS } from '@repo/types';
 import { resetDefaultTaskTimezoneCache } from '@repo/types/utils/datetime';
 import { Task } from './task.entity';
 import { TasksService } from './tasks.service';
+import { createTestDataSource } from '../testing/database';
 
 describe('TasksService', () => {
   const originalTimezone = process.env.TASKS_TIMEZONE;
@@ -21,30 +20,7 @@ describe('TasksService', () => {
     process.env.TASKS_TIMEZONE = testTimezone;
     resetDefaultTaskTimezoneCache();
 
-    const db = newDb({ autoCreateForeignKeyIndices: true });
-    db.public.registerFunction({
-      name: 'version',
-      returns: 'text',
-      implementation: () => 'PostgreSQL 13.3',
-    });
-    db.public.registerFunction({
-      name: 'current_database',
-      returns: 'text',
-      implementation: () => 'test',
-    });
-    db.public.registerFunction({
-      name: 'uuid_generate_v4',
-      returns: 'uuid',
-      implementation: () => randomUUID(),
-      impure: true,
-    });
-    const dataSourceFactory = db.adapters.createTypeormDataSource({
-      type: 'postgres',
-      entities: [Task],
-    });
-
-    dataSource = await dataSourceFactory.initialize();
-    await dataSource.synchronize();
+    dataSource = await createTestDataSource([Task]);
 
     repository = dataSource.getRepository(Task);
     service = new TasksService(repository, eventsClient);
