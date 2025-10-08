@@ -1,0 +1,1 @@
+{"version":3,"file":"notification.d.ts","sourceRoot":"","sources":["../../../../src/contracts/common/dtos/notification.ts"],"names":[],"mappings":"AAAA,OAAO,EACL,KAAK,YAAY,EACjB,KAAK,eAAe,GACrB,MAAM,8BAA8B,CAAC;AACtC,OAAO,EACL,KAAK,mBAAmB,EACxB,KAAK,kBAAkB,EACvB,qBAAqB,EACrB,qBAAqB,GACtB,MAAM,gCAAgC,CAAC"}
