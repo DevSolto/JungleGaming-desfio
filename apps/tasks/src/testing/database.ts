@@ -1,14 +1,14 @@
 import { randomUUID } from 'node:crypto';
 import { DataSource, EntityTarget } from 'typeorm';
-import { newDb } from 'pg-mem';
+import { DataType, newDb } from 'pg-mem';
 
 export async function createTestDataSource(
   entities: EntityTarget<unknown>[],
 ): Promise<DataSource> {
   const db = newDb({ autoCreateForeignKeyIndices: true });
 
-  const textType = db.public.getType('text');
-  const uuidType = db.public.getType('uuid');
+  const textType = db.public.getType(DataType.text);
+  const uuidType = db.public.getType(DataType.uuid);
 
   db.public.registerFunction({
     name: 'version',
