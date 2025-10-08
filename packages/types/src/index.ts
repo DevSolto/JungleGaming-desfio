@@ -25,6 +25,3 @@ export * from "./dto/comment.js";
 export * from "./dto/tokens.js";
 export * from "./dto/user.js";
 export * from "./dto/http.js";
-
-// Utils
-export * from "./utils/index.js";
