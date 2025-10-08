@@ -135,9 +135,18 @@ export class TasksController {
     @Body() dto: CreateCommentBodyDto,
     @CurrentUser() user: CurrentUserPayload | undefined,
   ): Promise<ApiResponse<Comment>> {
-    const currentUser = this.ensureAuthenticatedUser(user);
+    if (!user?.sub) {
+      throw new UnauthorizedException('Authenticated user is required.');
+    }
+
+    const authorName =
+      typeof user.name === 'string' && user.name.trim().length > 0
+        ? user.name.trim()
+        : undefined;
+
     const comment = await this.tasksService.createComment(params.id, {
-      authorId: currentUser.sub,
+      authorId: user.sub,
+      authorName,
       message: dto.message,
     });
 

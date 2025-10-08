@@ -24,6 +24,9 @@ export class Comment {
   @Column({ type: 'uuid' })
   authorId: string;
 
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  authorName?: string | null;
+
   @Column({ type: 'text' })
   message: string;
 

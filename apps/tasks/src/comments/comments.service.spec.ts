@@ -46,6 +46,7 @@ describe('CommentsService', () => {
       service.create({
         taskId: randomUUID(),
         authorId: randomUUID(),
+        authorName: 'Missing Task Author',
         message: 'Hello world',
       }),
     ).rejects.toThrow('Task not found');
@@ -54,6 +55,7 @@ describe('CommentsService', () => {
   it('creates a comment and emits a forwarding event with unique recipients', async () => {
     const authorId = randomUUID();
     const assigneeId = randomUUID();
+    const authorName = 'Author Example';
     const task = await tasksRepository.save(
       tasksRepository.create({
         title: 'Sample task',
@@ -71,17 +73,23 @@ describe('CommentsService', () => {
     const comment = await service.create({
       taskId: task.id,
       authorId,
+      authorName,
       message: 'First comment',
     });
 
     expect(comment.id).toBeDefined();
     expect(comment.taskId).toBe(task.id);
     expect(comment.message).toBe('First comment');
+    expect(comment.authorName).toBe(authorName);
 
     expect(emitMock).toHaveBeenCalledWith(
       TASK_FORWARDING_PATTERNS.COMMENT_CREATED,
       expect.objectContaining({
-        comment: expect.objectContaining({ id: comment.id, message: 'First comment' }),
+        comment: expect.objectContaining({
+          id: comment.id,
+          message: 'First comment',
+          authorName,
+        }),
         recipients: expect.arrayContaining([authorId, assigneeId]),
       }),
     );
@@ -114,16 +122,19 @@ describe('CommentsService', () => {
     await service.create({
       taskId: task.id,
       authorId: author1,
+      authorName: 'First Author',
       message: 'First',
     });
     await service.create({
       taskId: task.id,
       authorId: author2,
+      authorName: 'Second Author',
       message: 'Second',
     });
     await service.create({
       taskId: task.id,
       authorId: author3,
+      authorName: 'Third Author',
       message: 'Third',
     });
 
@@ -138,6 +149,8 @@ describe('CommentsService', () => {
     expect(result.total).toBe(3);
     expect(result.data).toHaveLength(3);
     expect(result.data[0].message).toBe('Third');
+    expect(result.data[0].authorName).toBe('Third Author');
     expect(result.data[2].message).toBe('First');
+    expect(result.data[2].authorName).toBe('First Author');
   });
 });

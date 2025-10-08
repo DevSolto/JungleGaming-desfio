@@ -486,6 +486,7 @@ describe('AppController (e2e)', () => {
       expect.objectContaining({
         taskId,
         authorId: 'user-1',
+        authorName: 'Player One',
         message: requestBody.message,
       }),
     );
@@ -523,6 +524,7 @@ describe('AppController (e2e)', () => {
       expect.objectContaining({
         taskId,
         authorId: 'user-1',
+        authorName: 'Player One',
       }),
     );
   });
