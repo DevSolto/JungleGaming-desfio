@@ -4,10 +4,13 @@ import { of } from 'rxjs';
 import { DataSource, Repository } from 'typeorm';
 import { newDb } from 'pg-mem';
 import { TaskPriority, TaskStatus, TASK_EVENT_PATTERNS } from '@repo/types';
+import { resetDefaultTaskTimezoneCache } from '@repo/types/utils/datetime';
 import { Task } from './task.entity';
 import { TasksService } from './tasks.service';
 
 describe('TasksService', () => {
+  const originalTimezone = process.env.TASKS_TIMEZONE;
+  const testTimezone = 'America/Sao_Paulo';
   let dataSource: DataSource;
   let repository: Repository<Task>;
   let service: TasksService;
@@ -15,6 +18,9 @@ describe('TasksService', () => {
   const eventsClient = { emit: emitMock } as unknown as ClientProxy;
 
   beforeAll(async () => {
+    process.env.TASKS_TIMEZONE = testTimezone;
+    resetDefaultTaskTimezoneCache();
+
     const db = newDb({ autoCreateForeignKeyIndices: true });
     db.public.registerFunction({
       name: 'version',
@@ -51,11 +57,13 @@ describe('TasksService', () => {
 
   afterAll(async () => {
     await dataSource.destroy();
+    process.env.TASKS_TIMEZONE = originalTimezone;
+    resetDefaultTaskTimezoneCache();
   });
 
-  it('persists due dates normalized to UTC using the Recife offset', async () => {
+  it('persists due dates normalized to UTC using the configured timezone', async () => {
     const task = await service.create({
-      title: 'Recife task',
+      title: 'Configured timezone task',
       description: null,
       status: TaskStatus.TODO,
       priority: TaskPriority.MEDIUM,
@@ -70,7 +78,7 @@ describe('TasksService', () => {
     );
   });
 
-  it('filters tasks by dueDate respecting the Recife day range', async () => {
+  it('filters tasks by dueDate respecting the configured day range', async () => {
     const matching = await service.create({
       title: 'Matches filter',
       description: null,

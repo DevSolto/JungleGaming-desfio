@@ -2,7 +2,10 @@ import { useEffect, useMemo } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { type Task, TaskPriority, TaskStatus } from '@repo/types'
-import { recifeDateToISOString } from '@repo/types/utils/datetime'
+import {
+  dateStringToISOString,
+  resolveTaskTimezone,
+} from '@repo/types/utils/datetime'
 import { useForm } from 'react-hook-form'
 
 import { Button } from '@/components/ui/button'
@@ -66,13 +69,15 @@ function formatTaskToFormValues(task?: Task | null): TaskSchema {
   }
 }
 
-function normalizeFormValues(values: TaskSchema) {
+function normalizeFormValues(values: TaskSchema, timeZone: string) {
   return {
     title: values.title.trim(),
     description: values.description?.trim() ? values.description.trim() : null,
     status: values.status,
     priority: values.priority,
-    dueDate: values.dueDate ? recifeDateToISOString(values.dueDate) : null,
+    dueDate: values.dueDate
+      ? dateStringToISOString(values.dueDate, timeZone)
+      : null,
     assignees: values.assignees,
   }
 }
@@ -80,6 +85,7 @@ function normalizeFormValues(values: TaskSchema) {
 export function TaskModal({ open, onOpenChange, task, onSuccess }: TaskModalProps) {
   const queryClient = useQueryClient()
   const isEditing = Boolean(task)
+  const timeZone = useMemo(() => resolveTaskTimezone(), [])
 
   const defaultValues = useMemo(() => formatTaskToFormValues(task), [task])
 
@@ -96,7 +102,7 @@ export function TaskModal({ open, onOpenChange, task, onSuccess }: TaskModalProp
 
   const mutation = useMutation({
     mutationFn: async (values: TaskSchema) => {
-      const payload = normalizeFormValues(values)
+      const payload = normalizeFormValues(values, timeZone)
 
       if (isEditing && task) {
         return updateTask(task.id, payload)
