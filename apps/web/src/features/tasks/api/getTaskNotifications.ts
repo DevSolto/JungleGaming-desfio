@@ -1,14 +1,15 @@
 import type { NotificationDTO } from '@repo/types'
 
 import { notificationSchema } from '../schemas/notificationSchema'
+import { fetchWithAuth } from '@/lib/apiClient'
+
 import { TASKS_ENDPOINT } from './getTasks'
 
 export async function getTaskNotifications(
   taskId: string,
 ): Promise<NotificationDTO[]> {
-  const response = await fetch(`${TASKS_ENDPOINT}/${taskId}/notifications`, {
+  const response = await fetchWithAuth(`${TASKS_ENDPOINT}/${taskId}/notifications`, {
     method: 'GET',
-    credentials: 'include',
   })
 
   if (!response.ok) {

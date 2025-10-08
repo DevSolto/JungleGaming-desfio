@@ -36,16 +36,28 @@ export const useAuthStore = create<AuthState>()(
       session: null,
       isAuthenticated: false,
       setAuth: (session) =>
-        set({
-          user: session.user,
-          session,
-          isAuthenticated: true,
+        set(() => {
+          if (typeof window !== 'undefined') {
+            window.localStorage.setItem('accessToken', session.accessToken)
+          }
+
+          return {
+            user: session.user,
+            session,
+            isAuthenticated: true,
+          }
         }),
       clearAuth: () =>
-        set({
-          user: null,
-          session: null,
-          isAuthenticated: false,
+        set(() => {
+          if (typeof window !== 'undefined') {
+            window.localStorage.removeItem('accessToken')
+          }
+
+          return {
+            user: null,
+            session: null,
+            isAuthenticated: false,
+          }
         }),
     }),
     {

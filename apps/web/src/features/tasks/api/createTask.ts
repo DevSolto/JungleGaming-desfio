@@ -1,5 +1,6 @@
 import type { CreateTask, Task } from '@repo/types'
 
+import { fetchWithAuth } from '@/lib/apiClient'
 import { apiResponseSchema } from '@/schemas/apiResponse'
 
 import { createTaskSchema, taskSchema } from '../schemas/taskSchema'
@@ -8,9 +9,8 @@ import { TASKS_ENDPOINT } from './getTasks'
 export async function createTask(payload: CreateTask): Promise<Task> {
   const body = createTaskSchema.parse(payload)
 
-  const response = await fetch(TASKS_ENDPOINT, {
+  const response = await fetchWithAuth(TASKS_ENDPOINT, {
     method: 'POST',
-    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
     },
