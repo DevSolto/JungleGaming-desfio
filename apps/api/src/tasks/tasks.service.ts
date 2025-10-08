@@ -19,9 +19,13 @@ import type {
   PaginatedComments as PaginatedCommentsResult,
   PaginatedTasks as PaginatedTasksResult,
   Task,
+  TaskActor,
   TaskCommentListFilters,
   TaskListFilters,
+  TasksCreatePayload,
   TasksMessagePattern,
+  TasksRemovePayload,
+  TasksUpdatePayload,
   UpdateTask,
 } from '@repo/types';
 import { TASKS_MESSAGE_PATTERNS } from '@repo/types';
@@ -40,8 +44,13 @@ export class TasksService {
     private readonly client: ClientProxy,
   ) {}
 
-  async create(payload: CreateTask): Promise<Task> {
-    return this.send<Task>(TASKS_MESSAGE_PATTERNS.CREATE, payload);
+  async create(payload: CreateTask, actor?: TaskActor | null): Promise<Task> {
+    const rpcPayload: TasksCreatePayload = {
+      ...payload,
+      ...(actor ? { actor } : {}),
+    };
+
+    return this.send<Task>(TASKS_MESSAGE_PATTERNS.CREATE, rpcPayload);
   }
 
   async findAll(filters: ListTasksFilters = {}): Promise<PaginatedTasks> {
@@ -52,12 +61,27 @@ export class TasksService {
     return this.send<Task>(TASKS_MESSAGE_PATTERNS.FIND_BY_ID, { id });
   }
 
-  async update(id: string, data: UpdateTask): Promise<Task> {
-    return this.send<Task>(TASKS_MESSAGE_PATTERNS.UPDATE, { id, data });
+  async update(
+    id: string,
+    data: UpdateTask,
+    actor?: TaskActor | null,
+  ): Promise<Task> {
+    const rpcPayload: TasksUpdatePayload = {
+      id,
+      data,
+      ...(actor ? { actor } : {}),
+    };
+
+    return this.send<Task>(TASKS_MESSAGE_PATTERNS.UPDATE, rpcPayload);
   }
 
-  async remove(id: string): Promise<Task> {
-    return this.send<Task>(TASKS_MESSAGE_PATTERNS.REMOVE, { id });
+  async remove(id: string, actor?: TaskActor | null): Promise<Task> {
+    const rpcPayload: TasksRemovePayload = {
+      id,
+      ...(actor ? { actor } : {}),
+    };
+
+    return this.send<Task>(TASKS_MESSAGE_PATTERNS.REMOVE, rpcPayload);
   }
 
   async listComments(

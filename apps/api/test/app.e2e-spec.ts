@@ -30,6 +30,11 @@ describe('AppController (e2e)', () => {
   let app: INestApplication<App>;
   let authClient: { send: jest.Mock };
   let tasksClient: { send: jest.Mock };
+  const expectedActor = {
+    id: 'user-1',
+    email: 'player@junglegaming.dev',
+    name: 'Player One',
+  };
 
   beforeEach(async () => {
     authClient = { send: jest.fn() };
@@ -215,8 +220,14 @@ describe('AppController (e2e)', () => {
     expect(tasksClient.send).toHaveBeenCalledTimes(1);
     expect(tasksClient.send).toHaveBeenCalledWith(
       TASKS_MESSAGE_PATTERNS.CREATE,
-      createPayload,
+      expect.anything(),
     );
+
+    const [, payload] = tasksClient.send.mock.calls[0];
+    expect(payload).toMatchObject({
+      ...createPayload,
+      actor: expectedActor,
+    });
   });
 
   it('POST /tasks maps RPC errors to HTTP responses', async () => {
@@ -247,8 +258,14 @@ describe('AppController (e2e)', () => {
     expect(tasksClient.send).toHaveBeenCalledTimes(1);
     expect(tasksClient.send).toHaveBeenCalledWith(
       TASKS_MESSAGE_PATTERNS.CREATE,
-      createPayload,
+      expect.anything(),
     );
+
+    const [, payload] = tasksClient.send.mock.calls[0];
+    expect(payload).toMatchObject({
+      ...createPayload,
+      actor: expectedActor,
+    });
   });
 
   it('PUT /tasks/:id updates a task and returns the updated entity', async () => {
@@ -274,8 +291,15 @@ describe('AppController (e2e)', () => {
     expect(tasksClient.send).toHaveBeenCalledTimes(1);
     expect(tasksClient.send).toHaveBeenCalledWith(
       TASKS_MESSAGE_PATTERNS.UPDATE,
-      { id: taskId, data: updatePayload },
+      expect.anything(),
     );
+
+    const [, payload] = tasksClient.send.mock.calls[0];
+    expect(payload).toMatchObject({
+      id: taskId,
+      data: updatePayload,
+      actor: expectedActor,
+    });
   });
 
   it('DELETE /tasks/:id removes a task and returns the deleted entity', async () => {
@@ -295,8 +319,14 @@ describe('AppController (e2e)', () => {
     expect(tasksClient.send).toHaveBeenCalledTimes(1);
     expect(tasksClient.send).toHaveBeenCalledWith(
       TASKS_MESSAGE_PATTERNS.REMOVE,
-      { id: taskId },
+      expect.anything(),
     );
+
+    const [, payload] = tasksClient.send.mock.calls[0];
+    expect(payload).toMatchObject({
+      id: taskId,
+      actor: expectedActor,
+    });
   });
 
   it('GET /tasks returns a paginated list when authorized', async () => {

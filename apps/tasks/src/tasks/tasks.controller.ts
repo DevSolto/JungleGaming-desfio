@@ -2,8 +2,9 @@ import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { TasksService, PaginatedTasks } from './tasks.service';
 import {
-  CreateTaskDto,
+  CreateTaskPayloadDto,
   ListTasksDto,
+  RemoveTaskPayloadDto,
   TaskIdDto,
   TASKS_MESSAGE_PATTERNS,
   UpdateTaskPayloadDto,
@@ -17,8 +18,11 @@ export class TasksController {
   @MessagePattern(TASKS_MESSAGE_PATTERNS.CREATE)
   async create(@Payload() payload: unknown) {
     try {
-      const dto = transformPayload(CreateTaskDto, payload);
-      return await this.tasksService.create(dto);
+      const { actor: _actor, ...data } = transformPayload(
+        CreateTaskPayloadDto,
+        payload,
+      );
+      return await this.tasksService.create(data);
     } catch (error) {
       throw toRpcException(error);
     }
@@ -57,7 +61,7 @@ export class TasksController {
   @MessagePattern(TASKS_MESSAGE_PATTERNS.REMOVE)
   async remove(@Payload() payload: unknown) {
     try {
-      const { id } = transformPayload(TaskIdDto, payload);
+      const { id } = transformPayload(RemoveTaskPayloadDto, payload);
       return await this.tasksService.remove(id);
     } catch (error) {
       throw toRpcException(error);
