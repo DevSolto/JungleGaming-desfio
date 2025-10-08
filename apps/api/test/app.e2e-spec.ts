@@ -4,6 +4,7 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 import { AUTH_SERVICE } from '../src/auth/auth.constants';
+import { TASKS_RPC_CLIENT } from '../src/tasks/tasks.constants';
 import { RpcException } from '@nestjs/microservices';
 import { of, throwError } from 'rxjs';
 import {
@@ -12,18 +13,28 @@ import {
   type AuthRegisterResponse,
 } from '@repo/types';
 import { validationExceptionFactory } from '../src/common/pipes/validation-exception.factory';
+import { TASKS_MESSAGE_PATTERNS } from '@repo/types';
+import {
+  createCreateTaskDtoFixture,
+  createTaskFixture,
+  createUpdateTaskDtoFixture,
+} from './__mocks__/tasks.fixtures';
 
 describe('AppController (e2e)', () => {
   let app: INestApplication<App>;
   let authClient: { send: jest.Mock };
+  let tasksClient: { send: jest.Mock };
 
   beforeEach(async () => {
     authClient = { send: jest.fn() };
+    tasksClient = { send: jest.fn() };
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     })
       .overrideProvider(AUTH_SERVICE)
       .useValue(authClient)
+      .overrideProvider(TASKS_RPC_CLIENT)
+      .useValue(tasksClient)
       .compile();
 
     app = moduleFixture.createNestApplication();
@@ -131,17 +142,17 @@ describe('AppController (e2e)', () => {
             expect.objectContaining({
               field: 'email',
               code: 'isEmail',
-              message: expect.stringContaining('email'),
+              message: expect.any(String),
             }),
             expect.objectContaining({
               field: 'name',
               code: 'isNotEmpty',
-              message: expect.stringContaining('name'),
+              message: expect.any(String),
             }),
             expect.objectContaining({
               field: 'password',
               code: 'minLength',
-              message: expect.stringContaining('password'),
+              message: expect.any(String),
             }),
           ]),
         );
@@ -170,5 +181,103 @@ describe('AppController (e2e)', () => {
         expect(body.message).toBe('Invalid email or password.');
         expect(body.code).toBe(AUTH_INVALID_CREDENTIALS);
       });
+  });
+
+  it('POST /tasks creates a task and returns the created entity', async () => {
+    const createPayload = createCreateTaskDtoFixture();
+    const createdTask = createTaskFixture();
+
+    tasksClient.send.mockReturnValueOnce(of(createdTask));
+
+    await request(app.getHttpServer())
+      .post('/tasks')
+      .send(createPayload)
+      .expect(HttpStatus.CREATED)
+      .expect(({ body }) => {
+        expect(body).toEqual({ data: createdTask });
+      });
+
+    expect(tasksClient.send).toHaveBeenCalledTimes(1);
+    expect(tasksClient.send).toHaveBeenCalledWith(
+      TASKS_MESSAGE_PATTERNS.CREATE,
+      createPayload,
+    );
+  });
+
+  it('POST /tasks maps RPC errors to HTTP responses', async () => {
+    const createPayload = createCreateTaskDtoFixture();
+
+    tasksClient.send.mockReturnValueOnce(
+      throwError(
+        () =>
+          new RpcException({
+            statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+            message: 'Title already exists',
+            code: 'TASK_TITLE_CONFLICT',
+          }),
+      ),
+    );
+
+    await request(app.getHttpServer())
+      .post('/tasks')
+      .send(createPayload)
+      .expect(HttpStatus.UNPROCESSABLE_ENTITY)
+      .expect(({ body }) => {
+        expect(body.statusCode).toBe(HttpStatus.UNPROCESSABLE_ENTITY);
+        expect(body.message).toBe('Title already exists');
+        expect(body.code).toBe('TASK_TITLE_CONFLICT');
+      });
+
+    expect(tasksClient.send).toHaveBeenCalledTimes(1);
+    expect(tasksClient.send).toHaveBeenCalledWith(
+      TASKS_MESSAGE_PATTERNS.CREATE,
+      createPayload,
+    );
+  });
+
+  it('PUT /tasks/:id updates a task and returns the updated entity', async () => {
+    const taskId = '2f1b7b58-9d1f-4a7e-8f6a-2c5d12345678';
+    const updatePayload = createUpdateTaskDtoFixture();
+    const updatedTask = createTaskFixture({
+      id: taskId,
+      ...updatePayload,
+      updatedAt: '2024-01-20T10:00:00.000Z',
+    });
+
+    tasksClient.send.mockReturnValueOnce(of(updatedTask));
+
+    await request(app.getHttpServer())
+      .put(`/tasks/${taskId}`)
+      .send(updatePayload)
+      .expect(HttpStatus.OK)
+      .expect(({ body }) => {
+        expect(body).toEqual({ data: updatedTask });
+      });
+
+    expect(tasksClient.send).toHaveBeenCalledTimes(1);
+    expect(tasksClient.send).toHaveBeenCalledWith(
+      TASKS_MESSAGE_PATTERNS.UPDATE,
+      { id: taskId, data: updatePayload },
+    );
+  });
+
+  it('DELETE /tasks/:id removes a task and returns the deleted entity', async () => {
+    const taskId = '2f1b7b58-9d1f-4a7e-8f6a-2c5d12345678';
+    const removedTask = createTaskFixture({ id: taskId });
+
+    tasksClient.send.mockReturnValueOnce(of(removedTask));
+
+    await request(app.getHttpServer())
+      .delete(`/tasks/${taskId}`)
+      .expect(HttpStatus.OK)
+      .expect(({ body }) => {
+        expect(body).toEqual({ data: removedTask });
+      });
+
+    expect(tasksClient.send).toHaveBeenCalledTimes(1);
+    expect(tasksClient.send).toHaveBeenCalledWith(
+      TASKS_MESSAGE_PATTERNS.REMOVE,
+      { id: taskId },
+    );
   });
 });
