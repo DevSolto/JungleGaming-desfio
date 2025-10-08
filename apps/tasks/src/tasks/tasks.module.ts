@@ -10,6 +10,7 @@ import { TASKS_EVENTS_CLIENT, TASKS_EVENTS_QUEUE } from './tasks.constants';
 import { Comment } from '../comments/comment.entity';
 import { CommentsService } from '../comments/comments.service';
 import { CommentsController } from '../comments/comments.controller';
+import { TaskAuditLogsService } from './task-audit-logs.service';
 
 @Module({
   imports: [
@@ -39,7 +40,7 @@ import { CommentsController } from '../comments/comments.controller';
     ]),
   ],
   controllers: [TasksController, CommentsController],
-  providers: [TasksService, CommentsService],
+  providers: [TasksService, CommentsService, TaskAuditLogsService],
   exports: [TypeOrmModule, TasksService],
 })
 export class TasksModule {}

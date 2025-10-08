@@ -6,6 +6,8 @@ import { resetDefaultTaskTimezoneCache } from '@repo/types/utils/datetime';
 import { Task } from './task.entity';
 import { TasksService } from './tasks.service';
 import { createTestDataSource } from '../testing/database';
+import { TaskAuditLog } from './task-audit-log.entity';
+import { TaskAuditLogsService } from './task-audit-logs.service';
 
 describe('TasksService', () => {
   const originalTimezone = process.env.TASKS_TIMEZONE;
@@ -13,6 +15,7 @@ describe('TasksService', () => {
   let dataSource: DataSource;
   let repository: Repository<Task>;
   let service: TasksService;
+  let auditLogsRepository: Repository<TaskAuditLog>;
   const emitMock = jest.fn(() => of(undefined));
   const eventsClient = { emit: emitMock } as unknown as ClientProxy;
 
@@ -20,14 +23,21 @@ describe('TasksService', () => {
     process.env.TASKS_TIMEZONE = testTimezone;
     resetDefaultTaskTimezoneCache();
 
-    dataSource = await createTestDataSource([Task]);
+    dataSource = await createTestDataSource([Task, TaskAuditLog]);
 
     repository = dataSource.getRepository(Task);
-    service = new TasksService(repository, eventsClient);
+    auditLogsRepository = dataSource.getRepository(TaskAuditLog);
+    const auditLogsService = new TaskAuditLogsService(auditLogsRepository);
+    service = new TasksService(repository, eventsClient, auditLogsService);
   });
 
   afterEach(async () => {
     emitMock.mockClear();
+    await auditLogsRepository
+      .createQueryBuilder()
+      .delete()
+      .from(TaskAuditLog)
+      .execute();
     await repository.createQueryBuilder().delete().from(Task).execute();
   });
 
@@ -50,8 +60,18 @@ describe('TasksService', () => {
     expect(task.dueDate?.toISOString()).toBe('2024-03-10T03:00:00.000Z');
     expect(emitMock).toHaveBeenCalledWith(
       TASK_EVENT_PATTERNS.CREATED,
-      expect.objectContaining({ id: task.id }),
+      expect.objectContaining({
+        task: expect.objectContaining({ id: task.id }),
+      }),
     );
+
+    const logs = await auditLogsRepository.find();
+    expect(logs).toHaveLength(1);
+    expect(logs[0]).toMatchObject({
+      taskId: task.id,
+      action: TASK_EVENT_PATTERNS.CREATED,
+      actorId: null,
+    });
   });
 
   it('filters tasks by dueDate respecting the configured day range', async () => {
@@ -86,5 +106,75 @@ describe('TasksService', () => {
     expect(result.data).toHaveLength(1);
     expect(result.data[0].id).toBe(matching.id);
     expect(result.data[0].dueDate?.toISOString()).toBe('2024-05-20T03:00:00.000Z');
+  });
+
+  it('registers audit logs with normalized changes when updating a task', async () => {
+    const task = await service.create({
+      title: 'Task to update',
+      description: 'Initial description',
+      status: TaskStatus.TODO,
+      priority: TaskPriority.MEDIUM,
+      dueDate: '2024-05-20',
+      assignees: [],
+    });
+
+    emitMock.mockClear();
+
+    await service.update(task.id, {
+      status: TaskStatus.IN_PROGRESS,
+      dueDate: '2024-05-25',
+      assignees: [
+        {
+          id: 'a1b2c3',
+          username: 'alice',
+        },
+      ],
+    });
+
+    const logs = await auditLogsRepository.find({
+      order: { createdAt: 'ASC' },
+    });
+
+    expect(logs).toHaveLength(2);
+
+    const updateLog = logs[1];
+    expect(updateLog).toMatchObject({
+      action: TASK_EVENT_PATTERNS.UPDATED,
+      taskId: task.id,
+    });
+    expect(updateLog.changes).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          field: 'status',
+          previousValue: TaskStatus.TODO,
+          currentValue: TaskStatus.IN_PROGRESS,
+        }),
+        expect.objectContaining({
+          field: 'dueDate',
+          previousValue: '2024-05-20T03:00:00.000Z',
+          currentValue: '2024-05-25T03:00:00.000Z',
+        }),
+        expect.objectContaining({
+          field: 'assignees',
+          previousValue: [],
+          currentValue: [
+            {
+              id: 'a1b2c3',
+              username: 'alice',
+            },
+          ],
+        }),
+      ]),
+    );
+
+    expect(emitMock).toHaveBeenCalledWith(
+      TASK_EVENT_PATTERNS.UPDATED,
+      expect.objectContaining({
+        task: expect.objectContaining({ id: task.id }),
+        changes: expect.arrayContaining([
+          expect.objectContaining({ field: 'status' }),
+        ]),
+      }),
+    );
   });
 });
