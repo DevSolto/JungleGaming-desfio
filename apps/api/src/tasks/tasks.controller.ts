@@ -126,8 +126,8 @@ export class TasksController {
     return this.toItemResponse(comment);
   }
 
-  private toItemResponse(task: Task): ApiResponse<Task> {
-    return { data: task };
+  private toItemResponse<T>(item: T): ApiResponse<T> {
+    return { data: item };
   }
 
   private toPaginatedResponse<T>(
