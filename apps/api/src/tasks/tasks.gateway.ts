@@ -1,19 +1,11 @@
 import { Logger, UseGuards } from '@nestjs/common';
 import {
-  Ctx,
-  EventPattern,
-  Payload,
-  RmqContext,
-} from '@nestjs/microservices';
-import {
   OnGatewayConnection,
   OnGatewayDisconnect,
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
 import type { Server, Socket } from 'socket.io';
-import type { CommentDTO, Task } from '@repo/types';
-import { GATEWAY_EVENT_PATTERNS, TASK_EVENT_PATTERNS } from '@repo/types';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 const rawOrigins = process.env.CORS_ORIGINS ?? '*';
@@ -31,9 +23,7 @@ const allowAllOrigins =
   },
 })
 @UseGuards(JwtAuthGuard)
-export class TasksGateway
-  implements OnGatewayConnection, OnGatewayDisconnect
-{
+export class TasksGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   private server?: Server;
 
@@ -47,43 +37,7 @@ export class TasksGateway
     this.logger.debug(`Client disconnected: ${client.id}`);
   }
 
-  @EventPattern(TASK_EVENT_PATTERNS.CREATED)
-  onTaskCreated(
-    @Payload() task: Task,
-    @Ctx() context: RmqContext,
-  ): void {
-    this.forwardEvent('task:created', task, context);
-  }
-
-  @EventPattern(TASK_EVENT_PATTERNS.UPDATED)
-  onTaskUpdated(
-    @Payload() task: Task,
-    @Ctx() context: RmqContext,
-  ): void {
-    this.forwardEvent('task:updated', task, context);
-  }
-
-  @EventPattern(TASK_EVENT_PATTERNS.DELETED)
-  onTaskDeleted(
-    @Payload() task: Task,
-    @Ctx() context: RmqContext,
-  ): void {
-    this.forwardEvent('task:deleted', task, context);
-  }
-
-  @EventPattern(GATEWAY_EVENT_PATTERNS.COMMENT_NEW)
-  onCommentNew(
-    @Payload() comment: CommentDTO,
-    @Ctx() context: RmqContext,
-  ): void {
-    this.forwardEvent('comment:new', comment, context);
-  }
-
-  private forwardEvent(
-    event: string,
-    payload: unknown,
-    context: RmqContext,
-  ): void {
+  emitToClients(event: string, payload: unknown): void {
     try {
       if (!this.server) {
         this.logger.warn(
@@ -105,17 +59,6 @@ export class TasksGateway
         `Failed to emit WebSocket event "${event}": ${messageDetail}`,
         stack,
       );
-    } finally {
-      this.acknowledge(context);
-    }
-  }
-
-  private acknowledge(context: RmqContext): void {
-    const channel = context.getChannelRef();
-    const originalMessage = context.getMessage();
-
-    if (channel && originalMessage) {
-      channel.ack(originalMessage);
     }
   }
 }

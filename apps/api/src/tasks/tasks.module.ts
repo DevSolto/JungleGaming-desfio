@@ -5,6 +5,7 @@ import { TasksService } from './tasks.service';
 import { TASKS_RPC_CLIENT, TASKS_RPC_QUEUE } from './tasks.constants';
 import { TasksController } from './tasks.controller';
 import { TasksGateway } from './tasks.gateway';
+import { TasksEventsController } from './tasks.events.controller';
 import { AuthModule } from '../auth/auth.module';
 
 @Module({
@@ -34,7 +35,7 @@ import { AuthModule } from '../auth/auth.module';
       },
     ]),
   ],
-  controllers: [TasksController],
+  controllers: [TasksController, TasksEventsController],
   providers: [TasksService, TasksGateway],
   exports: [TasksService],
 })
