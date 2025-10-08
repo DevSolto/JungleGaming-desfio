@@ -2,6 +2,7 @@ import { Type } from "class-transformer";
 import {
   IsArray,
   IsDateString,
+  IsEmail,
   IsEnum,
   IsInt,
   IsNotEmpty,
@@ -35,6 +36,30 @@ export interface TaskDTO {
 }
 
 export type Task = TaskDTO;
+
+export interface TaskActorDTO {
+  id: string;
+  name?: string | null;
+  email?: string | null;
+}
+
+export type TaskActor = TaskActorDTO;
+
+export class TaskActorDto implements TaskActorDTO {
+  @IsUUID()
+  @IsNotEmpty()
+  id!: string;
+
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @IsString()
+  name?: string | null;
+
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @IsEmail()
+  email?: string | null;
+}
 
 export interface CreateTaskDTO {
   title: string;
@@ -120,6 +145,21 @@ export class CreateTaskDto implements CreateTaskDTO {
   assignees!: TaskAssigneeDto[];
 }
 
+export interface CreateTaskPayloadDTO extends CreateTaskDTO {
+  actor?: TaskActorDTO | null;
+}
+
+export class CreateTaskPayloadDto
+  extends CreateTaskDto
+  implements CreateTaskPayloadDTO
+{
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @ValidateNested()
+  @Type(() => TaskActorDto)
+  actor?: TaskActorDto | null;
+}
+
 export class UpdateTaskDto implements UpdateTaskDTO {
   @IsOptional()
   @IsString()
@@ -160,6 +200,27 @@ export class UpdateTaskPayloadDto {
   @IsNotEmptyObject({ nullable: false })
   @Type(() => UpdateTaskDto)
   data!: UpdateTaskDto;
+
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @ValidateNested()
+  @Type(() => TaskActorDto)
+  actor?: TaskActorDto | null;
+}
+
+export interface RemoveTaskPayloadDTO extends TaskIdDto {
+  actor?: TaskActorDTO | null;
+}
+
+export class RemoveTaskPayloadDto
+  extends TaskIdDto
+  implements RemoveTaskPayloadDTO
+{
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @ValidateNested()
+  @Type(() => TaskActorDto)
+  actor?: TaskActorDto | null;
 }
 
 export class ListTasksDto implements TaskListFiltersDTO {

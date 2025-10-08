@@ -27,6 +27,7 @@ import {
   type PaginatedResponse,
   type Comment,
   type Task,
+  type TaskActor,
 } from '@repo/types';
 import { TasksService } from './tasks.service';
 import type { ListTaskCommentsFilters } from './tasks.service';
@@ -69,8 +70,15 @@ export class TasksController {
 
   @Post()
   @ApiCreatedResponse({ description: 'Create a new task' })
-  async create(@Body() dto: CreateTaskDto): Promise<ApiResponse<Task>> {
-    const task = await this.tasksService.create(dto);
+  async create(
+    @Body() dto: CreateTaskDto,
+    @CurrentUser() user: CurrentUserPayload | undefined,
+  ): Promise<ApiResponse<Task>> {
+    const currentUser = this.ensureAuthenticatedUser(user);
+    const task = await this.tasksService.create(
+      dto,
+      this.toTaskActor(currentUser),
+    );
     return this.toItemResponse(task);
   }
 
@@ -79,15 +87,28 @@ export class TasksController {
   async update(
     @Param() params: TaskIdParamDto,
     @Body() dto: UpdateTaskDto,
+    @CurrentUser() user: CurrentUserPayload | undefined,
   ): Promise<ApiResponse<Task>> {
-    const task = await this.tasksService.update(params.id, dto);
+    const currentUser = this.ensureAuthenticatedUser(user);
+    const task = await this.tasksService.update(
+      params.id,
+      dto,
+      this.toTaskActor(currentUser),
+    );
     return this.toItemResponse(task);
   }
 
   @Delete(':id')
   @ApiOkResponse({ description: 'Delete a task' })
-  async remove(@Param() params: TaskIdParamDto): Promise<ApiResponse<Task>> {
-    const task = await this.tasksService.remove(params.id);
+  async remove(
+    @Param() params: TaskIdParamDto,
+    @CurrentUser() user: CurrentUserPayload | undefined,
+  ): Promise<ApiResponse<Task>> {
+    const currentUser = this.ensureAuthenticatedUser(user);
+    const task = await this.tasksService.remove(
+      params.id,
+      this.toTaskActor(currentUser),
+    );
     return this.toItemResponse(task);
   }
 
@@ -130,6 +151,24 @@ export class TasksController {
     });
 
     return this.toItemResponse(comment);
+  }
+
+  private ensureAuthenticatedUser(
+    user: CurrentUserPayload | undefined,
+  ): CurrentUserPayload {
+    if (!user?.sub) {
+      throw new UnauthorizedException('Authenticated user is required.');
+    }
+
+    return user;
+  }
+
+  private toTaskActor(user: CurrentUserPayload): TaskActor {
+    return {
+      id: user.sub,
+      name: user.name,
+      email: user.email,
+    };
   }
 
   private toItemResponse<T>(item: T): ApiResponse<T> {

@@ -5,11 +5,12 @@ import type {
   TaskCommentListFiltersDTO,
 } from "../../dto/comment.js";
 import type {
-  CreateTaskDTO,
+  CreateTaskPayloadDTO,
   PaginatedTasksDTO,
+  RemoveTaskPayloadDTO,
   TaskDTO,
   TaskListFiltersDTO,
-  UpdateTaskDTO,
+  UpdateTaskPayloadDTO,
 } from "../../dto/task.js";
 import type {
   PaginatedTaskAuditLogsDTO,
@@ -30,7 +31,7 @@ export const TASKS_MESSAGE_PATTERNS = {
 export type TasksMessagePattern =
   (typeof TASKS_MESSAGE_PATTERNS)[keyof typeof TASKS_MESSAGE_PATTERNS];
 
-export type TasksCreatePayload = CreateTaskDTO;
+export type TasksCreatePayload = CreateTaskPayloadDTO;
 export type TasksCreateResult = TaskDTO;
 
 export type TasksFindAllPayload = TaskListFiltersDTO;
@@ -41,15 +42,10 @@ export interface TasksFindByIdPayload {
 }
 export type TasksFindByIdResult = TaskDTO;
 
-export interface TasksUpdatePayload {
-  id: string;
-  data: UpdateTaskDTO;
-}
+export type TasksUpdatePayload = UpdateTaskPayloadDTO;
 export type TasksUpdateResult = TaskDTO;
 
-export interface TasksRemovePayload {
-  id: string;
-}
+export type TasksRemovePayload = RemoveTaskPayloadDTO;
 export type TasksRemoveResult = TaskDTO;
 
 export type TasksCommentsCreatePayload = CreateCommentDTO;
