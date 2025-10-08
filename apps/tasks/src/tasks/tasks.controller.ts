@@ -1,11 +1,5 @@
-import {
-  BadRequestException,
-  Controller,
-  HttpException,
-} from '@nestjs/common';
-import { MessagePattern, Payload, RpcException } from '@nestjs/microservices';
-import { plainToInstance } from 'class-transformer';
-import { validateSync } from 'class-validator';
+import { Controller } from '@nestjs/common';
+import { MessagePattern, Payload } from '@nestjs/microservices';
 import { TasksService, PaginatedTasks } from './tasks.service';
 import {
   CreateTaskDto,
@@ -14,6 +8,7 @@ import {
   TASKS_MESSAGE_PATTERNS,
   UpdateTaskPayloadDto,
 } from '@repo/types';
+import { transformPayload, toRpcException } from '../common/rpc.utils';
 
 @Controller()
 export class TasksController {
@@ -22,90 +17,50 @@ export class TasksController {
   @MessagePattern(TASKS_MESSAGE_PATTERNS.CREATE)
   async create(@Payload() payload: unknown) {
     try {
-      const dto = this.transformPayload(CreateTaskDto, payload);
+      const dto = transformPayload(CreateTaskDto, payload);
       return await this.tasksService.create(dto);
     } catch (error) {
-      throw this.toRpcException(error);
+      throw toRpcException(error);
     }
   }
 
   @MessagePattern(TASKS_MESSAGE_PATTERNS.FIND_ALL)
   async findAll(@Payload() payload: unknown): Promise<PaginatedTasks> {
     try {
-      const dto = this.transformPayload(ListTasksDto, payload ?? {});
+      const dto = transformPayload(ListTasksDto, payload ?? {});
       return await this.tasksService.findAll(dto);
     } catch (error) {
-      throw this.toRpcException(error);
+      throw toRpcException(error);
     }
   }
 
   @MessagePattern(TASKS_MESSAGE_PATTERNS.FIND_BY_ID)
   async findById(@Payload() payload: unknown) {
     try {
-      const { id } = this.transformPayload(TaskIdDto, payload);
+      const { id } = transformPayload(TaskIdDto, payload);
       return await this.tasksService.findById(id);
     } catch (error) {
-      throw this.toRpcException(error);
+      throw toRpcException(error);
     }
   }
 
   @MessagePattern(TASKS_MESSAGE_PATTERNS.UPDATE)
   async update(@Payload() payload: unknown) {
     try {
-      const { id, data } = this.transformPayload(UpdateTaskPayloadDto, payload);
+      const { id, data } = transformPayload(UpdateTaskPayloadDto, payload);
       return await this.tasksService.update(id, data);
     } catch (error) {
-      throw this.toRpcException(error);
+      throw toRpcException(error);
     }
   }
 
   @MessagePattern(TASKS_MESSAGE_PATTERNS.REMOVE)
   async remove(@Payload() payload: unknown) {
     try {
-      const { id } = this.transformPayload(TaskIdDto, payload);
+      const { id } = transformPayload(TaskIdDto, payload);
       return await this.tasksService.remove(id);
     } catch (error) {
-      throw this.toRpcException(error);
+      throw toRpcException(error);
     }
-  }
-
-  private transformPayload<T>(cls: new () => T, payload: unknown): T {
-    const dto = plainToInstance(cls, payload, {
-      enableImplicitConversion: true,
-      exposeDefaultValues: true,
-    });
-
-    const errors = validateSync(dto as object, {
-      whitelist: true,
-      forbidUnknownValues: true,
-      forbidNonWhitelisted: true,
-    });
-
-    if (errors.length > 0) {
-      throw new BadRequestException(errors);
-    }
-
-    return dto;
-  }
-
-  private toRpcException(error: unknown): RpcException {
-    if (error instanceof RpcException) {
-      return error;
-    }
-
-    if (error instanceof HttpException) {
-      return new RpcException({
-        status: error.getStatus(),
-        response: error.getResponse(),
-      });
-    }
-
-    if (error instanceof Error) {
-      return new RpcException({
-        message: error.message,
-      });
-    }
-
-    return new RpcException(error as Record<string, unknown>);
   }
 }

@@ -6,10 +6,13 @@ import { Task } from './task.entity';
 import { TasksService } from './tasks.service';
 import { TasksController } from './tasks.controller';
 import { TASKS_EVENTS_CLIENT, TASKS_EVENTS_QUEUE } from './tasks.constants';
+import { Comment } from '../comments/comment.entity';
+import { CommentsService } from '../comments/comments.service';
+import { CommentsController } from '../comments/comments.controller';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Task]),
+    TypeOrmModule.forFeature([Task, Comment]),
     ConfigModule,
     ClientsModule.registerAsync([
       {
@@ -34,8 +37,8 @@ import { TASKS_EVENTS_CLIENT, TASKS_EVENTS_QUEUE } from './tasks.constants';
       },
     ]),
   ],
-  controllers: [TasksController],
-  providers: [TasksService],
+  controllers: [TasksController, CommentsController],
+  providers: [TasksService, CommentsService],
   exports: [TypeOrmModule, TasksService],
 })
 export class TasksModule {}

@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { HealthModule } from './health/health.module';
 import { TasksModule } from './tasks/tasks.module';
 import { Task } from './tasks/task.entity';
+import { Comment } from './comments/comment.entity';
 
 const validateEnv = (config: Record<string, unknown>) => {
   const databaseUrl = config['DATABASE_URL'];
@@ -30,7 +31,7 @@ const validateEnv = (config: Record<string, unknown>) => {
         url: configService.getOrThrow<string>('DATABASE_URL'),
         autoLoadEntities: true,
         synchronize: true,
-        entities: [Task],
+        entities: [Task, Comment],
       }),
     }),
     HealthModule,
