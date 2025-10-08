@@ -40,6 +40,7 @@ export class TasksController {
       status: query.status,
       priority: query.priority,
       search: query.search,
+      dueDate: query.dueDate,
     });
 
     return this.toPaginatedResponse(result);

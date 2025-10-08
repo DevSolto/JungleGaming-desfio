@@ -2,6 +2,7 @@ import { useEffect, useMemo } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { type Task, TaskPriority, TaskStatus } from '@repo/types'
+import { recifeDateToISOString } from '@repo/types/utils/datetime'
 import { useForm } from 'react-hook-form'
 
 import { Button } from '@/components/ui/button'
@@ -71,7 +72,7 @@ function normalizeFormValues(values: TaskSchema) {
     description: values.description?.trim() ? values.description.trim() : null,
     status: values.status,
     priority: values.priority,
-    dueDate: values.dueDate ? new Date(values.dueDate).toISOString() : null,
+    dueDate: values.dueDate ? recifeDateToISOString(values.dueDate) : null,
     assignees: values.assignees,
   }
 }

@@ -59,6 +59,7 @@ export interface TaskListFiltersDTO {
   priority?: TaskPriority;
   search?: string;
   assigneeId?: string;
+  dueDate?: string;
   page?: number;
   limit?: number;
 }
@@ -179,6 +180,10 @@ export class ListTasksDto implements TaskListFiltersDTO {
   assigneeId?: string;
 
   @IsOptional()
+  @IsDateString()
+  dueDate?: string;
+
+  @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
@@ -215,4 +220,8 @@ export class ListTasksQueryDto {
   @IsOptional()
   @IsString()
   search?: string;
+
+  @IsOptional()
+  @IsDateString()
+  dueDate?: string;
 }

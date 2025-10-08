@@ -35,17 +35,13 @@ function buildTasksUrl(filters?: GetTasksFilters) {
     params.set('search', searchTerm)
   }
 
+  if (filters?.dueDate) {
+    params.set('dueDate', filters.dueDate)
+  }
+
   const query = params.toString()
 
   return query ? `${TASKS_ENDPOINT}?${query}` : TASKS_ENDPOINT
-}
-
-function matchesDueDate(task: Task, dueDate: string) {
-  if (!task.dueDate) {
-    return false
-  }
-
-  return task.dueDate.slice(0, 10) === dueDate
 }
 
 export async function getTasks(filters?: GetTasksFilters): Promise<Task[]> {
@@ -62,11 +58,6 @@ export async function getTasks(filters?: GetTasksFilters): Promise<Task[]> {
 
   const data = await response.json()
   const parsed = paginatedTasksSchema.parse(data)
-
-  if (filters?.dueDate) {
-    const dueDate = filters.dueDate
-    return parsed.data.filter((task) => matchesDueDate(task, dueDate))
-  }
 
   return parsed.data
 }

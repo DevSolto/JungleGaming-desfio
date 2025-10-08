@@ -6,6 +6,7 @@ import { Repository } from 'typeorm';
 import { Task } from './task.entity';
 import { TASKS_EVENTS_CLIENT } from './tasks.constants';
 import { TASK_EVENT_PATTERNS } from '@repo/types';
+import { getRecifeDayRange, parseRecifeDate } from '@repo/types/utils/datetime';
 import type {
   CreateTaskDTO,
   TaskEventPattern,
@@ -32,7 +33,7 @@ export class TasksService {
   async create(dto: CreateTaskDTO): Promise<Task> {
     const task = this.tasksRepository.create({
       ...dto,
-      dueDate: dto.dueDate ? new Date(dto.dueDate) : null,
+      dueDate: dto.dueDate ? parseRecifeDate(dto.dueDate) : null,
     });
 
     const saved = await this.tasksRepository.save(task);
@@ -70,6 +71,14 @@ export class TasksService {
       });
     }
 
+    if (filters.dueDate) {
+      const { start, end } = getRecifeDayRange(filters.dueDate);
+      query.andWhere('task.dueDate >= :start AND task.dueDate < :end', {
+        start,
+        end,
+      });
+    }
+
     query.orderBy('task.createdAt', 'DESC');
 
     const [data, total] = await query
@@ -104,7 +113,7 @@ export class TasksService {
       dueDate:
         dueDate !== undefined
           ? dueDate
-            ? new Date(dueDate)
+            ? parseRecifeDate(dueDate)
             : null
           : undefined,
     };
