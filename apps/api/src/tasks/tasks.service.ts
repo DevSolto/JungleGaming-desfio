@@ -13,9 +13,13 @@ import {
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { lastValueFrom } from 'rxjs';
 import type {
+  Comment,
+  CreateComment,
   CreateTask,
+  PaginatedComments as PaginatedCommentsResult,
   PaginatedTasks as PaginatedTasksResult,
   Task,
+  TaskCommentListFilters,
   TaskListFilters,
   TasksMessagePattern,
   UpdateTask,
@@ -25,6 +29,9 @@ import { TASKS_RPC_CLIENT } from './tasks.constants';
 
 export type ListTasksFilters = TaskListFilters;
 export type PaginatedTasks = PaginatedTasksResult;
+export type PaginatedComments = PaginatedCommentsResult;
+export type ListTaskCommentsFilters = Omit<TaskCommentListFilters, 'taskId'>;
+export type CreateTaskComment = Omit<CreateComment, 'taskId'>;
 
 @Injectable()
 export class TasksService {
@@ -51,6 +58,29 @@ export class TasksService {
 
   async remove(id: string): Promise<Task> {
     return this.send<Task>(TASKS_MESSAGE_PATTERNS.REMOVE, { id });
+  }
+
+  async listComments(
+    taskId: string,
+    filters: ListTaskCommentsFilters = {},
+  ): Promise<PaginatedComments> {
+    return this.send<PaginatedComments>(
+      TASKS_MESSAGE_PATTERNS.COMMENT_FIND_ALL,
+      {
+        taskId,
+        ...filters,
+      },
+    );
+  }
+
+  async createComment(
+    taskId: string,
+    data: CreateTaskComment,
+  ): Promise<Comment> {
+    return this.send<Comment>(TASKS_MESSAGE_PATTERNS.COMMENT_CREATE, {
+      taskId,
+      ...data,
+    });
   }
 
   private async send<TResponse>(

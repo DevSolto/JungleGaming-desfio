@@ -19,6 +19,10 @@ import {
   createTaskFixture,
   createUpdateTaskDtoFixture,
 } from './__mocks__/tasks.fixtures';
+import {
+  createCommentFixture,
+  createPaginatedCommentsFixture,
+} from './__mocks__/comments.fixtures';
 import { JwtService } from '@nestjs/jwt';
 import { MOCK_AUTHORIZATION_HEADER } from './utils/auth.constants';
 
@@ -38,7 +42,13 @@ describe('AppController (e2e)', () => {
       .overrideProvider(TASKS_RPC_CLIENT)
       .useValue(tasksClient)
       .overrideProvider(JwtService)
-      .useValue({ verifyAsync: jest.fn().mockResolvedValue({ sub: 'user-1' }) })
+      .useValue({
+        verifyAsync: jest.fn().mockResolvedValue({
+          sub: 'user-1',
+          email: 'player@junglegaming.dev',
+          name: 'Player One',
+        }),
+      })
       .compile();
 
     app = moduleFixture.createNestApplication();
@@ -336,5 +346,154 @@ describe('AppController (e2e)', () => {
       });
 
     expect(tasksClient.send).not.toHaveBeenCalled();
+  });
+
+  it('GET /tasks/:id/comments returns paginated comments when authorized', async () => {
+    const taskId = '2f1b7b58-9d1f-4a7e-8f6a-2c5d12345678';
+    const comment = createCommentFixture({ taskId });
+    const paginatedComments = createPaginatedCommentsFixture({
+      data: [comment],
+      page: 2,
+      limit: 5,
+      total: 12,
+    });
+
+    tasksClient.send.mockReturnValueOnce(of(paginatedComments));
+
+    await request(app.getHttpServer())
+      .get(`/tasks/${taskId}/comments`)
+      .set('Authorization', MOCK_AUTHORIZATION_HEADER)
+      .query({ page: 2, limit: 5 })
+      .expect(HttpStatus.OK)
+      .expect(({ body }) => {
+        expect(body).toEqual({
+          data: paginatedComments.data,
+          meta: {
+            total: paginatedComments.total,
+            page: paginatedComments.page,
+            size: paginatedComments.limit,
+            totalPages: 3,
+          },
+        });
+      });
+
+    expect(tasksClient.send).toHaveBeenCalledTimes(1);
+    expect(tasksClient.send).toHaveBeenCalledWith(
+      TASKS_MESSAGE_PATTERNS.COMMENT_FIND_ALL,
+      expect.objectContaining({
+        taskId,
+        page: 2,
+        limit: 5,
+      }),
+    );
+  });
+
+  it('GET /tasks/:id/comments returns 401 without Authorization header', async () => {
+    await request(app.getHttpServer())
+      .get('/tasks/2f1b7b58-9d1f-4a7e-8f6a-2c5d12345678/comments')
+      .expect(HttpStatus.UNAUTHORIZED)
+      .expect(({ body }) => {
+        expect(body.statusCode).toBe(HttpStatus.UNAUTHORIZED);
+        expect(body.message).toBe('Access token is required.');
+      });
+
+    expect(tasksClient.send).not.toHaveBeenCalled();
+  });
+
+  it('GET /tasks/:id/comments maps RPC errors to HTTP responses', async () => {
+    const taskId = '2f1b7b58-9d1f-4a7e-8f6a-2c5d12345678';
+
+    tasksClient.send.mockReturnValueOnce(
+      throwError(
+        () =>
+          new RpcException({
+            statusCode: HttpStatus.NOT_FOUND,
+            message: 'Task not found',
+            code: 'TASK_NOT_FOUND',
+          }),
+      ),
+    );
+
+    await request(app.getHttpServer())
+      .get(`/tasks/${taskId}/comments`)
+      .set('Authorization', MOCK_AUTHORIZATION_HEADER)
+      .expect(HttpStatus.NOT_FOUND)
+      .expect(({ body }) => {
+        expect(body.statusCode).toBe(HttpStatus.NOT_FOUND);
+        expect(body.message).toBe('Task not found');
+        expect(body.code).toBe('TASK_NOT_FOUND');
+      });
+
+    expect(tasksClient.send).toHaveBeenCalledTimes(1);
+    expect(tasksClient.send).toHaveBeenCalledWith(
+      TASKS_MESSAGE_PATTERNS.COMMENT_FIND_ALL,
+      expect.objectContaining({ taskId }),
+    );
+  });
+
+  it('POST /tasks/:id/comments creates a comment and returns the created entity', async () => {
+    const taskId = '2f1b7b58-9d1f-4a7e-8f6a-2c5d12345678';
+    const requestBody = { message: 'New update from the field.' };
+    const createdComment = createCommentFixture({
+      taskId,
+      message: requestBody.message,
+    });
+
+    tasksClient.send.mockReturnValueOnce(of(createdComment));
+
+    await request(app.getHttpServer())
+      .post(`/tasks/${taskId}/comments`)
+      .set('Authorization', MOCK_AUTHORIZATION_HEADER)
+      .send(requestBody)
+      .expect(HttpStatus.CREATED)
+      .expect(({ body }) => {
+        expect(body).toEqual({ data: createdComment });
+      });
+
+    expect(tasksClient.send).toHaveBeenCalledTimes(1);
+    expect(tasksClient.send).toHaveBeenCalledWith(
+      TASKS_MESSAGE_PATTERNS.COMMENT_CREATE,
+      expect.objectContaining({
+        taskId,
+        authorId: 'user-1',
+        message: requestBody.message,
+      }),
+    );
+  });
+
+  it('POST /tasks/:id/comments maps RPC errors to HTTP responses', async () => {
+    const taskId = '2f1b7b58-9d1f-4a7e-8f6a-2c5d12345678';
+    const requestBody = { message: 'This comment exceeds the limit.' };
+
+    tasksClient.send.mockReturnValueOnce(
+      throwError(
+        () =>
+          new RpcException({
+            statusCode: HttpStatus.BAD_REQUEST,
+            message: 'Comment message is too long',
+            code: 'COMMENT_MESSAGE_TOO_LONG',
+          }),
+      ),
+    );
+
+    await request(app.getHttpServer())
+      .post(`/tasks/${taskId}/comments`)
+      .set('Authorization', MOCK_AUTHORIZATION_HEADER)
+      .send(requestBody)
+      .expect(HttpStatus.BAD_REQUEST)
+      .expect(({ body }) => {
+        expect(body.statusCode).toBe(HttpStatus.BAD_REQUEST);
+        expect(body.message).toBe('Comment message is too long');
+        expect(body.code).toBe('COMMENT_MESSAGE_TOO_LONG');
+      });
+
+    expect(tasksClient.send).toHaveBeenCalledTimes(1);
+    expect(tasksClient.send).toHaveBeenCalledWith(
+      TASKS_MESSAGE_PATTERNS.COMMENT_CREATE,
+      expect.objectContaining({
+        taskId,
+        authorId: 'user-1',
+      }),
+    );
   });
 });

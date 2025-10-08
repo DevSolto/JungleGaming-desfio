@@ -7,6 +7,7 @@ import {
   Post,
   Put,
   Query,
+  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -16,17 +17,21 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import {
+  CreateCommentBodyDto,
   CreateTaskDto,
+  ListTaskCommentsQueryDto,
   ListTasksQueryDto,
   TaskIdParamDto,
   UpdateTaskDto,
   type ApiResponse,
   type PaginatedResponse,
+  type Comment,
+  type Task,
 } from '@repo/types';
 import { TasksService } from './tasks.service';
-import type { PaginatedTasks } from './tasks.service';
-import type { Task } from '@repo/types';
+import type { ListTaskCommentsFilters } from './tasks.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { CurrentUser, type CurrentUserPayload } from '../auth/current-user.decorator';
 
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
@@ -52,7 +57,7 @@ export class TasksController {
       dueDate: query.dueDate,
     });
 
-    return this.toPaginatedResponse(result);
+    return this.toPaginatedResponse<Task>(result);
   }
 
   @Get(':id')
@@ -86,11 +91,48 @@ export class TasksController {
     return this.toItemResponse(task);
   }
 
+  @Get(':id/comments')
+  @ApiOkResponse({ description: 'List comments for a task with pagination' })
+  async listComments(
+    @Param() params: TaskIdParamDto,
+    @Query() query: ListTaskCommentsQueryDto,
+  ): Promise<PaginatedResponse<Comment>> {
+    const filters: ListTaskCommentsFilters = {
+      page: query.page ?? 1,
+      limit: query.limit ?? 10,
+    };
+
+    const result = await this.tasksService.listComments(params.id, filters);
+
+    return this.toPaginatedResponse<Comment>(result);
+  }
+
+  @Post(':id/comments')
+  @ApiCreatedResponse({ description: 'Create a new comment for a task' })
+  async createComment(
+    @Param() params: TaskIdParamDto,
+    @Body() dto: CreateCommentBodyDto,
+    @CurrentUser() user: CurrentUserPayload | undefined,
+  ): Promise<ApiResponse<Comment>> {
+    if (!user?.sub) {
+      throw new UnauthorizedException('Authenticated user is required.');
+    }
+
+    const comment = await this.tasksService.createComment(params.id, {
+      authorId: user.sub,
+      message: dto.message,
+    });
+
+    return this.toItemResponse(comment);
+  }
+
   private toItemResponse(task: Task): ApiResponse<Task> {
     return { data: task };
   }
 
-  private toPaginatedResponse(result: PaginatedTasks): PaginatedResponse<Task> {
+  private toPaginatedResponse<T>(
+    result: { data: T[]; total: number; page: number; limit: number },
+  ): PaginatedResponse<T> {
     const totalPages =
       result.limit > 0 ? Math.ceil(result.total / result.limit) : 0;
 
