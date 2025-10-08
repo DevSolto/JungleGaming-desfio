@@ -11,6 +11,7 @@ import { Type } from "class-transformer";
 import { IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, MaxLength, Min, } from "class-validator";
 // Comments are limited to 500 characters to maintain readability across clients.
 export const COMMENT_MESSAGE_MAX_LENGTH = 500;
+export const COMMENT_AUTHOR_NAME_MAX_LENGTH = 255;
 export class CreateCommentBodyDto {
     message;
 }
@@ -23,6 +24,7 @@ __decorate([
 export class CreateCommentDto {
     taskId;
     authorId;
+    authorName;
     message;
 }
 __decorate([
@@ -35,6 +37,13 @@ __decorate([
     IsNotEmpty(),
     __metadata("design:type", String)
 ], CreateCommentDto.prototype, "authorId", void 0);
+__decorate([
+    IsOptional(),
+    IsString(),
+    IsNotEmpty(),
+    MaxLength(COMMENT_AUTHOR_NAME_MAX_LENGTH),
+    __metadata("design:type", Object)
+], CreateCommentDto.prototype, "authorName", void 0);
 __decorate([
     IsString(),
     IsNotEmpty(),

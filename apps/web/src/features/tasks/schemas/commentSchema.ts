@@ -1,10 +1,18 @@
-import { COMMENT_MESSAGE_MAX_LENGTH } from '@repo/types'
+import {
+  COMMENT_AUTHOR_NAME_MAX_LENGTH,
+  COMMENT_MESSAGE_MAX_LENGTH,
+} from '@repo/types'
 import { z } from 'zod'
 
 export const commentSchema = z.object({
   id: z.string(),
   taskId: z.string(),
   authorId: z.string(),
+  authorName: z
+    .string()
+    .min(1)
+    .max(COMMENT_AUTHOR_NAME_MAX_LENGTH)
+    .nullish(),
   message: z.string(),
   createdAt: z.string(),
   updatedAt: z.string(),

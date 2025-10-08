@@ -34,7 +34,13 @@ export class CommentsService {
   async create(dto: CreateCommentDTO): Promise<Comment> {
     const task = await this.findTaskOrFail(dto.taskId);
 
-    const comment = this.commentsRepository.create(dto);
+    const normalizedAuthorName =
+      typeof dto.authorName === 'string' ? dto.authorName.trim() : null;
+
+    const comment = this.commentsRepository.create({
+      ...dto,
+      authorName: normalizedAuthorName ? normalizedAuthorName : null,
+    });
     const saved = await this.commentsRepository.save(comment);
 
     await this.emitCommentCreated(saved, task);
@@ -99,6 +105,7 @@ export class CommentsService {
       id: comment.id,
       taskId: comment.taskId,
       authorId: comment.authorId,
+      authorName: comment.authorName ?? null,
       message: comment.message,
       createdAt: comment.createdAt.toISOString(),
       updatedAt: comment.updatedAt.toISOString(),
