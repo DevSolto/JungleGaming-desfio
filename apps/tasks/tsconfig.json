@@ -15,8 +15,14 @@
     "outDir": "./dist",
     "baseUrl": "./",
     "paths": {
-      "@repo/types": ["../../packages/types/src/index.ts"],
-      "@repo/types/*": ["../../packages/types/src/*"]
+      "@repo/types": [
+        "../../packages/types/dist-cjs/index.js",
+        "../../packages/types/dist/index.d.ts"
+      ],
+      "@repo/types/*": [
+        "../../packages/types/dist-cjs/*.js",
+        "../../packages/types/dist/*.d.ts"
+      ]
     },
     "incremental": true,
     "skipLibCheck": true,
