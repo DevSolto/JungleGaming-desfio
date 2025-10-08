@@ -9,11 +9,12 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ListTaskCommentsQueryDto = exports.ListTaskCommentsDto = exports.CreateCommentDto = exports.CreateCommentBodyDto = exports.COMMENT_MESSAGE_MAX_LENGTH = void 0;
+exports.ListTaskCommentsQueryDto = exports.ListTaskCommentsDto = exports.CreateCommentDto = exports.CreateCommentBodyDto = exports.COMMENT_AUTHOR_NAME_MAX_LENGTH = exports.COMMENT_MESSAGE_MAX_LENGTH = void 0;
 const class_transformer_1 = require("class-transformer");
 const class_validator_1 = require("class-validator");
 // Comments are limited to 500 characters to maintain readability across clients.
 exports.COMMENT_MESSAGE_MAX_LENGTH = 500;
+exports.COMMENT_AUTHOR_NAME_MAX_LENGTH = 255;
 class CreateCommentBodyDto {
     message;
 }
@@ -27,6 +28,7 @@ __decorate([
 class CreateCommentDto {
     taskId;
     authorId;
+    authorName;
     message;
 }
 exports.CreateCommentDto = CreateCommentDto;
@@ -40,6 +42,13 @@ __decorate([
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], CreateCommentDto.prototype, "authorId", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.MaxLength)(exports.COMMENT_AUTHOR_NAME_MAX_LENGTH),
+    __metadata("design:type", Object)
+], CreateCommentDto.prototype, "authorName", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsNotEmpty)(),

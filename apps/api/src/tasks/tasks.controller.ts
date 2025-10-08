@@ -118,8 +118,14 @@ export class TasksController {
       throw new UnauthorizedException('Authenticated user is required.');
     }
 
+    const authorName =
+      typeof user.name === 'string' && user.name.trim().length > 0
+        ? user.name.trim()
+        : undefined;
+
     const comment = await this.tasksService.createComment(params.id, {
       authorId: user.sub,
+      authorName,
       message: dto.message,
     });
 

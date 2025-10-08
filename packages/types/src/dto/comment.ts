@@ -13,6 +13,7 @@ export interface CommentDTO {
   id: string;
   taskId: string;
   authorId: string;
+  authorName: string | null;
   message: string;
   createdAt: string;
   updatedAt: string;
@@ -23,9 +24,12 @@ export type Comment = CommentDTO;
 // Comments are limited to 500 characters to maintain readability across clients.
 export const COMMENT_MESSAGE_MAX_LENGTH = 500;
 
+export const COMMENT_AUTHOR_NAME_MAX_LENGTH = 255;
+
 export interface CreateCommentDTO {
   taskId: string;
   authorId: string;
+  authorName?: string | null;
   message: string;
 }
 
@@ -63,6 +67,12 @@ export class CreateCommentDto implements CreateCommentDTO {
   @IsUUID()
   @IsNotEmpty()
   authorId!: string;
+
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(COMMENT_AUTHOR_NAME_MAX_LENGTH)
+  authorName?: string | null;
 
   @IsString()
   @IsNotEmpty()

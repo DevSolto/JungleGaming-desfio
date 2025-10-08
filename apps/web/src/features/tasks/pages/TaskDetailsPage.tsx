@@ -421,20 +421,31 @@ export function TaskDetailsPage({ taskId }: TaskDetailsPageProps) {
             <p className="text-sm text-destructive">{commentsError}</p>
           ) : comments.length > 0 ? (
             <ul className="space-y-4" aria-live="polite">
-              {comments.map((comment: CommentDTO) => (
-                <li
-                  key={comment.id}
-                  className="rounded-md border border-border bg-background/80 p-4"
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-                    <span>
-                      Autor: <span className="font-medium text-foreground">{comment.authorId}</span>
-                    </span>
-                    <span>{formatDateTime(comment.createdAt)}</span>
-                  </div>
-                  <p className="mt-2 text-sm text-foreground">{comment.message}</p>
-                </li>
-              ))}
+              {comments.map((comment: CommentDTO) => {
+                const authorDisplayName =
+                  typeof comment.authorName === 'string' &&
+                  comment.authorName.trim().length > 0
+                    ? comment.authorName.trim()
+                    : comment.authorId
+
+                return (
+                  <li
+                    key={comment.id}
+                    className="rounded-md border border-border bg-background/80 p-4"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+                      <span>
+                        Autor:{' '}
+                        <span className="font-medium text-foreground">
+                          {authorDisplayName}
+                        </span>
+                      </span>
+                      <span>{formatDateTime(comment.createdAt)}</span>
+                    </div>
+                    <p className="mt-2 text-sm text-foreground">{comment.message}</p>
+                  </li>
+                )
+              })}
             </ul>
           ) : (
             <p className="text-sm text-muted-foreground">

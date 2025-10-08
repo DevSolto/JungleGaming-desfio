@@ -2,15 +2,18 @@ export interface CommentDTO {
     id: string;
     taskId: string;
     authorId: string;
+    authorName: string | null;
     message: string;
     createdAt: string;
     updatedAt: string;
 }
 export type Comment = CommentDTO;
 export declare const COMMENT_MESSAGE_MAX_LENGTH = 500;
+export declare const COMMENT_AUTHOR_NAME_MAX_LENGTH = 255;
 export interface CreateCommentDTO {
     taskId: string;
     authorId: string;
+    authorName?: string | null;
     message: string;
 }
 export type CreateComment = CreateCommentDTO;
@@ -33,6 +36,7 @@ export declare class CreateCommentBodyDto implements Pick<CreateCommentDTO, "mes
 export declare class CreateCommentDto implements CreateCommentDTO {
     taskId: string;
     authorId: string;
+    authorName?: string | null;
     message: string;
 }
 export declare class ListTaskCommentsDto implements TaskCommentListFiltersDTO {
