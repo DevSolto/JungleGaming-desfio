@@ -4,7 +4,7 @@
 * [x] Como usuário, quero **fazer login** e receber `accessToken` (15 min) e `refreshToken` (7 dias), para manter minha sessão ativa com segurança. — feita
 * [x] Como usuário, quero **atualizar meu accessToken** via endpoint de **refresh**, para continuar autenticado sem refazer login. — feita
 * [x] Como sistema, quero **hashear senhas** com bcrypt/argon2, para armazenar credenciais com segurança. — feita
-* [ ] Como API Gateway, quero **proteger rotas** com JWT Guards e expor **Swagger**, para padronizar e documentar o acesso HTTP. _(Observação: Swagger e guard para WebSocket estão ativos, porém os endpoints HTTP de tarefas ainda não utilizam JWT guard.)_
+* [x] Como API Gateway, quero **proteger rotas** com JWT Guards e expor **Swagger**, para padronizar e documentar o acesso HTTP. _(Observação: Swagger segue disponível em `/api/docs` e todos os endpoints HTTP agora exigem JWT via header `Authorization: Bearer <token>`.)_
 
 # Épico: Tarefas (CRUD, Atribuições, Comentários, Histórico)
 
