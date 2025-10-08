@@ -1,5 +1,7 @@
 import type { CreateTask, Task } from '@repo/types'
 
+import { apiResponseSchema } from '@/schemas/apiResponse'
+
 import { createTaskSchema, taskSchema } from '../schemas/taskSchema'
 import { TASKS_ENDPOINT } from './getTasks'
 
@@ -22,6 +24,7 @@ export async function createTask(payload: CreateTask): Promise<Task> {
   }
 
   const data = await response.json()
+  const parsed = apiResponseSchema(taskSchema).parse(data)
 
-  return taskSchema.parse(data)
+  return parsed.data
 }

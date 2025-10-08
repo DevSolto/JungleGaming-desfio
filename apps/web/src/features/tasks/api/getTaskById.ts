@@ -1,5 +1,7 @@
 import type { Task } from '@repo/types'
 
+import { apiResponseSchema } from '@/schemas/apiResponse'
+
 import { taskSchema } from '../schemas/taskSchema'
 import { TASKS_ENDPOINT } from './getTasks'
 
@@ -16,7 +18,11 @@ export async function getTaskById(taskId: string): Promise<Task> {
   }
 
   const data = await response.json()
-  const payload = 'data' in data ? data.data : data
+  const parsed = apiResponseSchema(taskSchema).safeParse(data)
 
-  return taskSchema.parse(payload)
+  if (parsed.success) {
+    return parsed.data.data
+  }
+
+  return taskSchema.parse(data)
 }

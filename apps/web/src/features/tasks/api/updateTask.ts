@@ -1,5 +1,7 @@
 import type { Task, UpdateTask } from '@repo/types'
 
+import { apiResponseSchema } from '@/schemas/apiResponse'
+
 import { taskSchema, updateTaskSchema } from '../schemas/taskSchema'
 import { TASKS_ENDPOINT } from './getTasks'
 
@@ -25,6 +27,7 @@ export async function updateTask(
   }
 
   const data = await response.json()
+  const parsed = apiResponseSchema(taskSchema).parse(data)
 
-  return taskSchema.parse(data)
+  return parsed.data
 }
