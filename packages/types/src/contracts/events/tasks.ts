@@ -1,5 +1,9 @@
 import type { CommentDTO } from "../../dto/comment.js";
 import type { TaskDTO } from "../../dto/task.js";
+import type {
+  TaskAuditLogActorDTO,
+  TaskAuditLogChangeDTO,
+} from "../../dto/task-audit-log.js";
 
 export const TASK_EVENT_PATTERNS = {
   CREATED: "task.created",
@@ -13,7 +17,8 @@ export type TaskEventPattern =
 export interface TaskEventPayload {
   task: TaskDTO;
   recipients?: string[];
-  changes?: Record<string, unknown>;
+  actor?: TaskAuditLogActorDTO | null;
+  changes?: TaskAuditLogChangeDTO[] | Record<string, unknown> | null;
 }
 
 export const TASK_FORWARDING_PATTERNS = {
@@ -32,5 +37,6 @@ export interface TaskCommentCreatedPayload {
 export interface TaskUpdatedForwardPayload {
   task: TaskDTO | { id: string; [key: string]: unknown };
   recipients: string[];
-  changes?: Record<string, unknown>;
+  actor?: TaskAuditLogActorDTO | null;
+  changes?: TaskAuditLogChangeDTO[] | Record<string, unknown> | null;
 }
