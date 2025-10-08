@@ -1,5 +1,6 @@
 import type { Task, UpdateTask } from '@repo/types'
 
+import { fetchWithAuth } from '@/lib/apiClient'
 import { apiResponseSchema } from '@/schemas/apiResponse'
 
 import { taskSchema, updateTaskSchema } from '../schemas/taskSchema'
@@ -11,9 +12,8 @@ export async function updateTask(
 ): Promise<Task> {
   const body = updateTaskSchema.parse(payload)
 
-  const response = await fetch(`${TASKS_ENDPOINT}/${taskId}`, {
+  const response = await fetchWithAuth(`${TASKS_ENDPOINT}/${taskId}`, {
     method: 'PUT',
-    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
     },

@@ -3,12 +3,13 @@ import type { Task } from '@repo/types'
 import { apiResponseSchema } from '@/schemas/apiResponse'
 
 import { taskSchema } from '../schemas/taskSchema'
+import { fetchWithAuth } from '@/lib/apiClient'
+
 import { TASKS_ENDPOINT } from './getTasks'
 
 export async function getTaskById(taskId: string): Promise<Task> {
-  const response = await fetch(`${TASKS_ENDPOINT}/${taskId}`, {
+  const response = await fetchWithAuth(`${TASKS_ENDPOINT}/${taskId}`, {
     method: 'GET',
-    credentials: 'include',
   })
 
   if (!response.ok) {

@@ -1,12 +1,13 @@
 import type { CommentDTO } from '@repo/types'
 
 import { commentSchema } from '../schemas/commentSchema'
+import { fetchWithAuth } from '@/lib/apiClient'
+
 import { TASKS_ENDPOINT } from './getTasks'
 
 export async function getTaskComments(taskId: string): Promise<CommentDTO[]> {
-  const response = await fetch(`${TASKS_ENDPOINT}/${taskId}/comments`, {
+  const response = await fetchWithAuth(`${TASKS_ENDPOINT}/${taskId}/comments`, {
     method: 'GET',
-    credentials: 'include',
   })
 
   if (!response.ok) {

@@ -1,11 +1,10 @@
 import type { Task, TaskPriority, TaskStatus } from '@repo/types'
 import { z } from 'zod'
 
-import { env } from '@/env'
+import { API_BASE_URL, fetchWithAuth } from '@/lib/apiClient'
 
 import { taskSchema } from '../schemas/taskSchema'
 
-const API_BASE_URL = env.VITE_API_BASE_URL?.replace(/\/$/, '') ?? ''
 const TASKS_ENDPOINT = API_BASE_URL ? `${API_BASE_URL}/tasks` : '/api/tasks'
 
 const paginatedTasksSchema = z.object({
@@ -45,9 +44,8 @@ function buildTasksUrl(filters?: GetTasksFilters) {
 }
 
 export async function getTasks(filters?: GetTasksFilters): Promise<Task[]> {
-  const response = await fetch(buildTasksUrl(filters), {
+  const response = await fetchWithAuth(buildTasksUrl(filters), {
     method: 'GET',
-    credentials: 'include',
   })
 
   if (!response.ok) {
