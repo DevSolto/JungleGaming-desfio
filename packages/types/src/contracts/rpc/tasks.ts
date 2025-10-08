@@ -11,6 +11,10 @@ import type {
   TaskListFiltersDTO,
   UpdateTaskDTO,
 } from "../../dto/task.js";
+import type {
+  PaginatedTaskAuditLogsDTO,
+  TaskAuditLogListFiltersDTO,
+} from "../../dto/task-audit-log.js";
 
 export const TASKS_MESSAGE_PATTERNS = {
   CREATE: "tasks.create",
@@ -20,6 +24,7 @@ export const TASKS_MESSAGE_PATTERNS = {
   REMOVE: "tasks.remove",
   COMMENT_CREATE: "tasks.comment.create",
   COMMENT_FIND_ALL: "tasks.comment.findAll",
+  AUDIT_FIND_ALL: "tasks.audit.findAll",
 } as const;
 
 export type TasksMessagePattern =
@@ -53,6 +58,9 @@ export type TasksCommentsCreateResult = CommentDTO;
 export type TasksCommentsFindAllPayload = TaskCommentListFiltersDTO;
 export type TasksCommentsFindAllResult = PaginatedCommentsDTO;
 
+export type TasksAuditFindAllPayload = TaskAuditLogListFiltersDTO;
+export type TasksAuditFindAllResult = PaginatedTaskAuditLogsDTO;
+
 export interface TasksRpcContractMap {
   [TASKS_MESSAGE_PATTERNS.CREATE]: {
     payload: TasksCreatePayload;
@@ -81,5 +89,9 @@ export interface TasksRpcContractMap {
   [TASKS_MESSAGE_PATTERNS.COMMENT_FIND_ALL]: {
     payload: TasksCommentsFindAllPayload;
     response: TasksCommentsFindAllResult;
+  };
+  [TASKS_MESSAGE_PATTERNS.AUDIT_FIND_ALL]: {
+    payload: TasksAuditFindAllPayload;
+    response: TasksAuditFindAllResult;
   };
 }
