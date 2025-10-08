@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import type { CommentDTO, Task } from '@repo/types'
+import type { CommentDTO, Task, TaskEventPayload } from '@repo/types'
 
 import { Button } from '@/components/ui/button'
 import { toast } from '@/components/ui/use-toast'
@@ -70,12 +70,25 @@ export function TasksPage() {
         ? 'Não foi possível carregar as tarefas. Tente novamente.'
         : null
 
+  const isTaskEventPayload = (
+    payload: Task | TaskEventPayload,
+  ): payload is TaskEventPayload =>
+    typeof payload === 'object' && payload !== null && 'task' in payload
+
   useEffect(() => {
-    const handleTaskCreated = () => {
+    const handleTaskCreated = (_payload?: TaskEventPayload) => {
       void queryClient.invalidateQueries({ queryKey: ['tasks'] })
     }
 
-    const handleTaskUpdated = (updatedTask: Task) => {
+    const handleTaskUpdated = (payload: Task | TaskEventPayload) => {
+      const updatedTask = isTaskEventPayload(payload)
+        ? payload.task
+        : payload
+
+      if (!updatedTask) {
+        return
+      }
+
       queryClient.setQueriesData<Task[] | undefined>(
         { queryKey: ['tasks'] },
         (oldTasks) => {

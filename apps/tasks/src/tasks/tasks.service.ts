@@ -5,7 +5,13 @@ import { defaultIfEmpty, lastValueFrom } from 'rxjs';
 import { Repository } from 'typeorm';
 import { Task } from './task.entity';
 import { TASKS_EVENTS_CLIENT } from './tasks.constants';
-import { TASK_EVENT_PATTERNS } from '@repo/types';
+import {
+  TASK_EVENT_PATTERNS,
+  type TaskActor,
+  type TaskAuditLogActorDTO,
+  type TaskAuditLogChangeDTO,
+  type TaskEventPayload,
+} from '@repo/types';
 import {
   getDayRangeInTimezone,
   getDefaultTaskTimezone,
@@ -17,6 +23,11 @@ import type {
   TaskListFiltersDTO,
   UpdateTaskDTO,
 } from '@repo/types';
+import { TaskAuditLogsService } from './task-audit-logs.service';
+import {
+  createTaskStateSnapshot,
+  diffTaskChanges,
+} from './task-diff.util';
 
 export interface PaginatedTasks {
   data: Task[];
@@ -34,9 +45,10 @@ export class TasksService {
     private readonly tasksRepository: Repository<Task>,
     @Inject(TASKS_EVENTS_CLIENT)
     private readonly eventsClient: ClientProxy,
+    private readonly auditLogsService: TaskAuditLogsService,
   ) {}
 
-  async create(dto: CreateTaskDTO): Promise<Task> {
+  async create(dto: CreateTaskDTO, actor?: TaskActor | null): Promise<Task> {
     const task = this.tasksRepository.create({
       ...dto,
       dueDate: dto.dueDate
@@ -45,7 +57,19 @@ export class TasksService {
     });
 
     const saved = await this.tasksRepository.save(task);
-    await this.emitEvent(TASK_EVENT_PATTERNS.CREATED, saved);
+
+    const auditActor = this.toAuditLogActor(actor);
+
+    await this.auditLogsService.createLog({
+      taskId: saved.id,
+      action: TASK_EVENT_PATTERNS.CREATED,
+      actor: auditActor,
+    });
+
+    await this.emitEvent(
+      TASK_EVENT_PATTERNS.CREATED,
+      this.createEventPayload(saved, auditActor),
+    );
 
     return saved;
   }
@@ -115,8 +139,13 @@ export class TasksService {
     return task;
   }
 
-  async update(id: string, dto: UpdateTaskDTO): Promise<Task> {
+  async update(
+    id: string,
+    dto: UpdateTaskDTO,
+    actor?: TaskActor | null,
+  ): Promise<Task> {
     const task = await this.findById(id);
+    const previousState = createTaskStateSnapshot(task);
 
     const { dueDate, ...restDto } = dto;
     const updatePayload: Partial<Task> = {
@@ -133,16 +162,42 @@ export class TasksService {
 
     const saved = await this.tasksRepository.save(task);
 
-    await this.emitEvent(TASK_EVENT_PATTERNS.UPDATED, saved);
+    const currentState = createTaskStateSnapshot(saved);
+    const changes = diffTaskChanges(previousState, currentState);
+    const normalizedChanges = changes.length > 0 ? changes : null;
+    const auditActor = this.toAuditLogActor(actor);
+
+    await this.auditLogsService.createLog({
+      taskId: saved.id,
+      action: TASK_EVENT_PATTERNS.UPDATED,
+      actor: auditActor,
+      changes: normalizedChanges,
+    });
+
+    await this.emitEvent(
+      TASK_EVENT_PATTERNS.UPDATED,
+      this.createEventPayload(saved, auditActor, normalizedChanges),
+    );
 
     return saved;
   }
 
-  async remove(id: string): Promise<Task> {
+  async remove(id: string, actor?: TaskActor | null): Promise<Task> {
     const task = await this.findById(id);
     const removed = await this.tasksRepository.remove(task);
 
-    await this.emitEvent(TASK_EVENT_PATTERNS.DELETED, removed);
+    const auditActor = this.toAuditLogActor(actor);
+
+    await this.auditLogsService.createLog({
+      taskId: removed.id,
+      action: TASK_EVENT_PATTERNS.DELETED,
+      actor: auditActor,
+    });
+
+    await this.emitEvent(
+      TASK_EVENT_PATTERNS.DELETED,
+      this.createEventPayload(removed, auditActor),
+    );
 
     return removed;
   }
@@ -160,5 +215,45 @@ export class TasksService {
     } catch {
       // Intentionally swallow errors to avoid breaking the main workflow
     }
+  }
+
+  private toAuditLogActor(
+    actor?: TaskActor | null,
+  ): TaskAuditLogActorDTO | null {
+    if (!actor) {
+      return null;
+    }
+
+    const displayName =
+      typeof actor.name === 'string' && actor.name.trim().length > 0
+        ? actor.name.trim()
+        : typeof actor.email === 'string' && actor.email.trim().length > 0
+          ? actor.email.trim()
+          : null;
+
+    return {
+      id: actor.id,
+      displayName,
+    };
+  }
+
+  private createEventPayload(
+    task: Task,
+    actor: TaskAuditLogActorDTO | null,
+    changes?: TaskAuditLogChangeDTO[] | null,
+  ): TaskEventPayload {
+    const payload: TaskEventPayload = {
+      task,
+    };
+
+    if (actor) {
+      payload.actor = actor;
+    }
+
+    if (changes && changes.length > 0) {
+      payload.changes = changes;
+    }
+
+    return payload;
   }
 }

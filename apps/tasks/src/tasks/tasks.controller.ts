@@ -18,11 +18,11 @@ export class TasksController {
   @MessagePattern(TASKS_MESSAGE_PATTERNS.CREATE)
   async create(@Payload() payload: unknown) {
     try {
-      const { actor: _actor, ...data } = transformPayload(
+      const { actor, ...data } = transformPayload(
         CreateTaskPayloadDto,
         payload,
       );
-      return await this.tasksService.create(data);
+      return await this.tasksService.create(data, actor ?? null);
     } catch (error) {
       throw toRpcException(error);
     }
@@ -51,8 +51,11 @@ export class TasksController {
   @MessagePattern(TASKS_MESSAGE_PATTERNS.UPDATE)
   async update(@Payload() payload: unknown) {
     try {
-      const { id, data } = transformPayload(UpdateTaskPayloadDto, payload);
-      return await this.tasksService.update(id, data);
+      const { id, data, actor } = transformPayload(
+        UpdateTaskPayloadDto,
+        payload,
+      );
+      return await this.tasksService.update(id, data, actor ?? null);
     } catch (error) {
       throw toRpcException(error);
     }
@@ -61,8 +64,8 @@ export class TasksController {
   @MessagePattern(TASKS_MESSAGE_PATTERNS.REMOVE)
   async remove(@Payload() payload: unknown) {
     try {
-      const { id } = transformPayload(RemoveTaskPayloadDto, payload);
-      return await this.tasksService.remove(id);
+      const { id, actor } = transformPayload(RemoveTaskPayloadDto, payload);
+      return await this.tasksService.remove(id, actor ?? null);
     } catch (error) {
       throw toRpcException(error);
     }
