@@ -25,7 +25,9 @@
     "src"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json && tsc -p tsconfig.cjs.json",
+    "build": "pnpm run build:esm && pnpm run build:cjs",
+    "build:esm": "tsc -p tsconfig.json",
+    "build:cjs": "tsc -p tsconfig.cjs.json && node ./scripts/ensure-cjs-package.cjs",
     "lint": "eslint . --ext .ts --max-warnings 0",
     "check-types": "tsc --noEmit",
     "prepare": "pnpm run build"
