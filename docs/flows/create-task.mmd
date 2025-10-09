@@ -1,0 +1,22 @@
+%% Fluxo de criação de tarefa e notificação
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as Usuário
+    participant Web as Web App
+    participant API as API Gateway
+    participant Tasks as Tasks Service
+    participant MQ as RabbitMQ
+    participant Notif as Notifications Service
+    participant WS as WebSocket Clients
+
+    U->>Web: Formulário "Nova tarefa"
+    Web->>API: POST /tasks
+    API->>Tasks: RPC createTask
+    Tasks-->>API: Tarefa criada
+    Tasks->>MQ: Publish task.created
+    API-->>Web: 201 Created + payload
+    MQ-->>Notif: task.created
+    Notif->>WS: Broadcast evento realtime
+    WS-->>U: Toast/Atualização da lista
+```

@@ -1,0 +1,31 @@
+%% Arquitetura de containers Jungle Gaming
+```mermaid
+flowchart LR
+    subgraph Client
+        web[Web App\nReact + TanStack Router]
+    end
+
+    subgraph Edge[Gateway]
+        apiGateway[API Gateway\nNestJS HTTP + WS]
+    end
+
+    subgraph Services[Microservices]
+        authService[Auth Service\nNestJS]
+        tasksService[Tasks Service\nNestJS]
+        notificationsService[Notifications Service\nNestJS]
+    end
+
+    subgraph Infra[Infraestrutura Compartilhada]
+        rabbitmq[(RabbitMQ)]
+        postgres[(PostgreSQL)]
+    end
+
+    web -->|HTTPS / WebSocket| apiGateway
+    apiGateway -->|HTTP / RPC| authService
+    apiGateway -->|HTTP / RPC| tasksService
+    apiGateway -->|WebSocket| notificationsService
+
+    tasksService <--> rabbitmq
+    notificationsService <--> rabbitmq
+    authService --> postgres
+    tasksService --> postgres

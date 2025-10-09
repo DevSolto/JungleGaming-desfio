@@ -1,0 +1,22 @@
+%% Fluxo de Login e Refresh Token
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as Usuário
+    participant Web as Web App
+    participant API as API Gateway
+    participant Auth as Auth Service
+    U->>Web: Envia credenciais (email, senha)
+    Web->>API: POST /auth/login
+    API->>Auth: RPC validateUser + issueTokens
+    Auth-->>API: accessToken + refreshToken (HTTP-only)
+    API-->>Web: 200 OK + tokens
+    Web-->>U: Sessão iniciada
+    Note over Web: Armazena accessToken em memória segura
+    Note over U,Web: Tempo passa...
+    Web->>API: POST /auth/refresh (cookie)
+    API->>Auth: validateRefreshToken
+    Auth-->>API: Novo par de tokens
+    API-->>Web: 200 OK + novos tokens
+    Web-->>U: Sessão mantida
+```

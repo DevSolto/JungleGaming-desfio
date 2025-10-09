@@ -1,0 +1,23 @@
+%% Fluxo de comentário com atualização em tempo real
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as Usuário
+    participant Web as Web App
+    participant API as API Gateway
+    participant Tasks as Tasks Service
+    participant MQ as RabbitMQ
+    participant Notif as Notifications Service
+    participant WS as WebSocket Clients
+
+    U->>Web: Digita comentário
+    Web->>API: POST /tasks/:id/comments
+    API->>Tasks: RPC addComment
+    Tasks-->>API: Confirma comentário
+    Tasks->>MQ: Publish comment.new
+    API-->>Web: 201 Created + comentário
+    MQ-->>Notif: comment.new
+    Notif->>WS: Emit WS "task.comment"
+    WS-->>U: Atualiza thread em tempo real
+    WS-->>Outros: Badge "Novo comentário"
+```
