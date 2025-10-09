@@ -55,4 +55,4 @@
 
 * [x] Como desenvolvedor, quero **subir tudo com docker-compose** (Postgres, RabbitMQ, web, gateway, services), para rodar o sistema facilmente. — feita
 * [x] Como time, quero um **monorepo Turborepo** com pacotes compartilháveis (`types`, `logger`, `eslint-config`, `tsconfig`), para padronizar e acelerar o desenvolvimento. — feita
-* [ ] Como time, quero **Dockerfiles multi-stage** e **compose com perfis dev/prod-lite**, para otimizar a imagem e simular produção local. _Dockerfiles atuais possuem estágio `base`/`dev`; falta estágio de runtime enxuto e perfis diferenciados no compose._
+* [x] Como time, quero **Dockerfiles multi-stage** e **compose com perfis dev/prod-lite**, para otimizar a imagem e simular produção local. _Dockerfiles atuais possuem estágio `base`/`dev`; falta estágio de runtime enxuto e perfis diferenciados no compose._

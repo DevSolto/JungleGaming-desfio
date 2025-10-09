@@ -1,4 +1,4 @@
-# Desafio Full-stack Júnior — Sistema de Gestão de Tarefas Colaborativo
+    # Desafio Full-stack Júnior — Sistema de Gestão de Tarefas Colaborativo
 
 [![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)](#como-rodar)
 [![NestJS](https://img.shields.io/badge/NestJS-microservices-E0234E?logo=nestjs&logoColor=white)](#arquitetura)
