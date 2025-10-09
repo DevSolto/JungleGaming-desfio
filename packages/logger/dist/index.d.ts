@@ -15,6 +15,7 @@ export interface RequestContext {
 }
 export declare const getCurrentRequestContext: () => RequestContext | undefined;
 export declare const runWithRequestContext: <T>(context: RequestContext, callback: () => T) => T;
+export declare const maskSensitiveFields: <T>(value: T, additionalPatterns?: string[]) => T;
 export declare class AppLoggerService implements StructuredLogger, NestLoggerService {
     private readonly logger;
     constructor(logger: PinoLogger);

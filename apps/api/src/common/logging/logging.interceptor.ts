@@ -3,8 +3,7 @@ import { Injectable, NestInterceptor } from '@nestjs/common';
 import { Observable, throwError } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
 import type { Request, Response } from 'express';
-import { AppLoggerService, getCurrentRequestContext } from '@repo/logger';
-import { maskBody, maskHeaders } from './mask.util';
+import { AppLoggerService, getCurrentRequestContext, maskSensitiveFields } from '@repo/logger';
 
 const HR_TIME_IN_MS = 1_000_000n;
 
@@ -30,8 +29,8 @@ export class LoggingInterceptor implements NestInterceptor {
     const url = request.originalUrl ?? request.url;
     const contextLogger = this.logger.withContext({ method, url });
 
-    const headers = maskHeaders(request.headers);
-    const body = maskBody(request.body);
+    const headers = maskSensitiveFields(request.headers);
+    const body = maskSensitiveFields(request.body);
 
     contextLogger.debug('HTTP request started', {
       headers,

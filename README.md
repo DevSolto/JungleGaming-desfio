@@ -34,4 +34,9 @@ Monorepo Turborepo com os serviços do JungleGaming (gateway HTTP, auth, tasks, 
 - `pnpm lint`: executa o linting.
 - `pnpm check-types`: valida os tipos TypeScript.
 
+## Observabilidade & Logging
+- O middleware/interceptores globais usam `@repo/logger` para propagar `requestId` entre HTTP e RPC. Cada resposta HTTP devolve o header `x-request-id`, que também aparece no payload dos logs para facilitar correlação.
+- Campos sensíveis como `password`, `token`, `refreshToken`, `authorization` e `cookie` são mascarados com `[REDACTED]` automaticamente antes do log, evitando que credenciais do AuthService vazem nos registros.
+- Configure o nível de log com `APP_LOG_LEVEL` (fallbacks `LOG_LEVEL`/`NODE_ENV`) e inclua mascaramentos extras com `APP_LOG_REDACT_EXTRA` (lista separada por vírgulas aceitando chaves ou paths como `payload.secret`).
+
 Consulte `apps/api/README.md` para exemplos detalhados de uso do Swagger e das requisições autenticadas.
