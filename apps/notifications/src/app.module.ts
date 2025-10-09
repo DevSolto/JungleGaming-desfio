@@ -11,6 +11,7 @@ import { HealthModule } from './health/health.module';
 import { NotificationsService } from './notifications.service';
 import { Notification } from './notifications/notification.entity';
 import { NotificationsPersistenceModule } from './notifications/persistence/notifications-persistence.module';
+import { LoggingModule } from './common/logging/logging.module';
 
 const validateEnv = (config: Record<string, unknown>) => {
   const databaseUrl = config['DATABASE_URL'];
@@ -24,6 +25,7 @@ const validateEnv = (config: Record<string, unknown>) => {
 
 @Module({
   imports: [
+    LoggingModule,
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: ['.env'],

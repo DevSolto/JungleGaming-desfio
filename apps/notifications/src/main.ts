@@ -1,4 +1,3 @@
-import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
@@ -10,6 +9,8 @@ import {
   NOTIFICATIONS_SERVICE_QUEUE,
   TASK_UPDATED_EVENT,
 } from './notifications.constants';
+import { AppLoggerService, createAppLogger } from '@repo/logger';
+import { RpcContextInterceptor } from './common/logging/rpc-context.interceptor';
 
 /**
  * Messaging topology shared with the API Gateway:
@@ -17,8 +18,6 @@ import {
  * - Forwarded WebSocket events are published to `NOTIFICATIONS_GATEWAY_QUEUE`
  *   using the `COMMENT_NEW_EVENT` and `TASK_UPDATED_EVENT` topics.
  */
-const logger = new Logger('NotificationsBootstrap');
-
 function parseNumberEnv(value: string | undefined, fallback: number) {
   if (!value) {
     return fallback;
@@ -38,6 +37,12 @@ function isConnectionRefused(error: unknown): error is NodeJS.ErrnoException {
 }
 
 async function bootstrap() {
+  const bootstrapLogger = createAppLogger({
+    name: 'notifications-service',
+  }).withContext({
+    service: 'notifications-service',
+    context: 'bootstrap',
+  });
   const configService = new ConfigService();
 
   const rabbitMqUrl = configService.get<string>(
@@ -88,7 +93,11 @@ async function bootstrap() {
   // eslint-disable-next-line no-constant-condition
   while (true) {
     attempt += 1;
-    const app = await NestFactory.create(AppModule);
+    const attemptLogger = bootstrapLogger.withContext({
+      context: 'bootstrap-attempt',
+      attempt,
+    });
+    const app = await NestFactory.create(AppModule, { bufferLogs: true });
 
     app.enableCors({
       origin: allowAllOrigins ? true : parsedOrigins,
@@ -96,16 +105,35 @@ async function bootstrap() {
       credentials: true,
     });
 
+    const appLogger = app.get(AppLoggerService).withContext({
+      service: 'notifications-service',
+      context: 'http-application',
+    });
+    const rpcContextInterceptor = app.get(RpcContextInterceptor);
+    app.useLogger(appLogger);
+
     const microservice = app.connectMicroservice<MicroserviceOptions>(
       microserviceOptions,
     );
 
+    const microserviceLogger = appLogger.withContext({
+      context: 'rmq-microservice',
+    });
+    microservice.useLogger(microserviceLogger);
+    microservice.useGlobalInterceptors(rpcContextInterceptor);
+
     try {
       await app.startAllMicroservices();
       await app.listen(httpPort);
-      logger.log(
-        `Notifications microservice connected to ${rabbitMqUrl} on queue "${queue}" (prefetch ${prefetch}) after ${attempt} attempt(s). Gateway consumes queue "${NOTIFICATIONS_GATEWAY_QUEUE}" for events "${COMMENT_NEW_EVENT}" and "${TASK_UPDATED_EVENT}". HTTP health endpoint available at http://localhost:${httpPort}/health.`,
-      );
+      microserviceLogger.log('Notifications microservice connected to RabbitMQ.', {
+        rabbitMqUrl,
+        queue,
+        prefetch,
+        attempts: attempt,
+        gatewayQueue: NOTIFICATIONS_GATEWAY_QUEUE,
+        events: [COMMENT_NEW_EVENT, TASK_UPDATED_EVENT],
+        httpPort,
+      });
       break;
     } catch (error) {
       await Promise.allSettled([
@@ -114,6 +142,12 @@ async function bootstrap() {
       ]);
 
       if (!isConnectionRefused(error)) {
+        attemptLogger.error('Failed to bootstrap notifications service.', error, {
+          rabbitMqUrl,
+          queue,
+          prefetch,
+          httpPort,
+        });
         throw error;
       }
 
@@ -121,12 +155,12 @@ async function bootstrap() {
         retryDelayMax,
         retryDelay * 2 ** Math.max(0, attempt - 1),
       );
-      const message = error instanceof Error ? error.message : String(error);
-      logger.error(
-        `RabbitMQ connection attempt #${attempt} failed (${message}). Retrying in ${Math.round(
-          delay / 1000,
-        )}s.`,
-      );
+      attemptLogger.error('RabbitMQ connection attempt failed. Retrying.', error, {
+        delayMs: delay,
+        rabbitMqUrl,
+        queue,
+        prefetch,
+      });
       await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }

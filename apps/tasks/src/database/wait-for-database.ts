@@ -1,18 +1,22 @@
-import { Logger } from '@nestjs/common';
 import {
   resolveWaitForDatabaseOptions as sharedResolveWaitForDatabaseOptions,
   waitForDatabase as sharedWaitForDatabase,
   type ResolvedWaitForDatabaseOptions as SharedResolvedWaitForDatabaseOptions,
   type WaitForDatabaseOptions as SharedWaitForDatabaseOptions,
 } from '@repo/types/utils/database';
+import { createAppLogger, type StructuredLogger } from '@repo/logger';
 
-const logger = new Logger('TasksDatabaseBootstrap');
+const defaultLogger = createAppLogger({ name: 'tasks-service' }).withContext({
+  service: 'tasks-service',
+  context: 'wait-for-database',
+});
 
 export type WaitForDatabaseOptions = SharedWaitForDatabaseOptions;
 export type ResolvedWaitForDatabaseOptions = SharedResolvedWaitForDatabaseOptions;
 
 export const waitForDatabase = async (
   options: SharedWaitForDatabaseOptions,
+  logger: StructuredLogger = defaultLogger,
 ): Promise<void> => {
   await sharedWaitForDatabase({
     ...options,

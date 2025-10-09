@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { Ctx, EventPattern, Payload, RmqContext } from '@nestjs/microservices';
 import {
   NOTIFICATION_CHANNELS,
@@ -8,6 +8,7 @@ import {
 } from '@repo/types';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
+import { AppLoggerService } from '@repo/logger';
 
 import {
   COMMENT_NEW_EVENT,
@@ -40,7 +41,7 @@ const isAcknowledgeMessage = (value: unknown): value is AcknowledgeMessage =>
 
 @Injectable()
 export class NotificationsService {
-  private readonly logger = new Logger(NotificationsService.name);
+  private readonly logger: AppLoggerService;
   private readonly inAppChannel: NotificationChannel =
     NOTIFICATION_CHANNELS.includes('in_app')
       ? ('in_app' as NotificationChannel)
@@ -50,7 +51,10 @@ export class NotificationsService {
     @Inject(NOTIFICATIONS_GATEWAY_CLIENT)
     private readonly gatewayClient: ClientProxy,
     private readonly notificationsPersistence: NotificationsPersistenceService,
-  ) {}
+    appLogger: AppLoggerService,
+  ) {
+    this.logger = appLogger.withContext({ context: NotificationsService.name });
+  }
 
   @EventPattern(TASKS_COMMENT_CREATED_PATTERN)
   async handleNewComment(
@@ -66,6 +70,8 @@ export class NotificationsService {
     ) {
       this.logger.error(
         'Received invalid RabbitMQ context while processing comment event.',
+        undefined,
+        { pattern: TASKS_COMMENT_CREATED_PATTERN },
       );
       return;
     }
@@ -77,9 +83,12 @@ export class NotificationsService {
       await this.persistCommentNotifications(payload);
     } catch (error) {
       this.logger.error(
-        `Failed to persist notifications for comment ${
-          payload.comment?.id ?? 'unknown'
-        }: ${this.formatError(error)}`,
+        'Failed to persist notifications for comment.',
+        error,
+        {
+          commentId: payload.comment?.id ?? null,
+          pattern: TASKS_COMMENT_CREATED_PATTERN,
+        },
       );
       channel.nack(originalMessage, false, true);
       return;
@@ -88,13 +97,15 @@ export class NotificationsService {
     try {
       await firstValueFrom(this.gatewayClient.emit(COMMENT_NEW_EVENT, payload));
       channel.ack(originalMessage);
-      this.logger.debug(
-        `Forwarded comment ${payload.comment?.id ?? 'unknown'} to ${COMMENT_NEW_EVENT}`,
-      );
+      this.logger.debug('Forwarded comment to gateway.', {
+        commentId: payload.comment?.id ?? null,
+        event: COMMENT_NEW_EVENT,
+      });
     } catch (error) {
-      this.logger.error(
-        `Failed to forward comment ${payload.comment?.id ?? 'unknown'}: ${this.formatError(error)}`,
-      );
+      this.logger.error('Failed to forward comment to gateway.', error, {
+        commentId: payload.comment?.id ?? null,
+        event: COMMENT_NEW_EVENT,
+      });
       channel.nack(originalMessage, false, true);
     }
   }
@@ -113,6 +124,8 @@ export class NotificationsService {
     ) {
       this.logger.error(
         'Received invalid RabbitMQ context while processing task event.',
+        undefined,
+        { pattern: TASKS_UPDATED_PATTERN },
       );
       return;
     }
@@ -123,11 +136,10 @@ export class NotificationsService {
     try {
       await this.persistTaskUpdateNotifications(payload);
     } catch (error) {
-      this.logger.error(
-        `Failed to persist notifications for task ${
-          this.extractTaskId(payload) ?? 'unknown'
-        } update: ${this.formatError(error)}`,
-      );
+      this.logger.error('Failed to persist notifications for task update.', error, {
+        taskId: this.extractTaskId(payload),
+        pattern: TASKS_UPDATED_PATTERN,
+      });
       channel.nack(originalMessage, false, true);
       return;
     }
@@ -137,13 +149,15 @@ export class NotificationsService {
         this.gatewayClient.emit(TASK_UPDATED_EVENT, payload),
       );
       channel.ack(originalMessage);
-      this.logger.debug(
-        `Forwarded task ${payload.task?.id ?? 'unknown'} update to ${TASK_UPDATED_EVENT}`,
-      );
+      this.logger.debug('Forwarded task update to gateway.', {
+        taskId: payload.task?.id ?? null,
+        event: TASK_UPDATED_EVENT,
+      });
     } catch (error) {
-      this.logger.error(
-        `Failed to forward task ${payload.task?.id ?? 'unknown'} update: ${this.formatError(error)}`,
-      );
+      this.logger.error('Failed to forward task update to gateway.', error, {
+        taskId: payload.task?.id ?? null,
+        event: TASK_UPDATED_EVENT,
+      });
       channel.nack(originalMessage, false, true);
     }
   }
@@ -265,19 +279,4 @@ export class NotificationsService {
     return null;
   }
 
-  private formatError(error: unknown): string {
-    if (error instanceof Error) {
-      return error.message;
-    }
-
-    if (typeof error === 'string') {
-      return error;
-    }
-
-    try {
-      return JSON.stringify(error);
-    } catch {
-      return 'Unknown error';
-    }
-  }
 }
