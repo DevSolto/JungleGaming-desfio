@@ -2,7 +2,7 @@ import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ClientProxy } from '@nestjs/microservices';
 import { defaultIfEmpty, lastValueFrom } from 'rxjs';
-import { Repository } from 'typeorm';
+import { Repository, type DeepPartial } from 'typeorm';
 import { Task } from './task.entity';
 import { TASKS_EVENTS_CLIENT } from './tasks.constants';
 import {
@@ -56,9 +56,9 @@ export class TasksService {
       dueDate: dto.dueDate
         ? parseDateInTimezone(dto.dueDate, this.taskTimezone)
         : null,
-    });
+    } as DeepPartial<Task>);
 
-    const saved = await this.tasksRepository.save(task);
+    const saved = await this.tasksRepository.save<Task>(task);
 
     const auditActor = this.toAuditLogActor(actor);
 

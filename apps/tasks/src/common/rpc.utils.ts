@@ -1,10 +1,14 @@
 import { BadRequestException, HttpException } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { plainToInstance } from 'class-transformer';
+import type { ClassConstructor } from 'class-transformer';
 import { validateSync } from 'class-validator';
 
-export function transformPayload<T>(cls: new () => T, payload: unknown): T {
-  const dto = plainToInstance(cls, payload, {
+export function transformPayload<T extends ClassConstructor<object>>(
+  cls: T,
+  payload: unknown,
+): InstanceType<T> {
+  const dto = plainToInstance(cls, payload as object, {
     enableImplicitConversion: true,
     exposeDefaultValues: true,
   });
@@ -19,7 +23,7 @@ export function transformPayload<T>(cls: new () => T, payload: unknown): T {
     throw new BadRequestException(errors);
   }
 
-  return dto;
+  return dto as InstanceType<T>;
 }
 
 export function toRpcException(error: unknown): RpcException {

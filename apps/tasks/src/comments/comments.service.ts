@@ -2,7 +2,7 @@ import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ClientProxy } from '@nestjs/microservices';
 import { defaultIfEmpty, lastValueFrom } from 'rxjs';
-import { Repository } from 'typeorm';
+import { Repository, type DeepPartial } from 'typeorm';
 import { Comment } from './comment.entity';
 import { Task } from '../tasks/task.entity';
 import { TASKS_EVENTS_CLIENT } from '../tasks/tasks.constants';
@@ -16,9 +16,7 @@ import {
   type TaskForwardingPattern,
 } from '@repo/types';
 
-export interface PaginatedComments extends PaginatedCommentsDTO {
-  data: CommentDTO[];
-}
+export type PaginatedComments = PaginatedCommentsDTO;
 
 @Injectable()
 export class CommentsService {
@@ -40,8 +38,8 @@ export class CommentsService {
     const comment = this.commentsRepository.create({
       ...dto,
       authorName: normalizedAuthorName ? normalizedAuthorName : null,
-    });
-    const saved = await this.commentsRepository.save(comment);
+    } as DeepPartial<Comment>);
+    const saved = await this.commentsRepository.save<Comment>(comment);
 
     await this.emitCommentCreated(saved, task);
 
