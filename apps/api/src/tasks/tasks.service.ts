@@ -13,6 +13,7 @@ import {
 import {
   ClientProxy,
   RpcException,
+  RmqRecord,
   RmqRecordBuilder,
 } from '@nestjs/microservices';
 import { lastValueFrom } from 'rxjs';
@@ -33,7 +34,7 @@ import type {
   TasksRemovePayload,
   TasksUpdatePayload,
   UpdateTask,
-  type CorrelatedMessage,
+  CorrelatedMessage,
 } from '@repo/types';
 import { TASKS_MESSAGE_PATTERNS } from '@repo/types';
 import { getCurrentRequestContext } from '@repo/logger';
@@ -49,6 +50,7 @@ export type ListTaskAuditLogsFilters = Omit<
   TaskAuditLogListFiltersDTO,
   'taskId'
 >;
+type TaskScopedPayload<T extends object> = T & { taskId: string };
 
 @Injectable()
 export class TasksService {
@@ -63,15 +65,24 @@ export class TasksService {
       ...(actor ? { actor } : {}),
     };
 
-    return this.send<Task>(TASKS_MESSAGE_PATTERNS.CREATE, rpcPayload);
+    return this.send<Task, TasksCreatePayload>(
+      TASKS_MESSAGE_PATTERNS.CREATE,
+      rpcPayload,
+    );
   }
 
   async findAll(filters: ListTasksFilters = {}): Promise<PaginatedTasks> {
-    return this.send<PaginatedTasks>(TASKS_MESSAGE_PATTERNS.FIND_ALL, filters);
+    return this.send<PaginatedTasks, ListTasksFilters>(
+      TASKS_MESSAGE_PATTERNS.FIND_ALL,
+      filters,
+    );
   }
 
   async findById(id: string): Promise<Task> {
-    return this.send<Task>(TASKS_MESSAGE_PATTERNS.FIND_BY_ID, { id });
+    return this.send<Task, { id: string }>(
+      TASKS_MESSAGE_PATTERNS.FIND_BY_ID,
+      { id },
+    );
   }
 
   async update(
@@ -85,7 +96,10 @@ export class TasksService {
       ...(actor ? { actor } : {}),
     };
 
-    return this.send<Task>(TASKS_MESSAGE_PATTERNS.UPDATE, rpcPayload);
+    return this.send<Task, TasksUpdatePayload>(
+      TASKS_MESSAGE_PATTERNS.UPDATE,
+      rpcPayload,
+    );
   }
 
   async remove(id: string, actor?: TaskActor | null): Promise<Task> {
@@ -94,14 +108,17 @@ export class TasksService {
       ...(actor ? { actor } : {}),
     };
 
-    return this.send<Task>(TASKS_MESSAGE_PATTERNS.REMOVE, rpcPayload);
+    return this.send<Task, TasksRemovePayload>(
+      TASKS_MESSAGE_PATTERNS.REMOVE,
+      rpcPayload,
+    );
   }
 
   async listComments(
     taskId: string,
     filters: ListTaskCommentsFilters = {},
   ): Promise<PaginatedComments> {
-    return this.send<PaginatedComments>(
+    return this.send<PaginatedComments, TaskScopedPayload<ListTaskCommentsFilters>>(
       TASKS_MESSAGE_PATTERNS.COMMENT_FIND_ALL,
       {
         taskId,
@@ -114,17 +131,23 @@ export class TasksService {
     taskId: string,
     data: CreateTaskComment,
   ): Promise<Comment> {
-    return this.send<Comment>(TASKS_MESSAGE_PATTERNS.COMMENT_CREATE, {
-      taskId,
-      ...data,
-    });
+    return this.send<Comment, TaskScopedPayload<CreateTaskComment>>(
+      TASKS_MESSAGE_PATTERNS.COMMENT_CREATE,
+      {
+        taskId,
+        ...data,
+      },
+    );
   }
 
   async listAuditLogs(
     taskId: string,
     filters: ListTaskAuditLogsFilters = {},
   ): Promise<PaginatedTaskAuditLogs> {
-    return this.send<PaginatedTaskAuditLogs>(
+    return this.send<
+      PaginatedTaskAuditLogs,
+      TaskScopedPayload<ListTaskAuditLogsFilters>
+    >(
       TASKS_MESSAGE_PATTERNS.AUDIT_FIND_ALL,
       {
         taskId,
@@ -147,11 +170,11 @@ export class TasksService {
 
   private createRecord<TPayload extends object>(
     payload: TPayload,
-  ): ReturnType<RmqRecordBuilder['build']> {
+  ): RmqRecord<TPayload> {
     const requestId = getCurrentRequestContext()?.requestId;
     const correlatedPayload = this.withRequestId(payload, requestId);
 
-    const builder = new RmqRecordBuilder(correlatedPayload);
+    const builder = new RmqRecordBuilder<TPayload>(correlatedPayload);
 
     if (requestId) {
       builder.setOptions({

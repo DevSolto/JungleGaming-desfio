@@ -17,7 +17,9 @@
     "strict": true,
     "paths": {
       "@repo/types": ["../types/src/index.ts"],
-      "@repo/types/*": ["../types/src/*"]
+      "@repo/types/*": ["../types/src/*"],
+      "@repo/logger": ["../logger/dist/index.d.ts"],
+      "@repo/logger/*": ["../logger/dist/*.d.ts"]
     },
     "target": "ES2022"
   }

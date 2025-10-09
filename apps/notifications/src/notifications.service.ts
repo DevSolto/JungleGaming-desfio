@@ -4,6 +4,7 @@ import {
   EventPattern,
   Payload,
   RmqContext,
+  RmqRecord,
   RmqRecordBuilder,
 } from '@nestjs/microservices';
 import {
@@ -384,13 +385,13 @@ export class NotificationsService {
   private createGatewayRecord<TPayload extends object>(
     payload: TPayload,
     requestId?: string,
-  ): ReturnType<RmqRecordBuilder['build']> {
+  ): RmqRecord<TPayload> {
     const { correlatedPayload, resolvedRequestId } = this.withRequestId(
       payload,
       requestId,
     );
 
-    const builder = new RmqRecordBuilder(correlatedPayload);
+    const builder = new RmqRecordBuilder<TPayload>(correlatedPayload);
 
     if (resolvedRequestId) {
       builder.setOptions({

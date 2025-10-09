@@ -22,6 +22,12 @@
       "@repo/types/*": [
         "../../packages/types/dist-cjs/*.js",
         "../../packages/types/dist/*.d.ts"
+      ],
+      "@repo/logger": [
+        "../../packages/logger/src/index.ts"
+      ],
+      "@repo/logger/*": [
+        "../../packages/logger/src/*.ts"
       ]
     },
     "incremental": true,
