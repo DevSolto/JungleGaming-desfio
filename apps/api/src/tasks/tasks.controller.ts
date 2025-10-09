@@ -20,17 +20,22 @@ import {
   CreateCommentBodyDto,
   CreateTaskDto,
   ListTaskCommentsQueryDto,
+  ListTaskAuditLogsQueryDto,
   ListTasksQueryDto,
   TaskIdParamDto,
   UpdateTaskDto,
   type ApiResponse,
   type PaginatedResponse,
   type Comment,
+  type TaskAuditLog,
   type Task,
   type TaskActor,
 } from '@repo/types';
 import { TasksService } from './tasks.service';
-import type { ListTaskCommentsFilters } from './tasks.service';
+import type {
+  ListTaskAuditLogsFilters,
+  ListTaskCommentsFilters,
+} from './tasks.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser, type CurrentUserPayload } from '../auth/current-user.decorator';
 
@@ -126,6 +131,24 @@ export class TasksController {
     const result = await this.tasksService.listComments(params.id, filters);
 
     return this.toPaginatedResponse<Comment>(result);
+  }
+
+  @Get(':id/audit-log')
+  @ApiOkResponse({
+    description: 'List audit logs for a task with pagination',
+  })
+  async listAuditLogs(
+    @Param() params: TaskIdParamDto,
+    @Query() query: ListTaskAuditLogsQueryDto,
+  ): Promise<PaginatedResponse<TaskAuditLog>> {
+    const filters: ListTaskAuditLogsFilters = {
+      page: query.page ?? 1,
+      limit: query.limit ?? 10,
+    };
+
+    const result = await this.tasksService.listAuditLogs(params.id, filters);
+
+    return this.toPaginatedResponse<TaskAuditLog>(result);
   }
 
   @Post(':id/comments')

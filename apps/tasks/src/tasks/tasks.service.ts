@@ -19,7 +19,9 @@ import {
 } from '@repo/types/utils/datetime';
 import type {
   CreateTaskDTO,
+  PaginatedTaskAuditLogsDTO,
   TaskEventPattern,
+  TaskAuditLogListFiltersDTO,
   TaskListFiltersDTO,
   UpdateTaskDTO,
 } from '@repo/types';
@@ -137,6 +139,12 @@ export class TasksService {
     }
 
     return task;
+  }
+
+  async findAuditLogs(
+    filters: TaskAuditLogListFiltersDTO,
+  ): Promise<PaginatedTaskAuditLogsDTO> {
+    return this.auditLogsService.findAll(filters);
   }
 
   async update(

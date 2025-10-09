@@ -17,10 +17,12 @@ import type {
   CreateComment,
   CreateTask,
   PaginatedComments as PaginatedCommentsResult,
+  PaginatedTaskAuditLogsDTO as PaginatedTaskAuditLogsResult,
   PaginatedTasks as PaginatedTasksResult,
   Task,
   TaskActor,
   TaskCommentListFilters,
+  TaskAuditLogListFiltersDTO,
   TaskListFilters,
   TasksCreatePayload,
   TasksMessagePattern,
@@ -36,6 +38,11 @@ export type PaginatedTasks = PaginatedTasksResult;
 export type PaginatedComments = PaginatedCommentsResult;
 export type ListTaskCommentsFilters = Omit<TaskCommentListFilters, 'taskId'>;
 export type CreateTaskComment = Omit<CreateComment, 'taskId'>;
+export type PaginatedTaskAuditLogs = PaginatedTaskAuditLogsResult;
+export type ListTaskAuditLogsFilters = Omit<
+  TaskAuditLogListFiltersDTO,
+  'taskId'
+>;
 
 @Injectable()
 export class TasksService {
@@ -105,6 +112,19 @@ export class TasksService {
       taskId,
       ...data,
     });
+  }
+
+  async listAuditLogs(
+    taskId: string,
+    filters: ListTaskAuditLogsFilters = {},
+  ): Promise<PaginatedTaskAuditLogs> {
+    return this.send<PaginatedTaskAuditLogs>(
+      TASKS_MESSAGE_PATTERNS.AUDIT_FIND_ALL,
+      {
+        taskId,
+        ...filters,
+      },
+    );
   }
 
   private async send<TResponse>(
