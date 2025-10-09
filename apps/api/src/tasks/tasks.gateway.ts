@@ -1,4 +1,4 @@
-import { Logger, UseGuards } from '@nestjs/common';
+import { UseGuards } from '@nestjs/common';
 import {
   OnGatewayConnection,
   OnGatewayDisconnect,
@@ -7,6 +7,7 @@ import {
 } from '@nestjs/websockets';
 import type { Server, Socket } from 'socket.io';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { AppLoggerService } from '@repo/logger';
 
 const rawOrigins = process.env.CORS_ORIGINS ?? '*';
 const parsedOrigins = rawOrigins
@@ -27,7 +28,11 @@ export class TasksGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   private server?: Server;
 
-  private readonly logger = new Logger(TasksGateway.name);
+  private readonly logger: AppLoggerService;
+
+  constructor(appLogger: AppLoggerService) {
+    this.logger = appLogger.withContext({ context: TasksGateway.name });
+  }
 
   handleConnection(client: Socket): void {
     this.logger.debug(`Client connected: ${client.id}`);
