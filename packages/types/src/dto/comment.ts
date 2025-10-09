@@ -8,6 +8,7 @@ import {
   MaxLength,
   Min,
 } from "class-validator";
+import { CorrelatedDto } from "./correlation.js";
 
 export interface CommentDTO {
   id: string;
@@ -59,7 +60,7 @@ export class CreateCommentBodyDto implements Pick<CreateCommentDTO, "message"> {
   message!: string;
 }
 
-export class CreateCommentDto implements CreateCommentDTO {
+export class CreateCommentDto extends CorrelatedDto implements CreateCommentDTO {
   @IsUUID()
   @IsNotEmpty()
   taskId!: string;
@@ -80,7 +81,10 @@ export class CreateCommentDto implements CreateCommentDTO {
   message!: string;
 }
 
-export class ListTaskCommentsDto implements TaskCommentListFiltersDTO {
+export class ListTaskCommentsDto
+  extends CorrelatedDto
+  implements TaskCommentListFiltersDTO
+{
   @IsUUID()
   @IsNotEmpty()
   taskId!: string;

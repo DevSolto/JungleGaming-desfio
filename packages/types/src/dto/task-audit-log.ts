@@ -13,6 +13,8 @@ import {
   ValidateIf,
   ValidateNested,
 } from "class-validator";
+import { CorrelatedDto } from "./correlation.js";
+import type { CorrelationMetadata } from "../contracts/common/correlation.js";
 
 export interface TaskAuditLogActorDTO {
   id: string;
@@ -43,7 +45,7 @@ export interface TaskAuditLogDTO {
 
 export type TaskAuditLog = TaskAuditLogDTO;
 
-export interface TaskAuditLogListFiltersDTO {
+export interface TaskAuditLogListFiltersDTO extends CorrelationMetadata {
   taskId: string;
   page?: number;
   limit?: number;
@@ -128,7 +130,10 @@ export class TaskAuditLogDto implements TaskAuditLogDTO {
   createdAt!: string;
 }
 
-export class ListTaskAuditLogsDto implements TaskAuditLogListFiltersDTO {
+export class ListTaskAuditLogsDto
+  extends CorrelatedDto
+  implements TaskAuditLogListFiltersDTO
+{
   @IsUUID()
   @IsNotEmpty()
   taskId!: string;
