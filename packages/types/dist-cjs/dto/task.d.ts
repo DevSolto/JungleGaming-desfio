@@ -1,4 +1,6 @@
 import { TaskPriority, TaskStatus } from "../enums/task.js";
+import type { CorrelationMetadata } from "../contracts/common/correlation.js";
+import { CorrelatedDto } from "./correlation.js";
 export interface TaskAssigneeDTO {
     id: string;
     username: string;
@@ -58,7 +60,7 @@ export interface PaginatedTasksDTO {
     limit: number;
 }
 export type PaginatedTasks = PaginatedTasksDTO;
-export declare class TaskIdDto {
+export declare class TaskIdDto extends CorrelatedDto {
     id: string;
 }
 export declare class TaskIdParamDto extends TaskIdDto {
@@ -75,11 +77,12 @@ export declare class CreateTaskDto implements CreateTaskDTO {
     dueDate?: string | null;
     assignees: TaskAssigneeDto[];
 }
-export interface CreateTaskPayloadDTO extends CreateTaskDTO {
+export interface CreateTaskPayloadDTO extends CreateTaskDTO, CorrelationMetadata {
     actor?: TaskActorDTO | null;
 }
 export declare class CreateTaskPayloadDto extends CreateTaskDto implements CreateTaskPayloadDTO {
     actor?: TaskActorDto | null;
+    requestId?: string;
 }
 export declare class UpdateTaskDto implements UpdateTaskDTO {
     title?: string;
@@ -89,7 +92,7 @@ export declare class UpdateTaskDto implements UpdateTaskDTO {
     dueDate?: string | null;
     assignees?: TaskAssigneeDto[];
 }
-export interface UpdateTaskPayloadDTO {
+export interface UpdateTaskPayloadDTO extends CorrelationMetadata {
     id: string;
     data: UpdateTaskDTO;
     actor?: TaskActorDTO | null;
@@ -99,14 +102,16 @@ export declare class UpdateTaskPayloadDto implements UpdateTaskPayloadDTO {
     id: string;
     data: UpdateTaskDto;
     actor?: TaskActorDto | null;
+    requestId?: string;
 }
-export interface RemoveTaskPayloadDTO extends TaskIdDto {
+export interface RemoveTaskPayloadDTO extends CorrelationMetadata {
+    id: string;
     actor?: TaskActorDTO | null;
 }
 export declare class RemoveTaskPayloadDto extends TaskIdDto implements RemoveTaskPayloadDTO {
     actor?: TaskActorDto | null;
 }
-export declare class ListTasksDto implements TaskListFiltersDTO {
+export declare class ListTasksDto extends CorrelatedDto implements TaskListFiltersDTO {
     status?: TaskStatus;
     priority?: TaskPriority;
     search?: string;

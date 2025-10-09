@@ -10,6 +10,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 import { Type } from "class-transformer";
 import { IsArray, IsDateString, IsEmail, IsEnum, IsInt, IsNotEmpty, IsNotEmptyObject, IsOptional, IsString, IsUUID, Min, ValidateIf, ValidateNested, } from "class-validator";
 import { TaskPriority, TaskStatus } from "../enums/task.js";
+import { CorrelatedDto } from "./correlation.js";
 export class TaskActorDto {
     id;
     name;
@@ -32,7 +33,7 @@ __decorate([
     IsEmail(),
     __metadata("design:type", Object)
 ], TaskActorDto.prototype, "email", void 0);
-export class TaskIdDto {
+export class TaskIdDto extends CorrelatedDto {
     id;
 }
 __decorate([
@@ -97,6 +98,7 @@ __decorate([
 ], CreateTaskDto.prototype, "assignees", void 0);
 export class CreateTaskPayloadDto extends CreateTaskDto {
     actor;
+    requestId;
 }
 __decorate([
     IsOptional(),
@@ -105,6 +107,11 @@ __decorate([
     Type(() => TaskActorDto),
     __metadata("design:type", Object)
 ], CreateTaskPayloadDto.prototype, "actor", void 0);
+__decorate([
+    IsOptional(),
+    IsString(),
+    __metadata("design:type", String)
+], CreateTaskPayloadDto.prototype, "requestId", void 0);
 export class UpdateTaskDto {
     title;
     description;
@@ -152,6 +159,7 @@ export class UpdateTaskPayloadDto {
     id;
     data;
     actor;
+    requestId;
 }
 __decorate([
     IsUUID(),
@@ -171,6 +179,11 @@ __decorate([
     Type(() => TaskActorDto),
     __metadata("design:type", Object)
 ], UpdateTaskPayloadDto.prototype, "actor", void 0);
+__decorate([
+    IsOptional(),
+    IsString(),
+    __metadata("design:type", String)
+], UpdateTaskPayloadDto.prototype, "requestId", void 0);
 export class RemoveTaskPayloadDto extends TaskIdDto {
     actor;
 }
@@ -181,7 +194,7 @@ __decorate([
     Type(() => TaskActorDto),
     __metadata("design:type", Object)
 ], RemoveTaskPayloadDto.prototype, "actor", void 0);
-export class ListTasksDto {
+export class ListTasksDto extends CorrelatedDto {
     status;
     priority;
     search;
