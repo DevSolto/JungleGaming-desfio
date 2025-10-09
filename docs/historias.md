@@ -24,7 +24,7 @@
 
 # Épico: Mensageria & Eventos (RabbitMQ)
 
-* [ ] Como tasks-service, quero **publicar** `task.created`, `task.updated` e `task.comment.created` na fila de eventos, para informar outros serviços sobre mudanças. _(Observação: eventos de criação/atualização são emitidos, porém não há publicação para comentários.)_
+* [x] Como tasks-service, quero **publicar** `task.created`, `task.updated` e `task.comment.created` na fila de eventos, para informar outros serviços sobre mudanças. _(Observação: a criação de comentários agora dispara tanto `task.comment.created` quanto `tasks.comment.created`, alinhando a publicação com os demais eventos.)_
 * [ ] Como notifications-service, quero **consumir** eventos de tarefas e **persistir** notificações, para entregar alertas confiáveis. _(Observação: o serviço apenas encaminha eventos via WebSocket; nenhuma persistência é realizada.)_
 * [x] Como notifications-service, quero **ack/retry** mensagens (at-least-once), para reduzir perdas em falhas transitórias. — feita
 
