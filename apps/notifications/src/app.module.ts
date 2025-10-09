@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { TypeOrmModule } from '@nestjs/typeorm';
 
 import {
   NOTIFICATIONS_GATEWAY_CLIENT,
@@ -8,10 +9,39 @@ import {
 } from './notifications.constants';
 import { HealthModule } from './health/health.module';
 import { NotificationsService } from './notifications.service';
+import { Notification } from './notifications/notification.entity';
+import { NotificationsPersistenceModule } from './notifications/persistence/notifications-persistence.module';
+import { LoggingModule } from './common/logging/logging.module';
+
+const validateEnv = (config: Record<string, unknown>) => {
+  const databaseUrl = config['DATABASE_URL'];
+
+  if (typeof databaseUrl !== 'string' || databaseUrl.trim().length === 0) {
+    throw new Error('DATABASE_URL must be defined as a non-empty string');
+  }
+
+  return config;
+};
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    LoggingModule,
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: ['.env'],
+      validate: validateEnv,
+    }),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        type: 'postgres',
+        url: configService.getOrThrow<string>('DATABASE_URL'),
+        autoLoadEntities: true,
+        synchronize: true,
+        entities: [Notification],
+      }),
+    }),
     ClientsModule.registerAsync([
       {
         name: NOTIFICATIONS_GATEWAY_CLIENT,
@@ -38,6 +68,7 @@ import { NotificationsService } from './notifications.service';
       },
     ]),
     HealthModule,
+    NotificationsPersistenceModule,
   ],
   providers: [NotificationsService],
 })

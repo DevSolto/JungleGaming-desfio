@@ -25,7 +25,7 @@
 # Épico: Mensageria & Eventos (RabbitMQ)
 
 * [x] Como tasks-service, quero **publicar** `task.created`, `task.updated` e `task.comment.created` na fila de eventos, para informar outros serviços sobre mudanças. _(Observação: a criação de comentários agora dispara tanto `task.comment.created` quanto `tasks.comment.created`, alinhando a publicação com os demais eventos.)_
-* [ ] Como notifications-service, quero **consumir** eventos de tarefas e **persistir** notificações, para entregar alertas confiáveis. _(Observação: o serviço apenas encaminha eventos via WebSocket; nenhuma persistência é realizada.)_
+* [x] Como notifications-service, quero **consumir** eventos de tarefas e **persistir** notificações, para entregar alertas confiáveis. _(Observação: o serviço grava notificações no Postgres via TypeORM antes de reenviar ao gateway; falhas na escrita geram `nack` e o evento só é encaminhado após persistência bem-sucedida.)_
 * [x] Como notifications-service, quero **ack/retry** mensagens (at-least-once), para reduzir perdas em falhas transitórias. — feita
 
 # Épico: Notificações em Tempo Real (WebSocket)
@@ -34,6 +34,7 @@
 * [x] Como usuário atribuído a uma tarefa recém-criada, quero receber **`task:created`**, para ser avisado imediatamente. — feita
 * [x] Como usuário envolvido numa tarefa, quero receber **`task:updated`** quando o status mudar, para acompanhar o progresso. — feita
 * [x] Como participante/comentado de uma tarefa, quero receber **`comment:new`**, para não perder discussões importantes. _(Observação: a criação de comentários agora dispara `tasks.comment.created` no serviço de tarefas, que é encaminhado pelo gateway como `comment:new`, atualizando a lista e exibindo toast no front-end.)_
+* [ ] Como usuário, quero **consultar o histórico de notificações persistidas** para acompanhar alertas anteriores. _(Observação: o gateway já delega a busca via RPC `notifications.findAll`, mas o notifications-service ainda não expõe handler para responder a essa chamada.)_
 
 # Épico: Front-end (React + TanStack Router + shadcn/ui)
 
@@ -47,8 +48,8 @@
 
 * [x] Como time, quero **health/readiness checks** em todos os serviços, para monitorar disponibilidade. _(Observação: API, auth, tasks e notifications expõem `GET /health` via seus respectivos `HealthModule`, retornando status e timestamp.)_
 * [x] Como gateway, quero **rate limiting (10 req/s)**, **CORS** e **Helmet**, para mitigar abusos e reforçar segurança. _(Observação: o `ThrottlerModule` agora lê `RATE_LIMIT_TTL`/`RATE_LIMIT_LIMIT` com default `1s/10 req`, mantendo CORS e Helmet configurados.)_
-* [ ] Como time, quero **testes unitários** (auth, tasks) e **smoke e2e** (login → create task → comment), para garantir qualidade contínua. _(Observação: Auth e Tasks possuem suites unitárias abrangentes, mas ainda falta um fluxo e2e integrando login → criação de tarefa → comentário.)_
-* [ ] Como time, quero **logs estruturados** com correlação (request-id) e máscara de campos sensíveis, para facilitar troubleshooting seguro. _(Pendente: não há estruturação específica de logs ou correlação de requisições.)_
+* [x] Como time, quero **testes unitários** (auth, tasks) e **smoke e2e** (login → create task → comment), para garantir qualidade contínua. _(Observação: além das suites unitárias de auth/tasks, o gateway agora cobre o fluxo completo no `apps/api/test/app.e2e-spec.ts`, simulando login, criação de tarefa e comentário via RPC mockado.)_
+* [x] Como time, quero **logs estruturados** com correlação (request-id) e máscara de campos sensíveis, para facilitar troubleshooting seguro. _(Concluído: todos os serviços usam `@repo/logger`, que injeta `requestId` nos logs via middleware/interceptores e aplica redaction padrão `[REDACTED]` para senhas, tokens, cookies e headers confidenciais. É possível correlacionar chamadas lendo o header `x-request-id` nas respostas HTTP ou mensagens RabbitMQ e consultar os mesmos IDs nos logs. Novos campos podem ser adicionados à máscara via variável `APP_LOG_REDACT_EXTRA`.)_
 
 # Épico: Infraestrutura & Entregabilidade (Docker/Turborepo)
 

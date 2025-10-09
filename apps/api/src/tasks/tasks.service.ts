@@ -10,7 +10,11 @@ import {
   UnauthorizedException,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { ClientProxy, RpcException } from '@nestjs/microservices';
+import {
+  ClientProxy,
+  RpcException,
+  RmqRecordBuilder,
+} from '@nestjs/microservices';
 import { lastValueFrom } from 'rxjs';
 import type {
   Comment,
@@ -29,8 +33,10 @@ import type {
   TasksRemovePayload,
   TasksUpdatePayload,
   UpdateTask,
+  type CorrelatedMessage,
 } from '@repo/types';
 import { TASKS_MESSAGE_PATTERNS } from '@repo/types';
+import { getCurrentRequestContext } from '@repo/logger';
 import { TASKS_RPC_CLIENT } from './tasks.constants';
 
 export type ListTasksFilters = TaskListFilters;
@@ -127,15 +133,49 @@ export class TasksService {
     );
   }
 
-  private async send<TResponse>(
+  private async send<TResponse, TPayload extends object>(
     pattern: TasksMessagePattern,
-    payload: unknown,
+    payload: TPayload,
   ): Promise<TResponse> {
     try {
-      return await lastValueFrom(this.client.send<TResponse>(pattern, payload));
+      const record = this.createRecord(payload);
+      return await lastValueFrom(this.client.send<TResponse>(pattern, record));
     } catch (error) {
       throw this.toHttpException(error);
     }
+  }
+
+  private createRecord<TPayload extends object>(
+    payload: TPayload,
+  ): ReturnType<RmqRecordBuilder['build']> {
+    const requestId = getCurrentRequestContext()?.requestId;
+    const correlatedPayload = this.withRequestId(payload, requestId);
+
+    const builder = new RmqRecordBuilder(correlatedPayload);
+
+    if (requestId) {
+      builder.setOptions({
+        headers: {
+          'x-request-id': requestId,
+        },
+      });
+    }
+
+    return builder.build();
+  }
+
+  private withRequestId<TPayload extends object>(
+    payload: TPayload,
+    requestId?: string,
+  ): CorrelatedMessage<TPayload> {
+    if (!requestId) {
+      return payload as CorrelatedMessage<TPayload>;
+    }
+
+    return {
+      ...payload,
+      requestId,
+    } satisfies CorrelatedMessage<TPayload>;
   }
 
   private toHttpException(error: unknown): HttpException {

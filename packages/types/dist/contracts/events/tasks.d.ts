@@ -14,17 +14,15 @@ export interface TaskEventPayload {
     actor?: TaskAuditLogActorDTO | null;
     changes?: TaskAuditLogChangeDTO[] | Record<string, unknown> | null;
 }
-export interface TaskCommentCreatedEventPayload {
+export interface TaskCommentCreatedEventPayload extends Pick<TaskEventPayload, "recipients"> {
     comment: CommentDTO;
-    recipients: string[];
 }
 export declare const TASK_FORWARDING_PATTERNS: {
     readonly COMMENT_CREATED: "tasks.comment.created";
     readonly UPDATED: "tasks.updated";
 };
 export type TaskForwardingPattern = (typeof TASK_FORWARDING_PATTERNS)[keyof typeof TASK_FORWARDING_PATTERNS];
-export interface TaskCommentCreatedPayload {
-    comment: CommentDTO;
+export interface TaskCommentCreatedPayload extends TaskCommentCreatedEventPayload {
     recipients: string[];
 }
 export interface TaskUpdatedForwardPayload {

@@ -15,6 +15,8 @@ import {
   ValidateNested,
 } from "class-validator";
 import { TaskPriority, TaskStatus } from "../enums/task.js";
+import type { CorrelationMetadata } from "../contracts/common/correlation.js";
+import { CorrelatedDto } from "./correlation.js";
 
 export interface TaskAssigneeDTO {
   id: string;
@@ -100,7 +102,7 @@ export interface PaginatedTasksDTO {
 
 export type PaginatedTasks = PaginatedTasksDTO;
 
-export class TaskIdDto {
+export class TaskIdDto extends CorrelatedDto {
   @IsUUID()
   @IsNotEmpty()
   id!: string;
@@ -145,7 +147,7 @@ export class CreateTaskDto implements CreateTaskDTO {
   assignees!: TaskAssigneeDto[];
 }
 
-export interface CreateTaskPayloadDTO extends CreateTaskDTO {
+export interface CreateTaskPayloadDTO extends CreateTaskDTO, CorrelationMetadata {
   actor?: TaskActorDTO | null;
 }
 
@@ -157,6 +159,10 @@ export class CreateTaskPayloadDto
   @ValidateNested()
   @Type(() => TaskActorDto)
   actor?: TaskActorDto | null;
+
+  @IsOptional()
+  @IsString()
+  requestId?: string;
 }
 
 export class UpdateTaskDto implements UpdateTaskDTO {
@@ -190,7 +196,7 @@ export class UpdateTaskDto implements UpdateTaskDTO {
   assignees?: TaskAssigneeDto[];
 }
 
-export interface UpdateTaskPayloadDTO {
+export interface UpdateTaskPayloadDTO extends CorrelationMetadata {
   id: string;
   data: UpdateTaskDTO;
   actor?: TaskActorDTO | null;
@@ -213,9 +219,14 @@ export class UpdateTaskPayloadDto implements UpdateTaskPayloadDTO {
   @ValidateNested()
   @Type(() => TaskActorDto)
   actor?: TaskActorDto | null;
+
+  @IsOptional()
+  @IsString()
+  requestId?: string;
 }
 
-export interface RemoveTaskPayloadDTO extends TaskIdDto {
+export interface RemoveTaskPayloadDTO extends CorrelationMetadata {
+  id: string;
   actor?: TaskActorDTO | null;
 }
 
@@ -229,7 +240,7 @@ export class RemoveTaskPayloadDto
   actor?: TaskActorDto | null;
 }
 
-export class ListTasksDto implements TaskListFiltersDTO {
+export class ListTasksDto extends CorrelatedDto implements TaskListFiltersDTO {
   @IsOptional()
   @IsEnum(TaskStatus)
   status?: TaskStatus;

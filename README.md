@@ -4,7 +4,7 @@ Monorepo Turborepo com os serviços do JungleGaming (gateway HTTP, auth, tasks, 
 
 ## Onboarding rápido
 1. Instale dependências com `pnpm install`.
-2. Configure as variáveis de ambiente copiando os arquivos `.env.example` dentro de cada app (ex.: `cp apps/auth/.env.example apps/auth/.env`).
+2. Configure as variáveis de ambiente copiando os arquivos `.env.example` dentro de cada app (ex.: `cp apps/auth/.env.example apps/auth/.env`). O serviço de notificações agora também espera `DATABASE_URL` apontando para o Postgres, assim como Auth e Tasks.
 3. Ajuste os segredos JWT compartilhados entre Auth e API (`JWT_SECRET`, `JWT_EXPIRES_IN`, `JWT_ACCESS_SECRET`, `JWT_ACCESS_EXPIRES`). Os valores precisam coincidir para que a validação do token funcione em todo o ecossistema.
 4. Suba os serviços com `pnpm dev` para desenvolvimento local ou `docker compose up` para a stack completa (Postgres, RabbitMQ e serviços NestJS).
 
@@ -33,5 +33,10 @@ Monorepo Turborepo com os serviços do JungleGaming (gateway HTTP, auth, tasks, 
 - `pnpm build`: compila todos os projetos.
 - `pnpm lint`: executa o linting.
 - `pnpm check-types`: valida os tipos TypeScript.
+
+## Observabilidade & Logging
+- O middleware/interceptores globais usam `@repo/logger` para propagar `requestId` entre HTTP e RPC. Cada resposta HTTP devolve o header `x-request-id`, que também aparece no payload dos logs para facilitar correlação.
+- Campos sensíveis como `password`, `token`, `refreshToken`, `authorization` e `cookie` são mascarados com `[REDACTED]` automaticamente antes do log, evitando que credenciais do AuthService vazem nos registros.
+- Configure o nível de log com `APP_LOG_LEVEL` (fallbacks `LOG_LEVEL`/`NODE_ENV`) e inclua mascaramentos extras com `APP_LOG_REDACT_EXTRA` (lista separada por vírgulas aceitando chaves ou paths como `payload.secret`).
 
 Consulte `apps/api/README.md` para exemplos detalhados de uso do Swagger e das requisições autenticadas.

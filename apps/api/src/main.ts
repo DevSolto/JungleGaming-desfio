@@ -1,4 +1,4 @@
-import { Logger, ValidationPipe } from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
@@ -7,15 +7,25 @@ import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { TASKS_EVENTS_QUEUE } from './tasks/tasks.constants';
+import { NOTIFICATIONS_EVENTS_QUEUE } from './notifications/notifications.constants';
 import { HttpExceptionCodeFilter } from './common/filters/http-exception-code.filter';
 import { validationExceptionFactory } from './common/pipes/validation-exception.factory';
-
-const NOTIFICATIONS_EVENTS_QUEUE = 'notifications.events';
+import { AppLoggerService } from '@repo/logger';
+import { LoggingInterceptor } from './common/logging/logging.interceptor';
+import { RequestContextMiddleware } from './common/logging/request-context.middleware';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    bufferLogs: true,
+  });
+
+  const appLogger = app.get(AppLoggerService);
+  app.useLogger(appLogger);
 
   const config = app.get(ConfigService);
+
+  const requestContextMiddleware = app.get(RequestContextMiddleware);
+  app.use(requestContextMiddleware.use.bind(requestContextMiddleware));
 
   const rabbitMqUrl = config.get<string>(
     'RABBITMQ_URL',
@@ -47,6 +57,9 @@ async function bootstrap() {
   app.use(cookieParser());
   app.use(helmet());
   app.useGlobalFilters(new HttpExceptionCodeFilter());
+
+  const loggingInterceptor = app.get(LoggingInterceptor);
+  app.useGlobalInterceptors(loggingInterceptor);
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -86,7 +99,7 @@ async function bootstrap() {
   const port = Number(config.get('PORT', 3001));
   await app.startAllMicroservices();
   await app.listen(port);
-  Logger.log(`API running on http://localhost:${port}/api`);
-  Logger.log(`API docs available at http://localhost:${port}/api/docs`);
+  appLogger.log(`API running on http://localhost:${port}/api`);
+  appLogger.log(`API docs available at http://localhost:${port}/api/docs`);
 }
 void bootstrap();

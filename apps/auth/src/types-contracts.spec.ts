@@ -6,6 +6,8 @@ import {
   TASKS_RPC_CLIENT,
   TASKS_EVENTS_CLIENT,
   NOTIFICATIONS_GATEWAY_CLIENT,
+  NOTIFICATIONS_MESSAGE_PATTERNS,
+  NOTIFICATIONS_RPC_CLIENT,
 } from "@repo/types";
 
 describe("@repo/types runtime contract", () => {
@@ -49,5 +51,16 @@ describe("@repo/types runtime contract", () => {
     expect(TASKS_RPC_CLIENT).toBe("TASKS_RPC_CLIENT");
     expect(TASKS_EVENTS_CLIENT).toBe("TASKS_EVENTS_CLIENT");
     expect(NOTIFICATIONS_GATEWAY_CLIENT).toBe("NOTIFICATIONS_GATEWAY_CLIENT");
+    expect(NOTIFICATIONS_RPC_CLIENT).toBe("NOTIFICATIONS_RPC_CLIENT");
+  });
+
+  it("exposes notification message patterns", () => {
+    expect(NOTIFICATIONS_MESSAGE_PATTERNS).toEqual(
+      expect.objectContaining({
+        FIND_ALL: "notifications.findAll",
+        MARK_AS_READ: "notifications.markAsRead",
+        MARK_MANY_AS_READ: "notifications.markManyAsRead",
+      }),
+    );
   });
 });

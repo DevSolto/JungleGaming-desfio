@@ -1,23 +1,16 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.__TESTING__ = exports.resolveWaitForDatabaseOptions = exports.waitForDatabase = exports.delay = exports.parsePositiveInt = void 0;
+const logger_1 = require("@repo/logger");
 const pg_1 = require("pg");
 const DEFAULT_INITIAL_DELAY_MS = 500;
 const DEFAULT_MAX_DELAY_MS = 5_000;
 const DEFAULT_MAX_ATTEMPTS = 10;
 const DEFAULT_CONNECTION_TIMEOUT_MS = 3_000;
 const isPgClientConstructor = (value) => typeof value === "function";
-const defaultLogger = {
-    log: (message) => console.log(message),
-    warn: (message) => console.warn(message),
-    error: (message, error) => {
-        if (error !== undefined) {
-            console.error(message, error);
-            return;
-        }
-        console.error(message);
-    },
-};
+const defaultLogger = (0, logger_1.createAppLogger)({ name: "database-bootstrap" }).withContext({
+    scope: "waitForDatabase",
+});
 const parsePositiveInt = (value, fallback) => {
     if (!value) {
         return fallback;
@@ -49,16 +42,25 @@ const waitForDatabase = async ({ connectionString, initialDelayMs = DEFAULT_INIT
             });
             await client.connect();
             await client.end();
-            logger.log(`Successfully connected to PostgreSQL on attempt ${attempt}.`);
+            logger.log("Successfully connected to PostgreSQL.", {
+                attempt,
+            });
             return;
         }
         catch (error) {
             if (attempt >= maxAttempts) {
-                logger.error("Exhausted all attempts to reach PostgreSQL.", error);
+                logger.error("Exhausted all attempts to reach PostgreSQL.", error, {
+                    attempt,
+                    maxAttempts,
+                });
                 throw error;
             }
-            const message = error instanceof Error ? error.message : String(error);
-            logger.warn(`Attempt ${attempt} to connect to PostgreSQL failed (${message}). Retrying in ${delayMs}ms...`);
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            logger.warn("PostgreSQL connection attempt failed.", {
+                attempt,
+                delayMs,
+                errorMessage,
+            });
             await (0, exports.delay)(delayMs);
             delayMs = Math.min(delayMs * 2, maxDelayMs);
         }

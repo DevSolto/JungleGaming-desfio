@@ -1,0 +1,40 @@
+{
+  "name": "@repo/logger",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "watch": "tsc -p tsconfig.json --watch",
+    "lint": "eslint . --ext .ts --max-warnings 0",
+    "check-types": "tsc --noEmit",
+    "prepare": "pnpm run build",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.0.1",
+    "pino": "^9.5.0"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "@types/node": "^22.15.3",
+    "eslint": "^9.34.0",
+    "pino-pretty": "^11.2.2",
+    "typescript": "5.9.2",
+    "vitest": "^3.2.4"
+  }
+}

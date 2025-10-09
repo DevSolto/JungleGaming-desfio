@@ -16,6 +16,7 @@ import type {
   PaginatedTaskAuditLogsDTO,
   TaskAuditLogListFiltersDTO,
 } from "../../dto/task-audit-log.js";
+import type { CorrelatedMessage } from "../common/correlation.js";
 
 export const TASKS_MESSAGE_PATTERNS = {
   CREATE: "tasks.create",
@@ -31,30 +32,28 @@ export const TASKS_MESSAGE_PATTERNS = {
 export type TasksMessagePattern =
   (typeof TASKS_MESSAGE_PATTERNS)[keyof typeof TASKS_MESSAGE_PATTERNS];
 
-export type TasksCreatePayload = CreateTaskPayloadDTO;
+export type TasksCreatePayload = CorrelatedMessage<CreateTaskPayloadDTO>;
 export type TasksCreateResult = TaskDTO;
 
-export type TasksFindAllPayload = TaskListFiltersDTO;
+export type TasksFindAllPayload = CorrelatedMessage<TaskListFiltersDTO>;
 export type TasksFindAllResult = PaginatedTasksDTO;
 
-export interface TasksFindByIdPayload {
-  id: string;
-}
+export type TasksFindByIdPayload = CorrelatedMessage<{ id: string }>;
 export type TasksFindByIdResult = TaskDTO;
 
-export type TasksUpdatePayload = UpdateTaskPayloadDTO;
+export type TasksUpdatePayload = CorrelatedMessage<UpdateTaskPayloadDTO>;
 export type TasksUpdateResult = TaskDTO;
 
-export type TasksRemovePayload = RemoveTaskPayloadDTO;
+export type TasksRemovePayload = CorrelatedMessage<RemoveTaskPayloadDTO>;
 export type TasksRemoveResult = TaskDTO;
 
-export type TasksCommentsCreatePayload = CreateCommentDTO;
+export type TasksCommentsCreatePayload = CorrelatedMessage<CreateCommentDTO>;
 export type TasksCommentsCreateResult = CommentDTO;
 
-export type TasksCommentsFindAllPayload = TaskCommentListFiltersDTO;
+export type TasksCommentsFindAllPayload = CorrelatedMessage<TaskCommentListFiltersDTO>;
 export type TasksCommentsFindAllResult = PaginatedCommentsDTO;
 
-export type TasksAuditFindAllPayload = TaskAuditLogListFiltersDTO;
+export type TasksAuditFindAllPayload = CorrelatedMessage<TaskAuditLogListFiltersDTO>;
 export type TasksAuditFindAllResult = PaginatedTaskAuditLogsDTO;
 
 export interface TasksRpcContractMap {
