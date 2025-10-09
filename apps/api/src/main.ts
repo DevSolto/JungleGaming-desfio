@@ -7,7 +7,10 @@ import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { TASKS_EVENTS_QUEUE } from './tasks/tasks.constants';
-import { NOTIFICATIONS_EVENTS_QUEUE } from './notifications/notifications.constants';
+import {
+  NOTIFICATIONS_EVENTS_QUEUE,
+  NOTIFICATIONS_GATEWAY_QUEUE,
+} from './notifications/notifications.constants';
 import { HttpExceptionCodeFilter } from './common/filters/http-exception-code.filter';
 import { validationExceptionFactory } from './common/pipes/validation-exception.factory';
 import { AppLoggerService } from '@repo/logger';
@@ -36,6 +39,10 @@ async function bootstrap() {
     config.get<string>(
       'NOTIFICATIONS_EVENTS_QUEUE',
       NOTIFICATIONS_EVENTS_QUEUE,
+    ),
+    config.get<string>(
+      'NOTIFICATIONS_GATEWAY_QUEUE',
+      NOTIFICATIONS_GATEWAY_QUEUE,
     ),
   ].filter((queue): queue is string => Boolean(queue?.trim()));
 
