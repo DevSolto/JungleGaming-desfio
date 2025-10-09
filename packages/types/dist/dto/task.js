@@ -8,8 +8,30 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 import { Type } from "class-transformer";
-import { IsArray, IsDateString, IsEnum, IsInt, IsNotEmpty, IsNotEmptyObject, IsOptional, IsString, IsUUID, Min, ValidateIf, ValidateNested, } from "class-validator";
+import { IsArray, IsDateString, IsEmail, IsEnum, IsInt, IsNotEmpty, IsNotEmptyObject, IsOptional, IsString, IsUUID, Min, ValidateIf, ValidateNested, } from "class-validator";
 import { TaskPriority, TaskStatus } from "../enums/task.js";
+export class TaskActorDto {
+    id;
+    name;
+    email;
+}
+__decorate([
+    IsUUID(),
+    IsNotEmpty(),
+    __metadata("design:type", String)
+], TaskActorDto.prototype, "id", void 0);
+__decorate([
+    IsOptional(),
+    ValidateIf((_, value) => value !== null),
+    IsString(),
+    __metadata("design:type", Object)
+], TaskActorDto.prototype, "name", void 0);
+__decorate([
+    IsOptional(),
+    ValidateIf((_, value) => value !== null),
+    IsEmail(),
+    __metadata("design:type", Object)
+], TaskActorDto.prototype, "email", void 0);
 export class TaskIdDto {
     id;
 }
@@ -73,6 +95,16 @@ __decorate([
     Type(() => TaskAssigneeDto),
     __metadata("design:type", Array)
 ], CreateTaskDto.prototype, "assignees", void 0);
+export class CreateTaskPayloadDto extends CreateTaskDto {
+    actor;
+}
+__decorate([
+    IsOptional(),
+    ValidateIf((_, value) => value !== null),
+    ValidateNested(),
+    Type(() => TaskActorDto),
+    __metadata("design:type", Object)
+], CreateTaskPayloadDto.prototype, "actor", void 0);
 export class UpdateTaskDto {
     title;
     description;
@@ -116,21 +148,39 @@ __decorate([
     Type(() => TaskAssigneeDto),
     __metadata("design:type", Array)
 ], UpdateTaskDto.prototype, "assignees", void 0);
-export class UpdateTaskPayloadDto {
+export class UpdateTaskPayloadDTO {
     id;
     data;
+    actor;
 }
 __decorate([
     IsUUID(),
     IsNotEmpty(),
     __metadata("design:type", String)
-], UpdateTaskPayloadDto.prototype, "id", void 0);
+], UpdateTaskPayloadDTO.prototype, "id", void 0);
 __decorate([
     ValidateNested(),
     IsNotEmptyObject({ nullable: false }),
     Type(() => UpdateTaskDto),
     __metadata("design:type", UpdateTaskDto)
-], UpdateTaskPayloadDto.prototype, "data", void 0);
+], UpdateTaskPayloadDTO.prototype, "data", void 0);
+__decorate([
+    IsOptional(),
+    ValidateIf((_, value) => value !== null),
+    ValidateNested(),
+    Type(() => TaskActorDto),
+    __metadata("design:type", Object)
+], UpdateTaskPayloadDTO.prototype, "actor", void 0);
+export class RemoveTaskPayloadDto extends TaskIdDto {
+    actor;
+}
+__decorate([
+    IsOptional(),
+    ValidateIf((_, value) => value !== null),
+    ValidateNested(),
+    Type(() => TaskActorDto),
+    __metadata("design:type", Object)
+], RemoveTaskPayloadDto.prototype, "actor", void 0);
 export class ListTasksDto {
     status;
     priority;

@@ -9,4 +9,5 @@ exports.TASKS_MESSAGE_PATTERNS = {
     REMOVE: "tasks.remove",
     COMMENT_CREATE: "tasks.comment.create",
     COMMENT_FIND_ALL: "tasks.comment.findAll",
+    AUDIT_FIND_ALL: "tasks.audit.findAll",
 };

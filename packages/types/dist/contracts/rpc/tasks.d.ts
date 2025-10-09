@@ -1,5 +1,6 @@
 import type { CommentDTO, CreateCommentDTO, PaginatedCommentsDTO, TaskCommentListFiltersDTO } from "../../dto/comment.js";
-import type { CreateTaskDTO, PaginatedTasksDTO, TaskDTO, TaskListFiltersDTO, UpdateTaskDTO } from "../../dto/task.js";
+import type { CreateTaskPayloadDTO, PaginatedTasksDTO, RemoveTaskPayloadDTO, TaskDTO, TaskListFiltersDTO, UpdateTaskPayloadDTO } from "../../dto/task.js";
+import type { PaginatedTaskAuditLogsDTO, TaskAuditLogListFiltersDTO } from "../../dto/task-audit-log.js";
 export declare const TASKS_MESSAGE_PATTERNS: {
     readonly CREATE: "tasks.create";
     readonly FIND_ALL: "tasks.findAll";
@@ -8,9 +9,10 @@ export declare const TASKS_MESSAGE_PATTERNS: {
     readonly REMOVE: "tasks.remove";
     readonly COMMENT_CREATE: "tasks.comment.create";
     readonly COMMENT_FIND_ALL: "tasks.comment.findAll";
+    readonly AUDIT_FIND_ALL: "tasks.audit.findAll";
 };
 export type TasksMessagePattern = (typeof TASKS_MESSAGE_PATTERNS)[keyof typeof TASKS_MESSAGE_PATTERNS];
-export type TasksCreatePayload = CreateTaskDTO;
+export type TasksCreatePayload = CreateTaskPayloadDTO;
 export type TasksCreateResult = TaskDTO;
 export type TasksFindAllPayload = TaskListFiltersDTO;
 export type TasksFindAllResult = PaginatedTasksDTO;
@@ -18,19 +20,16 @@ export interface TasksFindByIdPayload {
     id: string;
 }
 export type TasksFindByIdResult = TaskDTO;
-export interface TasksUpdatePayload {
-    id: string;
-    data: UpdateTaskDTO;
-}
+export type TasksUpdatePayload = UpdateTaskPayloadDTO;
 export type TasksUpdateResult = TaskDTO;
-export interface TasksRemovePayload {
-    id: string;
-}
+export type TasksRemovePayload = RemoveTaskPayloadDTO;
 export type TasksRemoveResult = TaskDTO;
 export type TasksCommentsCreatePayload = CreateCommentDTO;
 export type TasksCommentsCreateResult = CommentDTO;
 export type TasksCommentsFindAllPayload = TaskCommentListFiltersDTO;
 export type TasksCommentsFindAllResult = PaginatedCommentsDTO;
+export type TasksAuditFindAllPayload = TaskAuditLogListFiltersDTO;
+export type TasksAuditFindAllResult = PaginatedTaskAuditLogsDTO;
 export interface TasksRpcContractMap {
     [TASKS_MESSAGE_PATTERNS.CREATE]: {
         payload: TasksCreatePayload;
@@ -59,6 +58,10 @@ export interface TasksRpcContractMap {
     [TASKS_MESSAGE_PATTERNS.COMMENT_FIND_ALL]: {
         payload: TasksCommentsFindAllPayload;
         response: TasksCommentsFindAllResult;
+    };
+    [TASKS_MESSAGE_PATTERNS.AUDIT_FIND_ALL]: {
+        payload: TasksAuditFindAllPayload;
+        response: TasksAuditFindAllResult;
     };
 }
 //# sourceMappingURL=tasks.d.ts.map

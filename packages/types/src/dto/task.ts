@@ -106,7 +106,7 @@ export class TaskIdDto {
   id!: string;
 }
 
-export class TaskIdParamDto extends TaskIdDto {}
+export class TaskIdParamDto extends TaskIdDto { }
 
 export class TaskAssigneeDto implements TaskAssigneeDTO {
   @IsUUID()
@@ -151,8 +151,7 @@ export interface CreateTaskPayloadDTO extends CreateTaskDTO {
 
 export class CreateTaskPayloadDto
   extends CreateTaskDto
-  implements CreateTaskPayloadDTO
-{
+  implements CreateTaskPayloadDTO {
   @IsOptional()
   @ValidateIf((_, value) => value !== null)
   @ValidateNested()
@@ -191,7 +190,7 @@ export class UpdateTaskDto implements UpdateTaskDTO {
   assignees?: TaskAssigneeDto[];
 }
 
-export class UpdateTaskPayloadDto {
+export class UpdateTaskPayloadDTO {
   @IsUUID()
   @IsNotEmpty()
   id!: string;
@@ -214,8 +213,7 @@ export interface RemoveTaskPayloadDTO extends TaskIdDto {
 
 export class RemoveTaskPayloadDto
   extends TaskIdDto
-  implements RemoveTaskPayloadDTO
-{
+  implements RemoveTaskPayloadDTO {
   @IsOptional()
   @ValidateIf((_, value) => value !== null)
   @ValidateNested()
