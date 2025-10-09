@@ -18,14 +18,14 @@ import { TasksModule } from './tasks/tasks.module';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => {
-        const ttl = parseInt(config.get<string>('RATE_LIMIT_TTL', '60'), 10);
+        const ttl = parseInt(config.get<string>('RATE_LIMIT_TTL', '1'), 10);
         const limit = parseInt(
-          config.get<string>('RATE_LIMIT_LIMIT', '120'),
+          config.get<string>('RATE_LIMIT_LIMIT', '10'),
           10,
         );
 
-        const normalizedTtl = Number.isNaN(ttl) ? 60 : ttl;
-        const normalizedLimit = Number.isNaN(limit) ? 120 : limit;
+        const normalizedTtl = Number.isNaN(ttl) ? 1 : ttl;
+        const normalizedLimit = Number.isNaN(limit) ? 10 : limit;
 
         return [
           {
