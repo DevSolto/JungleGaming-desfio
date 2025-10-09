@@ -17,3 +17,4 @@ Object.defineProperty(exports, "__esModule", { value: true });
 __exportStar(require("./auth.js"), exports);
 __exportStar(require("./tasks.js"), exports);
 __exportStar(require("./notifications.js"), exports);
+__exportStar(require("./users.js"), exports);

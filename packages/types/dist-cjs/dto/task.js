@@ -52,6 +52,8 @@ exports.TaskIdParamDto = TaskIdParamDto;
 class TaskAssigneeDto {
     id;
     username;
+    name;
+    email;
 }
 exports.TaskAssigneeDto = TaskAssigneeDto;
 __decorate([
@@ -64,6 +66,18 @@ __decorate([
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], TaskAssigneeDto.prototype, "username", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.ValidateIf)((_, value) => value !== null),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", Object)
+], TaskAssigneeDto.prototype, "name", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.ValidateIf)((_, value) => value !== null),
+    (0, class_validator_1.IsEmail)(),
+    __metadata("design:type", Object)
+], TaskAssigneeDto.prototype, "email", void 0);
 class CreateTaskDto {
     title;
     description;
@@ -261,6 +275,7 @@ class ListTasksQueryDto {
     status;
     priority;
     search;
+    assigneeId;
     dueDate;
 }
 exports.ListTasksQueryDto = ListTasksQueryDto;
@@ -293,6 +308,11 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], ListTasksQueryDto.prototype, "search", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsUUID)(),
+    __metadata("design:type", String)
+], ListTasksQueryDto.prototype, "assigneeId", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsDateString)(),
