@@ -1,5 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { Ctx, EventPattern, Payload, RmqContext } from '@nestjs/microservices';
+import {
+  Ctx,
+  EventPattern,
+  Payload,
+  RmqContext,
+  RmqRecordBuilder,
+} from '@nestjs/microservices';
 import {
   NOTIFICATION_CHANNELS,
   type NotificationChannel,
@@ -8,7 +14,10 @@ import {
 } from '@repo/types';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
-import { AppLoggerService } from '@repo/logger';
+import { AppLoggerService, runWithRequestContext } from '@repo/logger';
+import type { CorrelatedMessage } from '@repo/types';
+
+const REQUEST_ID_HEADER = 'x-request-id';
 
 import {
   COMMENT_NEW_EVENT,
@@ -63,6 +72,7 @@ export class NotificationsService {
   ): Promise<void> {
     const channelRef = context.getChannelRef() as unknown;
     const messageRef = context.getMessage() as unknown;
+    const requestId = this.resolveRequestId(payload, context);
 
     if (
       !isAcknowledgeChannel(channelRef) ||
@@ -71,7 +81,7 @@ export class NotificationsService {
       this.logger.error(
         'Received invalid RabbitMQ context while processing comment event.',
         undefined,
-        { pattern: TASKS_COMMENT_CREATED_PATTERN },
+        this.buildLogContext({ pattern: TASKS_COMMENT_CREATED_PATTERN }, requestId),
       );
       return;
     }
@@ -79,35 +89,49 @@ export class NotificationsService {
     const channel = channelRef;
     const originalMessage = messageRef;
 
-    try {
-      await this.persistCommentNotifications(payload);
-    } catch (error) {
-      this.logger.error(
-        'Failed to persist notifications for comment.',
-        error,
-        {
-          commentId: payload.comment?.id ?? null,
-          pattern: TASKS_COMMENT_CREATED_PATTERN,
-        },
-      );
-      channel.nack(originalMessage, false, true);
-      return;
-    }
+    await this.withRequestContext(requestId, async () => {
+      try {
+        await this.persistCommentNotifications(payload);
+      } catch (error) {
+        this.logger.error(
+          'Failed to persist notifications for comment.',
+          error,
+          this.buildLogContext(
+            {
+              commentId: payload.comment?.id ?? null,
+              pattern: TASKS_COMMENT_CREATED_PATTERN,
+            },
+            requestId,
+          ),
+        );
+        channel.nack(originalMessage, false, true);
+        return;
+      }
 
-    try {
-      await firstValueFrom(this.gatewayClient.emit(COMMENT_NEW_EVENT, payload));
-      channel.ack(originalMessage);
-      this.logger.debug('Forwarded comment to gateway.', {
-        commentId: payload.comment?.id ?? null,
-        event: COMMENT_NEW_EVENT,
-      });
-    } catch (error) {
-      this.logger.error('Failed to forward comment to gateway.', error, {
-        commentId: payload.comment?.id ?? null,
-        event: COMMENT_NEW_EVENT,
-      });
-      channel.nack(originalMessage, false, true);
-    }
+      try {
+        const record = this.createGatewayRecord(payload, requestId);
+        await firstValueFrom(this.gatewayClient.emit(COMMENT_NEW_EVENT, record));
+        channel.ack(originalMessage);
+        this.logger.debug('Forwarded comment to gateway.', {
+          ...this.buildLogContext({}, requestId),
+          commentId: payload.comment?.id ?? null,
+          event: COMMENT_NEW_EVENT,
+        });
+      } catch (error) {
+        this.logger.error(
+          'Failed to forward comment to gateway.',
+          error,
+          this.buildLogContext(
+            {
+              commentId: payload.comment?.id ?? null,
+              event: COMMENT_NEW_EVENT,
+            },
+            requestId,
+          ),
+        );
+        channel.nack(originalMessage, false, true);
+      }
+    });
   }
 
   @EventPattern(TASKS_UPDATED_PATTERN)
@@ -117,6 +141,7 @@ export class NotificationsService {
   ): Promise<void> {
     const channelRef = context.getChannelRef() as unknown;
     const messageRef = context.getMessage() as unknown;
+    const requestId = this.resolveRequestId(payload, context);
 
     if (
       !isAcknowledgeChannel(channelRef) ||
@@ -125,7 +150,7 @@ export class NotificationsService {
       this.logger.error(
         'Received invalid RabbitMQ context while processing task event.',
         undefined,
-        { pattern: TASKS_UPDATED_PATTERN },
+        this.buildLogContext({ pattern: TASKS_UPDATED_PATTERN }, requestId),
       );
       return;
     }
@@ -133,33 +158,49 @@ export class NotificationsService {
     const channel = channelRef;
     const originalMessage = messageRef;
 
-    try {
-      await this.persistTaskUpdateNotifications(payload);
-    } catch (error) {
-      this.logger.error('Failed to persist notifications for task update.', error, {
-        taskId: this.extractTaskId(payload),
-        pattern: TASKS_UPDATED_PATTERN,
-      });
-      channel.nack(originalMessage, false, true);
-      return;
-    }
+    await this.withRequestContext(requestId, async () => {
+      try {
+        await this.persistTaskUpdateNotifications(payload);
+      } catch (error) {
+        this.logger.error(
+          'Failed to persist notifications for task update.',
+          error,
+          this.buildLogContext(
+            {
+              taskId: this.extractTaskId(payload),
+              pattern: TASKS_UPDATED_PATTERN,
+            },
+            requestId,
+          ),
+        );
+        channel.nack(originalMessage, false, true);
+        return;
+      }
 
-    try {
-      await firstValueFrom(
-        this.gatewayClient.emit(TASK_UPDATED_EVENT, payload),
-      );
-      channel.ack(originalMessage);
-      this.logger.debug('Forwarded task update to gateway.', {
-        taskId: payload.task?.id ?? null,
-        event: TASK_UPDATED_EVENT,
-      });
-    } catch (error) {
-      this.logger.error('Failed to forward task update to gateway.', error, {
-        taskId: payload.task?.id ?? null,
-        event: TASK_UPDATED_EVENT,
-      });
-      channel.nack(originalMessage, false, true);
-    }
+      try {
+        const record = this.createGatewayRecord(payload, requestId);
+        await firstValueFrom(this.gatewayClient.emit(TASK_UPDATED_EVENT, record));
+        channel.ack(originalMessage);
+        this.logger.debug('Forwarded task update to gateway.', {
+          ...this.buildLogContext({}, requestId),
+          taskId: payload.task?.id ?? null,
+          event: TASK_UPDATED_EVENT,
+        });
+      } catch (error) {
+        this.logger.error(
+          'Failed to forward task update to gateway.',
+          error,
+          this.buildLogContext(
+            {
+              taskId: payload.task?.id ?? null,
+              event: TASK_UPDATED_EVENT,
+            },
+            requestId,
+          ),
+        );
+        channel.nack(originalMessage, false, true);
+      }
+    });
   }
 
   private async persistCommentNotifications(
@@ -232,6 +273,128 @@ export class NotificationsService {
         }),
       ),
     );
+  }
+
+  private resolveRequestId(
+    payload: unknown,
+    context: RmqContext,
+  ): string | undefined {
+    const payloadRequestId = this.extractRequestIdFromPayload(payload);
+
+    if (payloadRequestId) {
+      return payloadRequestId;
+    }
+
+    return this.extractRequestIdFromContext(context);
+  }
+
+  private extractRequestIdFromPayload(payload: unknown): string | undefined {
+    if (!payload || typeof payload !== 'object') {
+      return undefined;
+    }
+
+    const candidate = (payload as { requestId?: unknown }).requestId;
+
+    if (typeof candidate === 'string') {
+      const trimmed = candidate.trim();
+      return trimmed.length > 0 ? trimmed : undefined;
+    }
+
+    return undefined;
+  }
+
+  private extractRequestIdFromContext(context: RmqContext): string | undefined {
+    const message = context?.getMessage?.();
+    const headers =
+      (message?.properties?.headers as Record<string, unknown> | undefined) ?? {};
+
+    const candidate = headers[REQUEST_ID_HEADER] ?? headers['request-id'];
+
+    if (typeof candidate === 'string') {
+      const trimmed = candidate.trim();
+      return trimmed.length > 0 ? trimmed : undefined;
+    }
+
+    return undefined;
+  }
+
+  private async withRequestContext<T>(
+    requestId: string | undefined,
+    handler: () => Promise<T>,
+  ): Promise<T> {
+    if (!requestId) {
+      return handler();
+    }
+
+    return runWithRequestContext({ requestId }, handler);
+  }
+
+  private buildLogContext(
+    base: Record<string, unknown>,
+    requestId?: string,
+  ): Record<string, unknown> {
+    if (!requestId) {
+      return base;
+    }
+
+    return {
+      ...base,
+      requestId,
+    };
+  }
+
+  private createGatewayRecord<TPayload extends object>(
+    payload: TPayload,
+    requestId?: string,
+  ): ReturnType<RmqRecordBuilder['build']> {
+    const { correlatedPayload, resolvedRequestId } = this.withRequestId(
+      payload,
+      requestId,
+    );
+
+    const builder = new RmqRecordBuilder(correlatedPayload);
+
+    if (resolvedRequestId) {
+      builder.setOptions({
+        headers: {
+          [REQUEST_ID_HEADER]: resolvedRequestId,
+        },
+      });
+    }
+
+    return builder.build();
+  }
+
+  private withRequestId<TPayload extends object>(
+    payload: TPayload,
+    explicitRequestId?: string,
+  ): {
+    correlatedPayload: CorrelatedMessage<TPayload>;
+    resolvedRequestId?: string;
+  } {
+    const payloadRequestId = this.extractRequestIdFromPayload(payload);
+    const requestId = payloadRequestId ?? explicitRequestId;
+
+    if (!requestId) {
+      return {
+        correlatedPayload: payload as CorrelatedMessage<TPayload>,
+      };
+    }
+
+    if (payloadRequestId === requestId) {
+      return {
+        correlatedPayload: payload as CorrelatedMessage<TPayload>,
+        resolvedRequestId: requestId,
+      };
+    }
+
+    return {
+      correlatedPayload: {
+        ...payload,
+        requestId,
+      } satisfies CorrelatedMessage<TPayload>,
+      resolvedRequestId: requestId,
+    };
   }
 
   private normalizeRecipients(recipients: string[]): string[] {

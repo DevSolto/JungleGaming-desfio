@@ -4,6 +4,7 @@ import type {
   TaskAuditLogActorDTO,
   TaskAuditLogChangeDTO,
 } from "../../dto/task-audit-log.js";
+import type { CorrelatedMessage } from "../common/correlation.js";
 
 export const TASK_EVENT_PATTERNS = {
   CREATED: "task.created",
@@ -15,17 +16,17 @@ export const TASK_EVENT_PATTERNS = {
 export type TaskEventPattern =
   (typeof TASK_EVENT_PATTERNS)[keyof typeof TASK_EVENT_PATTERNS];
 
-export interface TaskEventPayload {
+export type TaskEventPayload = CorrelatedMessage<{
   task: TaskDTO;
   recipients?: string[];
   actor?: TaskAuditLogActorDTO | null;
   changes?: TaskAuditLogChangeDTO[] | Record<string, unknown> | null;
-}
+}>;
 
-export interface TaskCommentCreatedEventPayload
-  extends Pick<TaskEventPayload, "recipients"> {
+export type TaskCommentCreatedEventPayload = CorrelatedMessage<{
   comment: CommentDTO;
-}
+  recipients?: string[];
+}>;
 
 export const TASK_FORWARDING_PATTERNS = {
   COMMENT_CREATED: "tasks.comment.created",
@@ -35,14 +36,15 @@ export const TASK_FORWARDING_PATTERNS = {
 export type TaskForwardingPattern =
   (typeof TASK_FORWARDING_PATTERNS)[keyof typeof TASK_FORWARDING_PATTERNS];
 
-export interface TaskCommentCreatedPayload
-  extends TaskCommentCreatedEventPayload {
-  recipients: string[];
-}
+export type TaskCommentCreatedPayload = CorrelatedMessage<
+  TaskCommentCreatedEventPayload & {
+    recipients: string[];
+  }
+>;
 
-export interface TaskUpdatedForwardPayload {
+export type TaskUpdatedForwardPayload = CorrelatedMessage<{
   task: TaskDTO | { id: string; [key: string]: unknown };
   recipients: string[];
   actor?: TaskAuditLogActorDTO | null;
   changes?: TaskAuditLogChangeDTO[] | Record<string, unknown> | null;
-}
+}>;

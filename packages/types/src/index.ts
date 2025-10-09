@@ -34,6 +34,7 @@ export * from "./contracts/events/gateway.js";
 export * from "./contracts/queues.js";
 export * from "./contracts/tokens.js";
 export * from "./contracts/common/index.js";
+export * from "./dto/correlation.js";
 export * from "./dto/comment.js";
 export * from "./dto/tokens.js";
 export * from "./dto/user.js";

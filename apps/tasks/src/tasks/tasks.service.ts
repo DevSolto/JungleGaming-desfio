@@ -1,6 +1,6 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ClientProxy } from '@nestjs/microservices';
+import { ClientProxy, RmqRecordBuilder } from '@nestjs/microservices';
 import { defaultIfEmpty, lastValueFrom } from 'rxjs';
 import { Repository, type DeepPartial } from 'typeorm';
 import { Task } from './task.entity';
@@ -31,6 +31,10 @@ import {
   createTaskStateSnapshot,
   diffTaskChanges,
 } from './task-diff.util';
+import { getCurrentRequestContext } from '@repo/logger';
+import type { CorrelatedMessage } from '@repo/types';
+
+const REQUEST_ID_HEADER = 'x-request-id';
 
 export interface PaginatedTasks {
   data: Task[];
@@ -213,19 +217,82 @@ export class TasksService {
     return removed;
   }
 
-  private async emitEvent(
+  private async emitEvent<TPayload extends object>(
     pattern: TaskEventPattern,
-    payload: unknown,
+    payload: TPayload,
   ): Promise<void> {
     try {
+      const record = this.createEventRecord(payload);
+
       await lastValueFrom(
-        this.eventsClient
-          .emit(pattern, payload)
-          .pipe(defaultIfEmpty(undefined)),
+        this.eventsClient.emit(pattern, record).pipe(defaultIfEmpty(undefined)),
       );
     } catch {
       // Intentionally swallow errors to avoid breaking the main workflow
     }
+  }
+
+  private createEventRecord<TPayload extends object>(
+    payload: TPayload,
+  ): ReturnType<RmqRecordBuilder['build']> {
+    const { correlatedPayload, requestId } = this.withRequestId(payload);
+    const builder = new RmqRecordBuilder(correlatedPayload);
+
+    if (requestId) {
+      builder.setOptions({
+        headers: {
+          [REQUEST_ID_HEADER]: requestId,
+        },
+      });
+    }
+
+    return builder.build();
+  }
+
+  private withRequestId<TPayload extends object>(
+    payload: TPayload,
+  ): {
+    correlatedPayload: CorrelatedMessage<TPayload>;
+    requestId?: string;
+  } {
+    const payloadRequestId = this.extractRequestId(payload);
+    const requestId = payloadRequestId ?? getCurrentRequestContext()?.requestId;
+
+    if (!requestId) {
+      return {
+        correlatedPayload: payload as CorrelatedMessage<TPayload>,
+      };
+    }
+
+    if (payloadRequestId === requestId) {
+      return {
+        correlatedPayload: payload as CorrelatedMessage<TPayload>,
+        requestId,
+      };
+    }
+
+    return {
+      correlatedPayload: {
+        ...payload,
+        requestId,
+      } satisfies CorrelatedMessage<TPayload>,
+      requestId,
+    };
+  }
+
+  private extractRequestId(payload: unknown): string | undefined {
+    if (!payload || typeof payload !== 'object') {
+      return undefined;
+    }
+
+    const candidate = (payload as { requestId?: unknown }).requestId;
+
+    if (typeof candidate === 'string') {
+      const trimmed = candidate.trim();
+      return trimmed.length > 0 ? trimmed : undefined;
+    }
+
+    return undefined;
   }
 
   private toAuditLogActor(
