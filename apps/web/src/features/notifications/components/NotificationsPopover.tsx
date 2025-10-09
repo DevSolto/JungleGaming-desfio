@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import type { NotificationDTO } from '@repo/types'
 import { Bell, Loader2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { toast } from '@/components/ui/use-toast'
 import { cn } from '@/lib/utils'
 import { router } from '@/router'
 
@@ -80,6 +81,8 @@ interface NotificationsPopoverProps {
 export function NotificationsPopover({ className }: NotificationsPopoverProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [lastSeenTotal, setLastSeenTotal] = useState<number | null>(null)
+  const hasInitializedRef = useRef(false)
+  const knownNotificationIdsRef = useRef(new Set<string>())
 
   const {
     data: notificationsResponse,
@@ -160,6 +163,44 @@ export function NotificationsPopover({ className }: NotificationsPopoverProps) {
 
     setLastSeenTotal(totalNotifications)
   }, [isOpen, isSuccess, totalNotifications])
+
+  useEffect(() => {
+    if (!isSuccess) {
+      return
+    }
+
+    const currentNotificationIds = new Set(
+      notifications.map((notification) => notification.id),
+    )
+
+    if (!hasInitializedRef.current) {
+      knownNotificationIdsRef.current = currentNotificationIds
+      hasInitializedRef.current = true
+      return
+    }
+
+    const newNotifications = notifications.filter(
+      (notification) => !knownNotificationIdsRef.current.has(notification.id),
+    )
+
+    if (newNotifications.length > 0) {
+      newNotifications.forEach((notification) => {
+        const responsibleName = getNotificationResponsibleName(notification)
+
+        toast({
+          title: 'Nova notificação',
+          description: responsibleName
+            ? `${notification.message} (Responsável: ${responsibleName})`
+            : notification.message,
+        })
+      })
+    }
+
+    knownNotificationIdsRef.current = new Set([
+      ...Array.from(knownNotificationIdsRef.current),
+      ...Array.from(currentNotificationIds),
+    ])
+  }, [isSuccess, notifications])
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
