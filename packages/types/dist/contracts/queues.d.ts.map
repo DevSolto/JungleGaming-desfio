@@ -1,1 +1,1 @@
-{"version":3,"file":"queues.d.ts","sourceRoot":"","sources":["../../src/contracts/queues.ts"],"names":[],"mappings":"AAAA,eAAO,MAAM,eAAe,cAAc,CAAC;AAC3C,eAAO,MAAM,kBAAkB,iBAAiB,CAAC;AAEjD,eAAO,MAAM,2BAA2B,yBAAyB,CAAC;AAClE,eAAO,MAAM,2BAA2B,mBAAmB,CAAC"}
+{"version":3,"file":"queues.d.ts","sourceRoot":"","sources":["../../src/contracts/queues.ts"],"names":[],"mappings":"AAAA,eAAO,MAAM,eAAe,cAAc,CAAC;AAC3C,eAAO,MAAM,kBAAkB,iBAAiB,CAAC;AAEjD,eAAO,MAAM,0BAA0B,yBAAyB,CAAC;AACjE,eAAO,MAAM,2BAA2B,yBAA6B,CAAC;AACtE,eAAO,MAAM,uBAAuB,sBAAsB,CAAC;AAC3D,eAAO,MAAM,2BAA2B,mBAAmB,CAAC"}

@@ -1,4 +1,5 @@
 export declare const TASKS_RPC_CLIENT = "TASKS_RPC_CLIENT";
 export declare const TASKS_EVENTS_CLIENT = "TASKS_EVENTS_CLIENT";
 export declare const NOTIFICATIONS_GATEWAY_CLIENT = "NOTIFICATIONS_GATEWAY_CLIENT";
+export declare const NOTIFICATIONS_RPC_CLIENT = "NOTIFICATIONS_RPC_CLIENT";
 //# sourceMappingURL=tokens.d.ts.map

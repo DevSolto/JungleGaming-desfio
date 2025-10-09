@@ -9,6 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 import { Type } from "class-transformer";
 import { IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, MaxLength, Min, } from "class-validator";
+import { CorrelatedDto } from "./correlation.js";
 // Comments are limited to 500 characters to maintain readability across clients.
 export const COMMENT_MESSAGE_MAX_LENGTH = 500;
 export const COMMENT_AUTHOR_NAME_MAX_LENGTH = 255;
@@ -21,7 +22,7 @@ __decorate([
     MaxLength(COMMENT_MESSAGE_MAX_LENGTH),
     __metadata("design:type", String)
 ], CreateCommentBodyDto.prototype, "message", void 0);
-export class CreateCommentDto {
+export class CreateCommentDto extends CorrelatedDto {
     taskId;
     authorId;
     authorName;
@@ -50,7 +51,7 @@ __decorate([
     MaxLength(COMMENT_MESSAGE_MAX_LENGTH),
     __metadata("design:type", String)
 ], CreateCommentDto.prototype, "message", void 0);
-export class ListTaskCommentsDto {
+export class ListTaskCommentsDto extends CorrelatedDto {
     taskId;
     page;
     limit;
