@@ -133,3 +133,43 @@ Resposta simplificada:
 ```
 
 O volume de registros cresce conforme as tarefas são alteradas; ajuste `limit` para controlar a quantidade retornada por página e monitore o tamanho da tabela `task_audit_logs` nas operações de produção.
+
+## Histórico de notificações persistidas
+
+O gateway expõe `GET /notifications` para consultar notificações armazenadas pelo serviço dedicado. O contrato já aparece na documentação Swagger com suporte a filtros por `status`, `channel`, intervalo temporal (`from`/`to`), busca textual (`search`) e paginação (`page`/`limit`).
+
+Exemplo de chamada autenticada:
+
+```bash
+curl -H "Authorization: Bearer $ACCESS_TOKEN" \
+     "http://localhost:3000/notifications?status=unread&channel=in_app&page=1&limit=20"
+```
+
+Resposta resumida:
+
+```json
+{
+  "data": [
+    {
+      "id": "notif-123",
+      "recipientId": "user-1",
+      "channel": "in_app",
+      "status": "unread",
+      "message": "Nova atualização na tarefa XYZ",
+      "metadata": {
+        "taskId": "task-xyz"
+      },
+      "createdAt": "2024-07-01T12:00:00.000Z",
+      "sentAt": null
+    }
+  ],
+  "meta": {
+    "page": 1,
+    "size": 20,
+    "total": 5,
+    "totalPages": 1
+  }
+}
+```
+
+O endpoint ainda depende da exposição RPC correspondente pelo serviço de notificações para retornar dados reais, mas já serve como contrato oficial para o front-end integrar a listagem paginada do histórico.
