@@ -37,6 +37,7 @@ import {
   commentFormSchema,
   type CommentFormSchema,
 } from '../schemas/commentSchema'
+import { getNotificationResponsibleName } from '../../notifications/utils/getNotificationResponsibleName'
 
 interface TaskDetailsPageProps {
   taskId: string
@@ -523,24 +524,43 @@ export function TaskDetailsPage({ taskId }: TaskDetailsPageProps) {
             <p className="text-sm text-destructive">{notificationsError}</p>
           ) : notifications.length > 0 ? (
             <ul className="space-y-4">
-              {notifications.map((notification: NotificationDTO) => (
-                <li key={notification.id} className="rounded-md border border-border bg-background/80 p-4">
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>Canal: {notification.channel}</span>
-                    <span>Status: {notification.status}</span>
-                  </div>
-                  <p className="mt-2 text-sm text-foreground">{notification.message}</p>
-                  <div className="mt-3 flex flex-wrap gap-4 text-xs text-muted-foreground">
-                    <span>Criada: {formatDateTime(notification.createdAt)}</span>
-                    <span>
-                      Enviada:{' '}
-                      {notification.sentAt
-                        ? formatDateTime(notification.sentAt)
-                        : 'Não enviada'}
-                    </span>
-                  </div>
-                </li>
-              ))}
+              {notifications.map((notification: NotificationDTO) => {
+                const responsibleName =
+                  getNotificationResponsibleName(notification) ?? 'Não informado'
+
+                return (
+                  <li
+                    key={notification.id}
+                    className="rounded-md border border-border bg-background/80 p-4"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+                      <span>
+                        Responsável:{' '}
+                        <span className="font-medium text-foreground">
+                          {responsibleName}
+                        </span>
+                      </span>
+                      <span>
+                        Criada em:{' '}
+                        <span className="font-medium text-foreground">
+                          {formatDateTime(notification.createdAt)}
+                        </span>
+                      </span>
+                    </div>
+                    <p className="mt-2 text-sm text-foreground">{notification.message}</p>
+                    <div className="mt-3 flex flex-wrap gap-4 text-xs text-muted-foreground">
+                      <span>Canal: {notification.channel}</span>
+                      <span>Status: {notification.status}</span>
+                      <span>
+                        Enviada:{' '}
+                        {notification.sentAt
+                          ? formatDateTime(notification.sentAt)
+                          : 'Não enviada'}
+                      </span>
+                    </div>
+                  </li>
+                )
+              })}
             </ul>
           ) : (
             <p className="text-sm text-muted-foreground">

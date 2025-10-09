@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils'
 import { router } from '@/router'
 
 import { getNotifications } from '../api/getNotifications'
+import { getNotificationResponsibleName } from '../utils/getNotificationResponsibleName'
 
 const REFRESH_INTERVAL_MS = 60_000
 const DEFAULT_LIMIT = 10
@@ -193,6 +194,8 @@ export function NotificationsPopover({ className }: NotificationsPopoverProps) {
             <ul className="divide-y divide-border">
               {notifications.map((notification) => {
                 const taskId = getTaskIdFromMetadata(notification)
+                const responsibleName =
+                  getNotificationResponsibleName(notification)
 
                 return (
                   <li key={notification.id} className="space-y-2 px-4 py-3 text-sm">
@@ -204,6 +207,15 @@ export function NotificationsPopover({ className }: NotificationsPopoverProps) {
                         {formatChannel(notification.channel)}
                       </span>
                     </div>
+
+                    {responsibleName ? (
+                      <p className="text-xs text-muted-foreground">
+                        Responsável:{' '}
+                        <span className="font-medium text-foreground">
+                          {responsibleName}
+                        </span>
+                      </p>
+                    ) : null}
 
                     <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                       <span>{formatDateTime(notification.createdAt)}</span>
