@@ -614,4 +614,89 @@ describe('AppController (e2e)', () => {
       }),
     );
   });
+
+  it('smoke test: user can login, create a task and comment on it', async () => {
+    const loginResponse = {
+      user: expectedActor,
+      accessToken: 'smoke-access-token',
+      refreshToken: 'smoke-refresh-token',
+    } as const;
+
+    authClient.send.mockReturnValueOnce(of(loginResponse));
+
+    const server = app.getHttpServer();
+
+    const loginResult = await request(server)
+      .post('/auth/login')
+      .send({
+        email: expectedActor.email,
+        password: 'secret1',
+      })
+      .expect(HttpStatus.OK);
+
+    expect(loginResult.body).toEqual({
+      user: loginResponse.user,
+      accessToken: loginResponse.accessToken,
+    });
+
+    const setCookieHeader = loginResult.headers['set-cookie'];
+    expect(Array.isArray(setCookieHeader)).toBe(true);
+    const cookies = setCookieHeader as string[];
+    expect(
+      cookies.some((value: string) =>
+        value.startsWith(`refreshToken=${loginResponse.refreshToken}`),
+      ),
+    ).toBe(true);
+
+    const accessToken = loginResult.body.accessToken;
+
+    const createTaskPayload = createCreateTaskDtoFixture();
+    const createdTask = createTaskFixture();
+    const commentMessage = 'Sharing mission status update.';
+    const createdComment = createCommentFixture({
+      taskId: createdTask.id,
+      message: commentMessage,
+    });
+
+    tasksClient.send
+      .mockReturnValueOnce(of(createdTask))
+      .mockReturnValueOnce(of(createdComment));
+
+    await request(server)
+      .post('/tasks')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send(createTaskPayload)
+      .expect(HttpStatus.CREATED)
+      .expect(({ body }) => {
+        expect(body).toEqual({ data: createdTask });
+      });
+
+    await request(server)
+      .post(`/tasks/${createdTask.id}/comments`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ message: commentMessage })
+      .expect(HttpStatus.CREATED)
+      .expect(({ body }) => {
+        expect(body).toEqual({ data: createdComment });
+      });
+
+    expect(authClient.send).toHaveBeenCalledTimes(1);
+    expect(tasksClient.send).toHaveBeenCalledTimes(2);
+
+    const [createPattern, createPayload] = tasksClient.send.mock.calls[0];
+    expect(createPattern).toBe(TASKS_MESSAGE_PATTERNS.CREATE);
+    expect(createPayload).toMatchObject({
+      ...createTaskPayload,
+      actor: expectedActor,
+    });
+
+    const [commentPattern, commentPayload] = tasksClient.send.mock.calls[1];
+    expect(commentPattern).toBe(TASKS_MESSAGE_PATTERNS.COMMENT_CREATE);
+    expect(commentPayload).toMatchObject({
+      taskId: createdTask.id,
+      message: commentMessage,
+      authorId: expectedActor.id,
+      authorName: expectedActor.name,
+    });
+  });
 });
