@@ -7,12 +7,14 @@ import { Comment } from './comment.entity';
 import { Task } from '../tasks/task.entity';
 import { TASKS_EVENTS_CLIENT } from '../tasks/tasks.constants';
 import {
+  TASK_EVENT_PATTERNS,
   TASK_FORWARDING_PATTERNS,
   type CommentDTO,
   type CreateCommentDTO,
   type PaginatedCommentsDTO,
   type TaskCommentListFiltersDTO,
   type TaskCommentCreatedPayload,
+  type TaskEventPattern,
   type TaskForwardingPattern,
 } from '@repo/types';
 
@@ -95,6 +97,7 @@ export class CommentsService {
       recipients: Array.from(recipients),
     };
 
+    await this.emitEvent(TASK_EVENT_PATTERNS.COMMENT_CREATED, payload);
     await this.emitEvent(TASK_FORWARDING_PATTERNS.COMMENT_CREATED, payload);
   }
 
@@ -111,7 +114,7 @@ export class CommentsService {
   }
 
   private async emitEvent(
-    pattern: TaskForwardingPattern,
+    pattern: TaskEventPattern | TaskForwardingPattern,
     payload: unknown,
   ): Promise<void> {
     try {
