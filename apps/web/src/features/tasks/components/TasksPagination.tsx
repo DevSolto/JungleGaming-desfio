@@ -65,6 +65,9 @@ export function TasksPagination({
         >
           Anterior
         </Button>
+        <div className="text-xs text-muted-foreground" aria-live="polite">
+          {hasMeta ? formatRange(meta!) : 'Carregando paginação...'}
+        </div>
         <Button
           type="button"
           variant="outline"
@@ -98,9 +101,7 @@ export function TasksPagination({
         </Select>
       </div>
 
-      <div className="text-xs text-muted-foreground" aria-live="polite">
-        {hasMeta ? formatRange(meta!) : 'Carregando paginação...'}
-      </div>
+
     </div>
   )
 }
