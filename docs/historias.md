@@ -38,16 +38,16 @@
 # Épico: Front-end (React + TanStack Router + shadcn/ui)
 
 * [x] Como visitante, quero **páginas de Login/Register** com validação (`react-hook-form` + `zod`), para entrar no sistema de forma simples e segura. — feita
-* [ ] Como usuário, quero uma **lista de tarefas** com **filtro, busca e paginação**, para encontrar e priorizar itens rapidamente. _(Observação: filtros e busca estão implementados, mas não há controles de paginação na UI.)_
+* [x] Como usuário, quero uma **lista de tarefas** com **filtro, busca e paginação**, para encontrar e priorizar itens rapidamente. _(Observação: a página de tarefas agora controla estado de página/tamanho via `useTasksPagination` e renderiza o componente `TasksPagination`, com botões de navegação e seletor de itens por página.)_
 * [x] Como usuário, quero uma **página de detalhes da tarefa** com **status, atribuições e comentários**, para trabalhar no contexto certo. — feita
 * [x] Como usuário, quero **componentes de UI** (≥5 shadcn) com **skeletons** e **toasts de erro/sucesso**, para uma UX fluida. — feita
 * [x] Como usuário, quero **notificações em tempo real** refletidas na UI (badges/toasts), para reagir sem precisar atualizar a página. — feita
 
 # Épico: Observabilidade, Qualidade e Segurança (DoR/DoD do projeto)
 
-* [ ] Como time, quero **health/readiness checks** em todos os serviços, para monitorar disponibilidade. _(Observação: API, auth e tasks possuem healthcheck, mas o serviço de notificações não expõe endpoint semelhante.)_
-* [ ] Como gateway, quero **rate limiting (10 req/s)**, **CORS** e **Helmet**, para mitigar abusos e reforçar segurança. _(Observação: CORS e Helmet estão ativos; o rate limiting existe mas com limites padrão (120/min) diferentes do alvo de 10 req/s.)_
-* [ ] Como time, quero **testes unitários** (auth, tasks) e **smoke e2e** (login → create task → comment), para garantir qualidade contínua. _(Observação: existem testes unitários para auth, porém faltam testes para tasks e o fluxo e2e.)_
+* [x] Como time, quero **health/readiness checks** em todos os serviços, para monitorar disponibilidade. _(Observação: API, auth, tasks e notifications expõem `GET /health` via seus respectivos `HealthModule`, retornando status e timestamp.)_
+* [x] Como gateway, quero **rate limiting (10 req/s)**, **CORS** e **Helmet**, para mitigar abusos e reforçar segurança. _(Observação: o `ThrottlerModule` agora lê `RATE_LIMIT_TTL`/`RATE_LIMIT_LIMIT` com default `1s/10 req`, mantendo CORS e Helmet configurados.)_
+* [ ] Como time, quero **testes unitários** (auth, tasks) e **smoke e2e** (login → create task → comment), para garantir qualidade contínua. _(Observação: Auth e Tasks possuem suites unitárias abrangentes, mas ainda falta um fluxo e2e integrando login → criação de tarefa → comentário.)_
 * [ ] Como time, quero **logs estruturados** com correlação (request-id) e máscara de campos sensíveis, para facilitar troubleshooting seguro. _(Pendente: não há estruturação específica de logs ou correlação de requisições.)_
 
 # Épico: Infraestrutura & Entregabilidade (Docker/Turborepo)
