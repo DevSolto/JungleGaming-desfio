@@ -4,6 +4,8 @@ import { CorrelatedDto } from "./correlation.js";
 export interface TaskAssigneeDTO {
     id: string;
     username: string;
+    name?: string | null;
+    email?: string | null;
 }
 export type TaskAssignee = TaskAssigneeDTO;
 export interface TaskDTO {
@@ -68,6 +70,8 @@ export declare class TaskIdParamDto extends TaskIdDto {
 export declare class TaskAssigneeDto implements TaskAssigneeDTO {
     id: string;
     username: string;
+    name?: string | null;
+    email?: string | null;
 }
 export declare class CreateTaskDto implements CreateTaskDTO {
     title: string;
@@ -126,6 +130,7 @@ export declare class ListTasksQueryDto {
     status?: TaskStatus;
     priority?: TaskPriority;
     search?: string;
+    assigneeId?: string;
     dueDate?: string;
 }
 //# sourceMappingURL=task.d.ts.map

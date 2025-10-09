@@ -208,7 +208,7 @@ export class NotificationsService {
     payload: TaskCommentCreatedPayload,
     requestId?: string,
   ): Promise<void> {
-    const recipients = this.normalizeRecipients(payload.recipients);
+    const recipients = this.resolveCommentRecipients(payload);
 
     if (recipients.length === 0) {
       return;
@@ -257,7 +257,7 @@ export class NotificationsService {
     payload: TaskUpdatedForwardPayload,
     requestId?: string,
   ): Promise<void> {
-    const recipients = this.normalizeRecipients(payload.recipients);
+    const recipients = this.resolveTaskUpdateRecipients(payload);
 
     if (recipients.length === 0) {
       return;
@@ -436,15 +436,165 @@ export class NotificationsService {
     };
   }
 
-  private normalizeRecipients(recipients: string[]): string[] {
-    return Array.from(
-      new Set(
-        (recipients ?? [])
-          .filter((recipient) => typeof recipient === 'string')
-          .map((recipient) => recipient.trim())
-          .filter((recipient) => recipient.length > 0),
-      ),
+  private resolveCommentRecipients(
+    payload: TaskCommentCreatedPayload,
+  ): string[] {
+    const normalizedRecipients = this.normalizeRecipients(
+      payload?.recipients ?? undefined,
     );
+    const recipients = new Set(normalizedRecipients);
+
+    if (recipients.size === 0) {
+      const authorId = this.extractIdentifier(payload?.comment?.authorId);
+      if (authorId) {
+        recipients.add(authorId);
+      }
+
+      const taskRecipients = this.extractTaskRecipients(
+        (payload as { task?: unknown }).task,
+      );
+
+      for (const recipient of taskRecipients) {
+        recipients.add(recipient);
+      }
+    }
+
+    return Array.from(recipients);
+  }
+
+  private resolveTaskUpdateRecipients(
+    payload: TaskUpdatedForwardPayload,
+  ): string[] {
+    const recipients = new Set(
+      this.normalizeRecipients(payload?.recipients ?? undefined),
+    );
+
+    const taskRecipients = this.extractTaskRecipients(payload?.task);
+    for (const recipient of taskRecipients) {
+      recipients.add(recipient);
+    }
+
+    return Array.from(recipients);
+  }
+
+  private normalizeRecipients(recipients: unknown): string[] {
+    const normalized = new Set<string>();
+
+    const visit = (value: unknown, depth = 0): void => {
+      if (value === undefined || value === null) {
+        return;
+      }
+
+      if (depth > 5) {
+        return;
+      }
+
+      if (typeof value === 'string') {
+        const trimmed = value.trim();
+        if (trimmed.length > 0) {
+          normalized.add(trimmed);
+        }
+        return;
+      }
+
+      if (Array.isArray(value)) {
+        for (const item of value) {
+          visit(item, depth + 1);
+        }
+        return;
+      }
+
+      if (typeof value !== 'object') {
+        return;
+      }
+
+      const record = value as Record<string, unknown>;
+
+      const directKeys = ['id', 'userId', 'recipientId'];
+      for (const key of directKeys) {
+        const candidate = record[key];
+        if (typeof candidate === 'string') {
+          const trimmed = candidate.trim();
+          if (trimmed.length > 0) {
+            normalized.add(trimmed);
+          }
+        }
+      }
+
+      const arrayKeys = ['ids', 'values', 'list'];
+      for (const key of arrayKeys) {
+        const candidate = record[key];
+        if (candidate !== undefined) {
+          visit(candidate, depth + 1);
+        }
+      }
+
+      const nestedKeys = [
+        'user',
+        'account',
+        'profile',
+        'member',
+        'assignee',
+        'responsible',
+        'target',
+      ];
+      for (const key of nestedKeys) {
+        const candidate = record[key];
+        if (candidate !== undefined) {
+          visit(candidate, depth + 1);
+        }
+      }
+    };
+
+    visit(recipients);
+
+    return Array.from(normalized);
+  }
+
+  private extractIdentifier(value: unknown): string | null {
+    if (typeof value !== 'string') {
+      return null;
+    }
+
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+
+  private extractTaskRecipients(task: unknown): string[] {
+    if (!task || typeof task !== 'object') {
+      return [];
+    }
+
+    const record = task as Record<string, unknown>;
+    const recipients = new Set<string>();
+
+    const candidateKeys = [
+      'assignees',
+      'assigneeIds',
+      'responsibles',
+      'responsibleIds',
+      'owners',
+      'ownerIds',
+      'participants',
+      'participantIds',
+      'followers',
+      'followerIds',
+      'watchers',
+      'watcherIds',
+    ];
+
+    for (const key of candidateKeys) {
+      const value = record[key];
+      if (value === undefined) {
+        continue;
+      }
+
+      for (const recipient of this.normalizeRecipients(value)) {
+        recipients.add(recipient);
+      }
+    }
+
+    return Array.from(recipients);
   }
 
   private normalizeText(value: string | null | undefined): string | null {

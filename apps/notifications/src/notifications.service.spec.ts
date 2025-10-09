@@ -187,6 +187,83 @@ describe('NotificationsService', () => {
     expect(channel.nack).toHaveBeenCalledTimes(1)
   })
 
+  it('normalizes complex recipient structures for comments', async () => {
+    const { context, channel } = createContext()
+    const payload = {
+      comment: {
+        id: 'comment-structured',
+        taskId: 'task-structured',
+        authorId: null,
+        authorName: 'Estrutura',
+        message: 'Comentário com recipientes complexos',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+      recipients: [
+        '  user-1  ',
+        { id: ' user-2 ' },
+        { userId: 'user-3' },
+        { recipientId: 'user-4' },
+        { ids: ['user-5', ''] },
+        { user: { id: 'user-6 ' } },
+        { assignee: { id: 'user-7' } },
+        { values: ['user-8', null] },
+      ],
+    } as unknown as TaskCommentCreatedPayload
+
+    emitMock.mockReturnValue(of(undefined))
+
+    await service.handleNewComment(payload, context)
+
+    const recipientIds = createNotificationMock.mock.calls.map(
+      ([callPayload]: [{ recipientId: string }]) => callPayload.recipientId,
+    )
+
+    expect(recipientIds).toHaveLength(8)
+    expect(recipientIds).toEqual(
+      expect.arrayContaining([
+        'user-1',
+        'user-2',
+        'user-3',
+        'user-4',
+        'user-5',
+        'user-6',
+        'user-7',
+        'user-8',
+      ]),
+    )
+    expect(emitMock).toHaveBeenCalledTimes(1)
+    expect(channel.ack).toHaveBeenCalledTimes(1)
+    expect(channel.nack).not.toHaveBeenCalled()
+  })
+
+  it('includes the comment author when recipients are missing', async () => {
+    const { context, channel } = createContext()
+    const payload = {
+      comment: {
+        id: 'comment-author',
+        taskId: 'task-author',
+        authorId: 'author-123',
+        authorName: 'Autor',
+        message: 'Comentário sem destinatários explícitos',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+      recipients: [],
+    } as unknown as TaskCommentCreatedPayload
+
+    emitMock.mockReturnValue(of(undefined))
+
+    await service.handleNewComment(payload, context)
+
+    expect(createNotificationMock).toHaveBeenCalledTimes(1)
+    expect(createNotificationMock).toHaveBeenCalledWith(
+      expect.objectContaining({ recipientId: 'author-123' }),
+    )
+    expect(channel.ack).toHaveBeenCalledTimes(1)
+    expect(channel.nack).not.toHaveBeenCalled()
+  })
+
   it('persists task update notifications with metadata before forwarding', async () => {
     const { context, channel } = createContext()
     const payload: TaskUpdatedForwardPayload = {
@@ -249,5 +326,46 @@ describe('NotificationsService', () => {
     expect(emitMock).not.toHaveBeenCalled()
     expect(channel.ack).not.toHaveBeenCalled()
     expect(channel.nack).toHaveBeenCalledTimes(1)
+  })
+
+  it('derives task recipients from task payload when recipients array is empty', async () => {
+    const { context, channel } = createContext()
+    const payload = {
+      task: {
+        id: 'task-derived',
+        title: 'Tarefa derivada',
+        assignees: [
+          { id: 'assignee-1', username: 'user1' },
+          { id: 'assignee-2', username: 'user2' },
+        ],
+        responsibles: [{ id: 'responsible-1' }],
+        responsibleIds: ['responsible-2'],
+      },
+      recipients: [],
+      actor: {
+        id: 'actor-derived',
+        displayName: 'Derivador',
+      },
+    } as unknown as TaskUpdatedForwardPayload
+
+    emitMock.mockReturnValue(of(undefined))
+
+    await service.handleTaskUpdated(payload, context)
+
+    const recipientIds = createNotificationMock.mock.calls.map(
+      ([callPayload]: [{ recipientId: string }]) => callPayload.recipientId,
+    )
+
+    expect(new Set(recipientIds)).toEqual(
+      new Set([
+        'assignee-1',
+        'assignee-2',
+        'responsible-1',
+        'responsible-2',
+      ]),
+    )
+    expect(createNotificationMock).toHaveBeenCalledTimes(4)
+    expect(channel.ack).toHaveBeenCalledTimes(1)
+    expect(channel.nack).not.toHaveBeenCalled()
   })
 })

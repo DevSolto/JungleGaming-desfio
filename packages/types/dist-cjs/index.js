@@ -22,6 +22,7 @@ __exportStar(require("./dto/auth.js"), exports);
 __exportStar(require("./enums/auth.js"), exports);
 // Tasks
 __exportStar(require("./contracts/rpc/tasks.js"), exports);
+__exportStar(require("./contracts/rpc/users.js"), exports);
 var tasks_js_1 = require("./contracts/events/tasks.js");
 Object.defineProperty(exports, "TASK_EVENT_PATTERNS", { enumerable: true, get: function () { return tasks_js_1.TASK_EVENT_PATTERNS; } });
 Object.defineProperty(exports, "TASK_FORWARDING_PATTERNS", { enumerable: true, get: function () { return tasks_js_1.TASK_FORWARDING_PATTERNS; } });
