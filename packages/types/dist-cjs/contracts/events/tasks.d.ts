@@ -5,6 +5,7 @@ export declare const TASK_EVENT_PATTERNS: {
     readonly CREATED: "task.created";
     readonly UPDATED: "task.updated";
     readonly DELETED: "task.deleted";
+    readonly COMMENT_CREATED: "task.comment.created";
 };
 export type TaskEventPattern = (typeof TASK_EVENT_PATTERNS)[keyof typeof TASK_EVENT_PATTERNS];
 export interface TaskEventPayload {
@@ -12,6 +13,10 @@ export interface TaskEventPayload {
     recipients?: string[];
     actor?: TaskAuditLogActorDTO | null;
     changes?: TaskAuditLogChangeDTO[] | Record<string, unknown> | null;
+}
+export interface TaskCommentCreatedEventPayload {
+    comment: CommentDTO;
+    recipients: string[];
 }
 export declare const TASK_FORWARDING_PATTERNS: {
     readonly COMMENT_CREATED: "tasks.comment.created";
