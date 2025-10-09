@@ -13,6 +13,7 @@ exports.ListTasksQueryDto = exports.ListTasksDto = exports.RemoveTaskPayloadDto 
 const class_transformer_1 = require("class-transformer");
 const class_validator_1 = require("class-validator");
 const task_js_1 = require("../enums/task.js");
+const correlation_js_1 = require("./correlation.js");
 class TaskActorDto {
     id;
     name;
@@ -36,7 +37,7 @@ __decorate([
     (0, class_validator_1.IsEmail)(),
     __metadata("design:type", Object)
 ], TaskActorDto.prototype, "email", void 0);
-class TaskIdDto {
+class TaskIdDto extends correlation_js_1.CorrelatedDto {
     id;
 }
 exports.TaskIdDto = TaskIdDto;
@@ -105,6 +106,7 @@ __decorate([
 ], CreateTaskDto.prototype, "assignees", void 0);
 class CreateTaskPayloadDto extends CreateTaskDto {
     actor;
+    requestId;
 }
 exports.CreateTaskPayloadDto = CreateTaskPayloadDto;
 __decorate([
@@ -114,6 +116,11 @@ __decorate([
     (0, class_transformer_1.Type)(() => TaskActorDto),
     __metadata("design:type", Object)
 ], CreateTaskPayloadDto.prototype, "actor", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateTaskPayloadDto.prototype, "requestId", void 0);
 class UpdateTaskDto {
     title;
     description;
@@ -162,6 +169,7 @@ class UpdateTaskPayloadDto {
     id;
     data;
     actor;
+    requestId;
 }
 exports.UpdateTaskPayloadDto = UpdateTaskPayloadDto;
 __decorate([
@@ -182,6 +190,11 @@ __decorate([
     (0, class_transformer_1.Type)(() => TaskActorDto),
     __metadata("design:type", Object)
 ], UpdateTaskPayloadDto.prototype, "actor", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], UpdateTaskPayloadDto.prototype, "requestId", void 0);
 class RemoveTaskPayloadDto extends TaskIdDto {
     actor;
 }
@@ -193,7 +206,7 @@ __decorate([
     (0, class_transformer_1.Type)(() => TaskActorDto),
     __metadata("design:type", Object)
 ], RemoveTaskPayloadDto.prototype, "actor", void 0);
-class ListTasksDto {
+class ListTasksDto extends correlation_js_1.CorrelatedDto {
     status;
     priority;
     search;

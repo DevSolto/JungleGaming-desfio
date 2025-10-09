@@ -10,6 +10,7 @@ export * from "./dto/task.js";
 export * from "./dto/task-audit-log.js";
 export * from "./enums/task.js";
 // Notifications
+export * from "./contracts/rpc/notifications.js";
 export * from "./dto/notification.js";
 export * from "./enums/notification.js";
 // Gateway
@@ -18,6 +19,7 @@ export * from "./contracts/events/gateway.js";
 export * from "./contracts/queues.js";
 export * from "./contracts/tokens.js";
 export * from "./contracts/common/index.js";
+export * from "./dto/correlation.js";
 export * from "./dto/comment.js";
 export * from "./dto/tokens.js";
 export * from "./dto/user.js";

@@ -1,3 +1,4 @@
+import { CorrelatedDto } from "./correlation.js";
 export interface CommentDTO {
     id: string;
     taskId: string;
@@ -33,13 +34,13 @@ export type PaginatedComments = PaginatedCommentsDTO;
 export declare class CreateCommentBodyDto implements Pick<CreateCommentDTO, "message"> {
     message: string;
 }
-export declare class CreateCommentDto implements CreateCommentDTO {
+export declare class CreateCommentDto extends CorrelatedDto implements CreateCommentDTO {
     taskId: string;
     authorId: string;
     authorName?: string | null;
     message: string;
 }
-export declare class ListTaskCommentsDto implements TaskCommentListFiltersDTO {
+export declare class ListTaskCommentsDto extends CorrelatedDto implements TaskCommentListFiltersDTO {
     taskId: string;
     page?: number;
     limit?: number;

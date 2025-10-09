@@ -29,6 +29,7 @@ __exportStar(require("./dto/task.js"), exports);
 __exportStar(require("./dto/task-audit-log.js"), exports);
 __exportStar(require("./enums/task.js"), exports);
 // Notifications
+__exportStar(require("./contracts/rpc/notifications.js"), exports);
 __exportStar(require("./dto/notification.js"), exports);
 __exportStar(require("./enums/notification.js"), exports);
 // Gateway
@@ -37,6 +38,7 @@ __exportStar(require("./contracts/events/gateway.js"), exports);
 __exportStar(require("./contracts/queues.js"), exports);
 __exportStar(require("./contracts/tokens.js"), exports);
 __exportStar(require("./contracts/common/index.js"), exports);
+__exportStar(require("./dto/correlation.js"), exports);
 __exportStar(require("./dto/comment.js"), exports);
 __exportStar(require("./dto/tokens.js"), exports);
 __exportStar(require("./dto/user.js"), exports);

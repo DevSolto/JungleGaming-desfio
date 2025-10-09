@@ -11,10 +11,12 @@
         "../../packages/types/dist/*.d.ts"
       ],
       "@repo/logger": [
-        "../../packages/logger/src/index.ts"
+        "../../packages/logger/dist/index.js",
+        "../../packages/logger/dist/index.d.ts"
       ],
       "@repo/logger/*": [
-        "../../packages/logger/src/*.ts"
+        "../../packages/logger/dist/*.js",
+        "../../packages/logger/dist/*.d.ts"
       ]
     }
   },

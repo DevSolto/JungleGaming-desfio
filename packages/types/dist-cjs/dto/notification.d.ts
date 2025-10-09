@@ -22,3 +22,36 @@ export interface NotificationDTO {
     sentAt?: string | null;
 }
 export type Notification = NotificationDTO;
+export interface NotificationListFiltersDTO {
+    status?: NotificationStatus;
+    channel?: NotificationChannel;
+    search?: string;
+    from?: string;
+    to?: string;
+    page?: number;
+    limit?: number;
+}
+export type NotificationListFilters = NotificationListFiltersDTO;
+export interface PaginatedNotificationsDTO {
+    data: NotificationDTO[];
+    total: number;
+    page: number;
+    limit: number;
+}
+export type PaginatedNotifications = PaginatedNotificationsDTO;
+export declare class NotificationIdParamDto {
+    id: string;
+}
+export declare class ListNotificationsQueryDto implements NotificationListFiltersDTO {
+    status?: NotificationStatus;
+    channel?: NotificationChannel;
+    search?: string;
+    from?: string;
+    to?: string;
+    page?: number;
+    limit?: number;
+}
+export declare class NotificationStatusUpdateDto implements NotificationStatusUpdateDTO {
+    status: NotificationStatus;
+    sentAt?: string | null;
+}

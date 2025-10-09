@@ -18,3 +18,4 @@ __exportStar(require("./auth.js"), exports);
 __exportStar(require("./task.js"), exports);
 __exportStar(require("./task-audit-log.js"), exports);
 __exportStar(require("./comment.js"), exports);
+__exportStar(require("./notification.js"), exports);
