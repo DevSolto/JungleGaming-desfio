@@ -532,6 +532,11 @@ export class NotificationsService {
       }
     }
 
+    const authorId = this.extractIdentifier(payload?.comment?.authorId);
+    if (authorId) {
+      recipients.delete(authorId);
+    }
+
     return Array.from(recipients);
   }
 
@@ -545,6 +550,14 @@ export class NotificationsService {
     const taskRecipients = this.extractTaskRecipients(payload?.task);
     for (const recipient of taskRecipients) {
       recipients.add(recipient);
+    }
+
+    const actorId =
+      this.extractIdentifier(payload?.actor?.id) ??
+      this.extractIdentifier((payload as { actorId?: unknown }).actorId);
+
+    if (actorId) {
+      recipients.delete(actorId);
     }
 
     return Array.from(recipients);
