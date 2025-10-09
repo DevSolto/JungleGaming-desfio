@@ -19,11 +19,15 @@ export interface TaskAuditLogActorDTO {
   displayName?: string | null;
 }
 
+export type TaskAuditLogActor = TaskAuditLogActorDTO;
+
 export interface TaskAuditLogChangeDTO {
   field: string;
   previousValue?: unknown;
   currentValue?: unknown;
 }
+
+export type TaskAuditLogChange = TaskAuditLogChangeDTO;
 
 export interface TaskAuditLogDTO {
   id: string;
@@ -37,11 +41,15 @@ export interface TaskAuditLogDTO {
   createdAt: string;
 }
 
+export type TaskAuditLog = TaskAuditLogDTO;
+
 export interface TaskAuditLogListFiltersDTO {
   taskId: string;
   page?: number;
   limit?: number;
 }
+
+export type TaskAuditLogListFilters = TaskAuditLogListFiltersDTO;
 
 export interface PaginatedTaskAuditLogsDTO {
   data: TaskAuditLogDTO[];
@@ -49,6 +57,8 @@ export interface PaginatedTaskAuditLogsDTO {
   page: number;
   limit: number;
 }
+
+export type PaginatedTaskAuditLogs = PaginatedTaskAuditLogsDTO;
 
 export class TaskAuditLogActorDto implements TaskAuditLogActorDTO {
   @IsUUID()

@@ -2,7 +2,7 @@ import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ClientProxy } from '@nestjs/microservices';
 import { defaultIfEmpty, lastValueFrom } from 'rxjs';
-import { Repository } from 'typeorm';
+import { Repository, type DeepPartial } from 'typeorm';
 import { Task } from './task.entity';
 import { TASKS_EVENTS_CLIENT } from './tasks.constants';
 import {
@@ -10,6 +10,7 @@ import {
   type TaskActor,
   type TaskAuditLogActorDTO,
   type TaskAuditLogChangeDTO,
+  type TaskDTO,
   type TaskEventPayload,
 } from '@repo/types';
 import {
@@ -56,9 +57,9 @@ export class TasksService {
       dueDate: dto.dueDate
         ? parseDateInTimezone(dto.dueDate, this.taskTimezone)
         : null,
-    });
+    } as DeepPartial<Task>);
 
-    const saved = await this.tasksRepository.save(task);
+    const saved = await this.tasksRepository.save<Task>(task);
 
     const auditActor = this.toAuditLogActor(actor);
 
@@ -253,7 +254,7 @@ export class TasksService {
     changes?: TaskAuditLogChangeDTO[] | null,
   ): TaskEventPayload {
     const payload: TaskEventPayload = {
-      task,
+      task: this.toTaskDto(task),
     };
 
     if (actor) {
@@ -265,5 +266,14 @@ export class TasksService {
     }
 
     return payload;
+  }
+
+  private toTaskDto(task: Task): TaskDTO {
+    return {
+      ...task,
+      dueDate: task.dueDate ? task.dueDate.toISOString() : null,
+      createdAt: task.createdAt.toISOString(),
+      updatedAt: task.updatedAt.toISOString(),
+    };
   }
 }

@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ListTasksQueryDto = exports.ListTasksDto = exports.RemoveTaskPayloadDto = exports.UpdateTaskPayloadDTO = exports.UpdateTaskDto = exports.CreateTaskPayloadDto = exports.CreateTaskDto = exports.TaskAssigneeDto = exports.TaskIdParamDto = exports.TaskIdDto = exports.TaskActorDto = void 0;
+exports.ListTasksQueryDto = exports.ListTasksDto = exports.RemoveTaskPayloadDto = exports.UpdateTaskPayloadDto = exports.UpdateTaskDto = exports.CreateTaskPayloadDto = exports.CreateTaskDto = exports.TaskAssigneeDto = exports.TaskIdParamDto = exports.TaskIdDto = exports.TaskActorDto = void 0;
 const class_transformer_1 = require("class-transformer");
 const class_validator_1 = require("class-validator");
 const task_js_1 = require("../enums/task.js");
@@ -174,14 +174,14 @@ __decorate([
     (0, class_validator_1.IsNotEmptyObject)({ nullable: false }),
     (0, class_transformer_1.Type)(() => UpdateTaskDto),
     __metadata("design:type", UpdateTaskDto)
-], UpdateTaskPayloadDTO.prototype, "data", void 0);
+], UpdateTaskPayloadDto.prototype, "data", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.ValidateIf)((_, value) => value !== null),
     (0, class_validator_1.ValidateNested)(),
     (0, class_transformer_1.Type)(() => TaskActorDto),
     __metadata("design:type", Object)
-], UpdateTaskPayloadDTO.prototype, "actor", void 0);
+], UpdateTaskPayloadDto.prototype, "actor", void 0);
 class RemoveTaskPayloadDto extends TaskIdDto {
     actor;
 }

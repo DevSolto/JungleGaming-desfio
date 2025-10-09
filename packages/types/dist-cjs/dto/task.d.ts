@@ -89,7 +89,13 @@ export declare class UpdateTaskDto implements UpdateTaskDTO {
     dueDate?: string | null;
     assignees?: TaskAssigneeDto[];
 }
-export declare class UpdateTaskPayloadDTO {
+export interface UpdateTaskPayloadDTO {
+    id: string;
+    data: UpdateTaskDTO;
+    actor?: TaskActorDTO | null;
+}
+export type UpdateTaskPayload = UpdateTaskPayloadDTO;
+export declare class UpdateTaskPayloadDto implements UpdateTaskPayloadDTO {
     id: string;
     data: UpdateTaskDto;
     actor?: TaskActorDto | null;

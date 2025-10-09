@@ -163,14 +163,14 @@ __decorate([
     IsNotEmptyObject({ nullable: false }),
     Type(() => UpdateTaskDto),
     __metadata("design:type", UpdateTaskDto)
-], UpdateTaskPayloadDTO.prototype, "data", void 0);
+], UpdateTaskPayloadDto.prototype, "data", void 0);
 __decorate([
     IsOptional(),
     ValidateIf((_, value) => value !== null),
     ValidateNested(),
     Type(() => TaskActorDto),
     __metadata("design:type", Object)
-], UpdateTaskPayloadDTO.prototype, "actor", void 0);
+], UpdateTaskPayloadDto.prototype, "actor", void 0);
 export class RemoveTaskPayloadDto extends TaskIdDto {
     actor;
 }
