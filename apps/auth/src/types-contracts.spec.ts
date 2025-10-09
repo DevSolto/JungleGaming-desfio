@@ -37,6 +37,8 @@ describe("@repo/types runtime contract", () => {
     expect(TASK_EVENT_PATTERNS).toEqual(
       expect.objectContaining({
         CREATED: "task.created",
+        UPDATED: "task.updated",
+        DELETED: "task.deleted",
         COMMENT_CREATED: "task.comment.created",
       }),
     );
