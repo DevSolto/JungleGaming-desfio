@@ -302,7 +302,7 @@ describe('NotificationsService', () => {
     expect(channel.nack).not.toHaveBeenCalled()
   })
 
-  it('includes the comment author when recipients are missing', async () => {
+  it('não inclui o autor do comentário quando destinatários estão ausentes', async () => {
     const { context, channel } = createContext()
     const payload = {
       comment: {
@@ -321,12 +321,34 @@ describe('NotificationsService', () => {
 
     await service.handleNewComment(payload, context)
 
-    expect(createNotificationMock).toHaveBeenCalledTimes(1)
-    expect(createNotificationMock).toHaveBeenCalledWith(
-      expect.objectContaining({ recipientId: 'author-123' }),
-    )
+    expect(createNotificationMock).not.toHaveBeenCalled()
     expect(channel.ack).toHaveBeenCalledTimes(1)
     expect(channel.nack).not.toHaveBeenCalled()
+  })
+
+  it('remove o autor do comentário da lista de destinatários explícitos', async () => {
+    const { context } = createContext()
+    const payload = {
+      comment: {
+        id: 'comment-author-explicit',
+        taskId: 'task-author-explicit',
+        authorId: 'author-999',
+        authorName: 'Autor explícito',
+        message: 'Comentário com autor nos destinatários',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+      recipients: ['author-999', 'user-abc'],
+    } as unknown as TaskCommentCreatedPayload
+
+    emitMock.mockReturnValue(of(undefined))
+
+    await service.handleNewComment(payload, context)
+
+    expect(createNotificationMock).toHaveBeenCalledTimes(1)
+    expect(createNotificationMock).toHaveBeenCalledWith(
+      expect.objectContaining({ recipientId: 'user-abc' }),
+    )
   })
 
   it('persists task update notifications with metadata before forwarding', async () => {
@@ -372,6 +394,30 @@ describe('NotificationsService', () => {
     expect(emitMock).toHaveBeenCalledTimes(1)
     expect(channel.ack).toHaveBeenCalledTimes(1)
     expect(channel.nack).not.toHaveBeenCalled()
+  })
+
+  it('remove o ator da atualização da lista de destinatários explícitos', async () => {
+    const { context } = createContext()
+    const payload: TaskUpdatedForwardPayload = {
+      task: {
+        id: 'task-actor',
+        title: 'Tarefa com ator removido',
+      },
+      recipients: ['actor-50', 'user-77'],
+      actor: {
+        id: 'actor-50',
+        displayName: 'Ator Removido',
+      },
+    }
+
+    emitMock.mockReturnValue(of(undefined))
+
+    await service.handleTaskUpdated(payload, context)
+
+    expect(createNotificationMock).toHaveBeenCalledTimes(1)
+    expect(createNotificationMock).toHaveBeenCalledWith(
+      expect.objectContaining({ recipientId: 'user-77' }),
+    )
   })
 
   it('nacks the message and aborts forwarding when task update persistence fails', async () => {
