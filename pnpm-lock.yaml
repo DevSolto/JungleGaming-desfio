@@ -416,6 +416,9 @@ importers:
       jest:
         specifier: ^30.0.0
         version: 30.2.0(@types/node@22.15.3)(ts-node@10.9.2(@types/node@22.15.3)(typescript@5.9.2))
+      pg-mem:
+        specifier: ^3.0.5
+        version: 3.0.5(typeorm@0.3.27(pg@8.16.3)(reflect-metadata@0.2.2)(sql.js@1.13.0)(ts-node@10.9.2(@types/node@22.15.3)(typescript@5.9.2)))
       prettier:
         specifier: ^3.4.2
         version: 3.6.2
