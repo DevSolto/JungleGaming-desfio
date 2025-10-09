@@ -8,6 +8,7 @@ import type { AppLoggerService } from '@repo/logger'
 
 import { NotificationsService } from './notifications.service'
 import type { NotificationsPersistenceService } from './notifications/persistence/notifications-persistence.service'
+import { Notification } from './notifications/notification.entity'
 
 describe('NotificationsService', () => {
   let service: NotificationsService
@@ -22,7 +23,7 @@ describe('NotificationsService', () => {
     const ack = jest.fn()
     const nack = jest.fn()
     const channel = { ack, nack }
-    const message = { content: Buffer.from('test') }
+    const message = { content: Buffer.from('test'), properties: { headers: {} } }
     const context = {
       getChannelRef: jest.fn().mockReturnValue(channel),
       getMessage: jest.fn().mockReturnValue(message),
@@ -49,6 +50,7 @@ describe('NotificationsService', () => {
     gatewayClient = { emit: emitMock } as unknown as ClientProxy
     notificationsPersistence = {
       createNotification: createNotificationMock,
+      findPaginatedByRecipient: jest.fn(),
     } as unknown as NotificationsPersistenceService
 
     scopedLogger = {
@@ -185,6 +187,69 @@ describe('NotificationsService', () => {
     expect(emitMock).toHaveBeenCalledTimes(1)
     expect(channel.ack).not.toHaveBeenCalled()
     expect(channel.nack).toHaveBeenCalledTimes(1)
+  })
+
+  it('retorna notificações paginadas quando recebe requisição RPC findAll', async () => {
+    const { context } = createContext()
+    const stored: Notification[] = [
+      {
+        id: '6f18b85e-b3f0-4d75-8f85-9f8a0f5c0c1a',
+        recipientId: '0baf5b64-28e0-4e63-a362-8ec0f24b38ca',
+        channel: 'in_app',
+        status: 'pending',
+        message: 'Atualização disponível',
+        metadata: { taskId: '648f71b0-8f4e-4d6d-bca9-72e8f598b357' },
+        createdAt: new Date('2024-06-01T10:00:00Z'),
+        sentAt: null,
+      },
+    ]
+
+    ;(notificationsPersistence.findPaginatedByRecipient as jest.Mock).mockResolvedValue({
+      data: stored,
+      total: 1,
+      page: 2,
+      limit: 5,
+    })
+
+    const result = await service.findAll(
+      {
+        recipientId: '0baf5b64-28e0-4e63-a362-8ec0f24b38ca',
+        page: 2,
+        limit: 5,
+        taskId: '648f71b0-8f4e-4d6d-bca9-72e8f598b357',
+        requestId: 'req-123',
+      },
+      context,
+    )
+
+    expect(notificationsPersistence.findPaginatedByRecipient).toHaveBeenCalledWith({
+      recipientId: '0baf5b64-28e0-4e63-a362-8ec0f24b38ca',
+      status: undefined,
+      channel: undefined,
+      search: undefined,
+      from: undefined,
+      to: undefined,
+      taskId: '648f71b0-8f4e-4d6d-bca9-72e8f598b357',
+      page: 2,
+      limit: 5,
+    })
+    expect(result).toEqual({
+      data: [
+        {
+          id: '6f18b85e-b3f0-4d75-8f85-9f8a0f5c0c1a',
+          recipientId: '0baf5b64-28e0-4e63-a362-8ec0f24b38ca',
+          channel: 'in_app',
+          status: 'pending',
+          message: 'Atualização disponível',
+          metadata: { taskId: '648f71b0-8f4e-4d6d-bca9-72e8f598b357' },
+          createdAt: '2024-06-01T10:00:00.000Z',
+          sentAt: null,
+        },
+      ],
+      total: 1,
+      page: 2,
+      limit: 5,
+    })
   })
 
   it('normalizes complex recipient structures for comments', async () => {

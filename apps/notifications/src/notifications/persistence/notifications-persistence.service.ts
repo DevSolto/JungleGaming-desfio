@@ -3,12 +3,33 @@ import { InjectRepository } from '@nestjs/typeorm';
 import type {
   NotificationCreateDTO,
   NotificationStatusUpdateDTO,
+  NotificationStatus,
+  NotificationChannel,
 } from '@repo/types';
 import { NOTIFICATION_STATUSES } from '@repo/types';
 import { Repository } from 'typeorm';
 
 import { Notification } from '../notification.entity';
 import { AppLoggerService } from '@repo/logger';
+
+export interface FindNotificationsOptions {
+  recipientId: string;
+  status?: NotificationStatus;
+  channel?: NotificationChannel;
+  search?: string;
+  from?: Date;
+  to?: Date;
+  taskId?: string;
+  page: number;
+  limit: number;
+}
+
+export interface PaginatedNotificationEntities {
+  data: Notification[];
+  total: number;
+  page: number;
+  limit: number;
+}
 
 @Injectable()
 export class NotificationsPersistenceService {
@@ -127,6 +148,99 @@ export class NotificationsPersistenceService {
         'Failed to retrieve notifications by recipient from database.',
         error,
         { recipientId },
+      );
+
+      throw error;
+    }
+  }
+
+  async findPaginatedByRecipient(
+    options: FindNotificationsOptions,
+  ): Promise<PaginatedNotificationEntities> {
+    const page = options.page > 0 ? options.page : 1;
+    const limit = options.limit > 0 ? options.limit : 10;
+
+    try {
+      const query = this.notificationsRepository
+        .createQueryBuilder('notification')
+        .where('notification.recipientId = :recipientId', {
+          recipientId: options.recipientId,
+        })
+        .orderBy('notification.createdAt', 'DESC');
+
+      if (options.status) {
+        query.andWhere('notification.status = :status', {
+          status: options.status,
+        });
+      }
+
+      if (options.channel) {
+        query.andWhere('notification.channel = :channel', {
+          channel: options.channel,
+        });
+      }
+
+      if (options.search) {
+        const trimmed = options.search.trim();
+
+        if (trimmed.length > 0) {
+          const sanitized = trimmed
+            .replace(/%/g, '\\%')
+            .replace(/_/g, '\\_');
+          const likeSearch = `%${sanitized}%`;
+          query.andWhere('notification.message ILIKE :search', {
+            search: likeSearch,
+          });
+        }
+      }
+
+      if (options.from) {
+        query.andWhere('notification.createdAt >= :from', {
+          from: options.from,
+        });
+      }
+
+      if (options.to) {
+        query.andWhere('notification.createdAt <= :to', {
+          to: options.to,
+        });
+      }
+
+      if (options.taskId) {
+        query.andWhere("notification.metadata ->> 'taskId' = :taskId", {
+          taskId: options.taskId,
+        });
+      }
+
+      const [data, total] = await query
+        .skip((page - 1) * limit)
+        .take(limit)
+        .getManyAndCount();
+
+      this.logger.debug('Retrieved paginated notifications for recipient.', {
+        recipientId: options.recipientId,
+        notificationCount: data.length,
+        total,
+        page,
+        limit,
+      });
+
+      return {
+        data,
+        total,
+        page,
+        limit,
+      };
+    } catch (error) {
+      this.logger.error(
+        'Failed to retrieve paginated notifications from database.',
+        error,
+        {
+          recipientId: options.recipientId,
+          status: options.status ?? null,
+          channel: options.channel ?? null,
+          taskId: options.taskId ?? null,
+        },
       );
 
       throw error;
