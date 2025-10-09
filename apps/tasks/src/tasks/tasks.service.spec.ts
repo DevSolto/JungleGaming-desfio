@@ -211,6 +211,92 @@ describe('TasksService', () => {
         }),
       }),
     );
+
+    const logs = await auditLogsRepository.find({ order: { createdAt: 'ASC' } });
+    expect(logs).toHaveLength(1);
+    expect(logs[0]).toMatchObject({
+      taskId: task.id,
+      action: TASK_EVENT_PATTERNS.CREATED,
+      changes: null,
+    });
+  });
+
+  it('stores audit logs and emits events when creating tasks with assignees and actor metadata', async () => {
+    const actor = {
+      id: 'leader-1',
+      name: '  Explorer Lead  ',
+      email: 'lead@junglegaming.dev',
+    };
+
+    const task = await service.create(
+      {
+        title: 'Task with tracked assignees',
+        description: 'Validate responsible assignment',
+        status: TaskStatus.TODO,
+        priority: TaskPriority.HIGH,
+        dueDate: null,
+        assignees: [
+          {
+            id: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+            username: 'beta',
+            name: '  Beta   ',
+            email: ' beta@example.com ',
+          },
+          {
+            id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+            username: 'alpha',
+            name: 'Alpha',
+            email: null,
+          },
+        ],
+      },
+      actor,
+    );
+
+    const logs = await auditLogsRepository.find({ order: { createdAt: 'ASC' } });
+    expect(logs).toHaveLength(1);
+    expect(logs[0]).toMatchObject({
+      taskId: task.id,
+      action: TASK_EVENT_PATTERNS.CREATED,
+      actorId: actor.id,
+      actorDisplayName: 'Explorer Lead',
+      changes: null,
+    });
+
+    const createdEvent = emitMock.mock.calls.find(
+      ([pattern]) => pattern === TASK_EVENT_PATTERNS.CREATED,
+    );
+
+    expect(createdEvent).toBeDefined();
+
+    const createdRecord = createdEvent![1] as { data: Record<string, unknown> };
+    const createdData = createdRecord.data as Record<string, unknown>;
+
+    expect(createdData).toEqual(
+      expect.objectContaining({
+        actor: { id: actor.id, displayName: 'Explorer Lead' },
+        recipients: [
+          'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+          'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+        ],
+        task: expect.objectContaining({
+          assignees: [
+            {
+              id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+              username: 'alpha',
+              name: 'Alpha',
+              email: null,
+            },
+            {
+              id: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+              username: 'beta',
+              name: 'Beta',
+              email: 'beta@example.com',
+            },
+          ],
+        }),
+      }),
+    );
   });
 
   it('filters tasks by dueDate respecting the configured day range', async () => {
@@ -340,6 +426,142 @@ describe('TasksService', () => {
         }),
       }),
     );
+  });
+
+  it('tracks assignee updates and emits recipients when responsibles change', async () => {
+    const task = await service.create({
+      title: 'Task with responsibles',
+      description: null,
+      status: TaskStatus.TODO,
+      priority: TaskPriority.MEDIUM,
+      dueDate: null,
+      assignees: [
+        {
+          id: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+          username: 'beta',
+          name: ' Beta  ',
+          email: 'beta@example.com',
+        },
+        {
+          id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+          username: 'alpha',
+          name: 'Alpha',
+          email: null,
+        },
+      ],
+    });
+
+    emitMock.mockClear();
+
+    const actor = {
+      id: 'updater-1',
+      name: '  Responsible Manager ',
+      email: 'manager@example.com',
+    };
+
+    await service.update(
+      task.id,
+      {
+        assignees: [
+          {
+            id: 'cccccccc-cccc-cccc-cccc-cccccccccccc',
+            username: 'charlie',
+            name: ' Charlie ',
+            email: 'charlie@example.com',
+          },
+          {
+            id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+            username: 'alpha',
+            name: '  Alpha  ',
+            email: 'alpha@example.com',
+          },
+        ],
+      },
+      actor,
+    );
+
+    const logs = await auditLogsRepository.find({ order: { createdAt: 'ASC' } });
+    expect(logs).toHaveLength(2);
+
+    const updateLog = logs[1];
+    expect(updateLog).toMatchObject({
+      action: TASK_EVENT_PATTERNS.UPDATED,
+      taskId: task.id,
+      actorId: actor.id,
+      actorDisplayName: 'Responsible Manager',
+    });
+
+    expect(updateLog.changes).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          field: 'assignees',
+          previousValue: [
+            {
+              id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+              username: 'alpha',
+              name: 'Alpha',
+              email: null,
+            },
+            {
+              id: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+              username: 'beta',
+              name: 'Beta',
+              email: 'beta@example.com',
+            },
+          ],
+          currentValue: [
+            {
+              id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+              username: 'alpha',
+              name: 'Alpha',
+              email: 'alpha@example.com',
+            },
+            {
+              id: 'cccccccc-cccc-cccc-cccc-cccccccccccc',
+              username: 'charlie',
+              name: 'Charlie',
+              email: 'charlie@example.com',
+            },
+          ],
+        }),
+      ]),
+    );
+
+    const updatedEvent = emitMock.mock.calls.find(
+      ([pattern]) => pattern === TASK_EVENT_PATTERNS.UPDATED,
+    );
+
+    expect(updatedEvent).toBeDefined();
+
+    const [, updatedRecord] = updatedEvent!;
+    const updatedData = (updatedRecord as { data: Record<string, unknown> }).data as {
+      recipients: string[];
+      task: { assignees: Array<Record<string, unknown>> };
+      actor?: Record<string, unknown>;
+    };
+
+    expect(updatedData.actor).toEqual({
+      id: actor.id,
+      displayName: 'Responsible Manager',
+    });
+    expect(updatedData.recipients).toEqual([
+      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+      'cccccccc-cccc-cccc-cccc-cccccccccccc',
+    ]);
+    expect(updatedData.task.assignees).toEqual([
+      {
+        id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+        username: 'alpha',
+        name: 'Alpha',
+        email: 'alpha@example.com',
+      },
+      {
+        id: 'cccccccc-cccc-cccc-cccc-cccccccccccc',
+        username: 'charlie',
+        name: 'Charlie',
+        email: 'charlie@example.com',
+      },
+    ]);
   });
 
   it('filters tasks by assignee id using normalized filters', async () => {
