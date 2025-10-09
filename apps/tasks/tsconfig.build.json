@@ -2,8 +2,14 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "paths": {
-      "@repo/types": ["../../packages/types/dist/index.d.ts"],
-      "@repo/types/*": ["../../packages/types/dist/*.d.ts"]
+      "@repo/types": [
+        "../../packages/types/dist-cjs/index.js",
+        "../../packages/types/dist/index.d.ts"
+      ],
+      "@repo/types/*": [
+        "../../packages/types/dist-cjs/*.js",
+        "../../packages/types/dist/*.d.ts"
+      ]
     }
   },
   "exclude": ["node_modules", "test", "dist", "**/*spec.ts"]
