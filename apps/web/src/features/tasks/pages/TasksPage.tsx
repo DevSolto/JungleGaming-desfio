@@ -40,6 +40,7 @@ export function TasksPage() {
     priority,
     dueDate,
     searchTerm,
+    assigneeId,
     setSearchTerm,
   } = useTasksFilters()
   const { page, pageSize, setPage, setPageSize, resetPagination } =
@@ -50,17 +51,21 @@ export function TasksPage() {
   const wasDisconnectedRef = useRef(false)
 
   const filters = useMemo<
-    Pick<GetTasksFilters, 'status' | 'priority' | 'dueDate' | 'searchTerm' | 'page' | 'size'>
+    Pick<
+      GetTasksFilters,
+      'status' | 'priority' | 'dueDate' | 'searchTerm' | 'assigneeId' | 'page' | 'size'
+    >
   >(
     () => ({
       status,
       priority,
       dueDate,
       searchTerm,
+      assigneeId,
       page,
       size: pageSize,
     }),
-    [status, priority, dueDate, searchTerm, page, pageSize],
+    [status, priority, dueDate, searchTerm, assigneeId, page, pageSize],
   )
 
   const tasksQuery = useQuery({

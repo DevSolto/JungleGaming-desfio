@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { type Task, TaskPriority, TaskStatus } from '@repo/types'
+import { type Task, type TaskAssignee, TaskPriority, TaskStatus } from '@repo/types'
 import {
   dateStringToISOString,
   resolveTaskTimezone,
@@ -33,6 +33,7 @@ import { toast } from '@/components/ui/use-toast'
 import { createTask } from '../api/createTask'
 import { updateTask } from '../api/updateTask'
 import { type TaskSchema, taskSchema } from '../schemas/taskSchema'
+import { AssigneeMultiSelect } from './AssigneeMultiSelect'
 
 interface TaskModalProps {
   open: boolean
@@ -69,6 +70,52 @@ function formatTaskToFormValues(task?: Task | null): TaskSchema {
   }
 }
 
+function normalizeAssignees(assignees: TaskSchema['assignees']): TaskAssignee[] {
+  if (!Array.isArray(assignees)) {
+    return []
+  }
+
+  const normalized: TaskAssignee[] = []
+
+  for (const candidate of assignees) {
+    if (!candidate) {
+      continue
+    }
+
+    const id = typeof candidate.id === 'string' ? candidate.id.trim() : ''
+    const username =
+      typeof candidate.username === 'string' ? candidate.username.trim() : ''
+
+    if (!id || !username) {
+      continue
+    }
+
+    const normalizedAssignee: TaskAssignee = { id, username }
+
+    if (candidate.name === null) {
+      normalizedAssignee.name = null
+    } else if (typeof candidate.name === 'string') {
+      const name = candidate.name.trim()
+      if (name) {
+        normalizedAssignee.name = name
+      }
+    }
+
+    if (candidate.email === null) {
+      normalizedAssignee.email = null
+    } else if (typeof candidate.email === 'string') {
+      const email = candidate.email.trim()
+      if (email) {
+        normalizedAssignee.email = email
+      }
+    }
+
+    normalized.push(normalizedAssignee)
+  }
+
+  return normalized
+}
+
 function normalizeFormValues(values: TaskSchema, timeZone: string) {
   return {
     title: values.title.trim(),
@@ -78,7 +125,7 @@ function normalizeFormValues(values: TaskSchema, timeZone: string) {
     dueDate: values.dueDate
       ? dateStringToISOString(values.dueDate, timeZone)
       : null,
-    assignees: values.assignees,
+    assignees: normalizeAssignees(values.assignees),
   }
 }
 
@@ -187,6 +234,24 @@ export function TaskModal({ open, onOpenChange, task, onSuccess }: TaskModalProp
                         {...field}
                         disabled={mutation.isPending}
                         className="min-h-[120px]"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="assignees"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Responsáveis</FormLabel>
+                    <FormControl>
+                      <AssigneeMultiSelect
+                        value={field.value ?? []}
+                        onChange={field.onChange}
+                        disabled={mutation.isPending}
                       />
                     </FormControl>
                     <FormMessage />

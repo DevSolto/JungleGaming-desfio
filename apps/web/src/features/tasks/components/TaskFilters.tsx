@@ -1,9 +1,20 @@
-import { type ChangeEvent } from 'react'
+import { type ChangeEvent, useEffect, useMemo, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { TaskPriority, TaskStatus } from '@repo/types'
+import { Check, ChevronsUpDown, Loader2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandLoading,
+} from '@/components/ui/command'
 import {
   Select,
   SelectContent,
@@ -11,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
 
 import {
@@ -20,6 +32,7 @@ import {
 } from '../store/useTasksFilters'
 import { useTaskCreationModal } from '../store/useTaskCreationModal'
 import { useTasksPagination } from '../store/useTasksPagination'
+import { getUsers } from '@/features/users/api/getUsers'
 
 const statusLabels: Record<Exclude<StatusFilter, 'ALL'>, string> = {
   [TaskStatus.TODO]: 'A fazer',
@@ -57,10 +70,35 @@ interface TaskFiltersProps {
 }
 
 export function TaskFilters({ className, onCreateTask }: TaskFiltersProps) {
-  const { status, setStatus, priority, setPriority, dueDate, setDueDate } =
-    useTasksFilters()
+  const {
+    status,
+    setStatus,
+    priority,
+    setPriority,
+    dueDate,
+    setDueDate,
+    assigneeId,
+    assigneeName,
+    setAssignee,
+  } = useTasksFilters()
   const { open } = useTaskCreationModal()
   const { resetPagination } = useTasksPagination()
+  const [assigneeSearch, setAssigneeSearch] = useState('')
+  const [isAssigneeOpen, setIsAssigneeOpen] = useState(false)
+
+  const assigneesQuery = useQuery({
+    queryKey: ['users', { search: assigneeSearch }],
+    queryFn: () => getUsers({ search: assigneeSearch, limit: 20 }),
+    enabled: isAssigneeOpen,
+    staleTime: 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+  })
+
+  useEffect(() => {
+    if (!isAssigneeOpen) {
+      setAssigneeSearch('')
+    }
+  }, [isAssigneeOpen])
 
   const handleStatusChange = (value: string) => {
     setStatus(value as StatusFilter)
@@ -76,6 +114,44 @@ export function TaskFilters({ className, onCreateTask }: TaskFiltersProps) {
     const value = event.target.value.trim()
     setDueDate(value ? value : null)
     resetPagination()
+  }
+
+  const users = assigneesQuery.data ?? []
+
+  const selectedUser = useMemo(
+    () => users.find((user) => user.id === assigneeId),
+    [users, assigneeId],
+  )
+
+  const assigneeLabel = assigneeId
+    ? selectedUser?.name ?? assigneeName ?? 'Responsável selecionado'
+    : 'Todos os responsáveis'
+
+  const emptyMessage = assigneesQuery.isError
+    ? 'Não foi possível carregar responsáveis.'
+    : 'Nenhum responsável encontrado.'
+
+  const closeAssigneePopover = () => {
+    setIsAssigneeOpen(false)
+    setAssigneeSearch('')
+  }
+
+  const handleAssigneeClear = () => {
+    setAssignee({ id: null, name: null })
+    resetPagination()
+    closeAssigneePopover()
+  }
+
+  const handleAssigneeSelect = (userId: string) => {
+    const selected = users.find((user) => user.id === userId)
+
+    if (!selected) {
+      return
+    }
+
+    setAssignee({ id: selected.id, name: selected.name })
+    resetPagination()
+    closeAssigneePopover()
   }
 
   const handleCreateTaskClick = () => {
@@ -129,6 +205,84 @@ export function TaskFilters({ className, onCreateTask }: TaskFiltersProps) {
               ))}
             </SelectContent>
           </Select>
+        </div>
+
+        <div className="flex min-w-[220px] flex-col gap-2">
+          <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Responsável
+          </Label>
+          <Popover open={isAssigneeOpen} onOpenChange={setIsAssigneeOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className={cn(
+                  'flex w-full items-center justify-between gap-2 truncate font-normal',
+                  !assigneeId && 'text-muted-foreground',
+                )}
+              >
+                <span className="truncate">{assigneeLabel}</span>
+                <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[min(320px,90vw)] p-0" align="start">
+              <Command shouldFilter={false}>
+                <CommandInput
+                  placeholder="Buscar responsável..."
+                  value={assigneeSearch}
+                  onValueChange={setAssigneeSearch}
+                />
+                <CommandList>
+                  <CommandEmpty>{emptyMessage}</CommandEmpty>
+                  {assigneesQuery.isFetching ? (
+                    <CommandLoading>
+                      <div className="flex items-center justify-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Carregando responsáveis...
+                      </div>
+                    </CommandLoading>
+                  ) : null}
+                  <CommandGroup heading="Opções">
+                    <CommandItem
+                      value="__all__"
+                      onSelect={handleAssigneeClear}
+                    >
+                      <span className="flex items-center gap-2">
+                        Todos os responsáveis
+                        {!assigneeId ? (
+                          <Check className="h-4 w-4" />
+                        ) : null}
+                      </span>
+                    </CommandItem>
+                  </CommandGroup>
+                  {users.length > 0 ? (
+                    <CommandGroup heading="Usuários">
+                      {users.map((user) => (
+                        <CommandItem
+                          key={user.id}
+                          value={user.id}
+                          onSelect={handleAssigneeSelect}
+                        >
+                          <div className="flex flex-col">
+                            <span className="text-sm font-medium text-foreground">
+                              {user.name}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {user.email}
+                            </span>
+                          </div>
+                          {assigneeId === user.id ? (
+                            <Check className="ml-auto h-4 w-4" />
+                          ) : null}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  ) : null}
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
         </div>
 
         <div className="flex min-w-[180px] flex-col gap-2">

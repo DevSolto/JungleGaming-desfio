@@ -10,21 +10,26 @@ interface TasksFiltersState {
   status: StatusFilter
   priority: PriorityFilter
   dueDate: DueDateFilter
+  assigneeId: string | null
+  assigneeName: string | null
   setSearchTerm: (searchTerm: string) => void
   setStatus: (status: StatusFilter) => void
   setPriority: (priority: PriorityFilter) => void
   setDueDate: (dueDate: DueDateFilter) => void
+  setAssignee: (assignee: { id: string | null; name: string | null }) => void
   resetFilters: () => void
 }
 
 const initialState: Pick<
   TasksFiltersState,
-  'searchTerm' | 'status' | 'priority' | 'dueDate'
+  'searchTerm' | 'status' | 'priority' | 'dueDate' | 'assigneeId' | 'assigneeName'
 > = {
   searchTerm: '',
   status: 'ALL',
   priority: 'ALL',
   dueDate: null,
+  assigneeId: null,
+  assigneeName: null,
 }
 
 export const useTasksFilters = create<TasksFiltersState>((set) => ({
@@ -33,7 +38,8 @@ export const useTasksFilters = create<TasksFiltersState>((set) => ({
   setStatus: (status) => set({ status }),
   setPriority: (priority) => set({ priority }),
   setDueDate: (dueDate) => set({ dueDate }),
-  resetFilters: () => set(initialState),
+  setAssignee: ({ id, name }) => set({ assigneeId: id, assigneeName: name }),
+  resetFilters: () => set({ ...initialState }),
 }))
 
 export type { DueDateFilter, PriorityFilter, StatusFilter }
