@@ -8,7 +8,9 @@ import {
   NOTIFICATIONS_GATEWAY_QUEUE,
   NOTIFICATIONS_RPC_QUEUE,
   TASKS_EVENTS_QUEUE,
+  TASK_CREATED_EVENT,
   TASK_UPDATED_EVENT,
+  TASK_DELETED_EVENT,
 } from './notifications.constants';
 import { AppLoggerService, createAppLogger } from '@repo/logger';
 import { RpcContextInterceptor } from './common/logging/rpc-context.interceptor';
@@ -18,7 +20,8 @@ import { RpcContextInterceptor } from './common/logging/rpc-context.interceptor'
  * - Notifications service consumes domain events from `TASKS_EVENTS_QUEUE`.
  * - RPC requests are handled through `NOTIFICATIONS_RPC_QUEUE`.
  * - Forwarded WebSocket events are published to `NOTIFICATIONS_GATEWAY_QUEUE`
- *   using the `COMMENT_NEW_EVENT` and `TASK_UPDATED_EVENT` topics.
+ *   using the `COMMENT_NEW_EVENT`, `TASK_CREATED_EVENT`,
+ *   `TASK_UPDATED_EVENT` and `TASK_DELETED_EVENT` topics.
  */
 function parseNumberEnv(value: string | undefined, fallback: number) {
   if (!value) {
@@ -156,7 +159,12 @@ async function bootstrap() {
           prefetch,
           attempts: attempt,
           gatewayQueue: NOTIFICATIONS_GATEWAY_QUEUE,
-          events: [COMMENT_NEW_EVENT, TASK_UPDATED_EVENT],
+          events: [
+            COMMENT_NEW_EVENT,
+            TASK_CREATED_EVENT,
+            TASK_UPDATED_EVENT,
+            TASK_DELETED_EVENT,
+          ],
           httpPort,
           connectionType: type,
         });

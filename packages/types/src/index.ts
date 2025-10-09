@@ -17,7 +17,9 @@ export type {
   TaskCommentCreatedEventPayload,
   TaskForwardingPattern,
   TaskCommentCreatedPayload,
+  TaskCreatedForwardPayload,
   TaskUpdatedForwardPayload,
+  TaskDeletedForwardPayload,
 } from "./contracts/events/tasks.js";
 export * from "./dto/task.js";
 export * from "./dto/task-audit-log.js";

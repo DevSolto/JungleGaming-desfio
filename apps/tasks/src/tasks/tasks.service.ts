@@ -24,6 +24,7 @@ import type {
   CreateTaskDTO,
   PaginatedTaskAuditLogsDTO,
   TaskEventPattern,
+  TaskForwardingPattern,
   TaskAuditLogListFiltersDTO,
   TaskListFiltersDTO,
   UpdateTaskDTO,
@@ -77,15 +78,15 @@ export class TasksService {
       actor: auditActor,
     });
 
-    await this.emitEvent(
-      TASK_EVENT_PATTERNS.CREATED,
-      this.createEventPayload(
-        saved,
-        auditActor,
-        null,
-        this.getAssigneeRecipients(saved.assignees),
-      ),
+    const payload = this.createEventPayload(
+      saved,
+      auditActor,
+      null,
+      this.getAssigneeRecipients(saved.assignees),
     );
+
+    await this.emitEvent(TASK_EVENT_PATTERNS.CREATED, payload);
+    await this.emitEvent(TASK_FORWARDING_PATTERNS.CREATED, payload);
 
     return saved;
   }
@@ -231,21 +232,21 @@ export class TasksService {
       actor: auditActor,
     });
 
-    await this.emitEvent(
-      TASK_EVENT_PATTERNS.DELETED,
-      this.createEventPayload(
-        removed,
-        auditActor,
-        null,
-        this.getAssigneeRecipients(task.assignees),
-      ),
+    const payload = this.createEventPayload(
+      removed,
+      auditActor,
+      null,
+      this.getAssigneeRecipients(task.assignees),
     );
+
+    await this.emitEvent(TASK_EVENT_PATTERNS.DELETED, payload);
+    await this.emitEvent(TASK_FORWARDING_PATTERNS.DELETED, payload);
 
     return removed;
   }
 
   private async emitEvent<TPayload extends object>(
-    pattern: TaskEventPattern,
+    pattern: TaskEventPattern | TaskForwardingPattern,
     payload: TPayload,
   ): Promise<void> {
     try {

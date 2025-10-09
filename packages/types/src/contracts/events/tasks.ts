@@ -30,7 +30,9 @@ export type TaskCommentCreatedEventPayload = CorrelatedMessage<{
 
 export const TASK_FORWARDING_PATTERNS = {
   COMMENT_CREATED: "tasks.comment.created",
+  CREATED: "tasks.created",
   UPDATED: "tasks.updated",
+  DELETED: "tasks.deleted",
 } as const;
 
 export type TaskForwardingPattern =
@@ -42,9 +44,15 @@ export type TaskCommentCreatedPayload = CorrelatedMessage<
   }
 >;
 
-export type TaskUpdatedForwardPayload = CorrelatedMessage<{
+type TaskForwardPayload = CorrelatedMessage<{
   task: TaskDTO | { id: string; [key: string]: unknown };
   recipients: string[];
   actor?: TaskAuditLogActorDTO | null;
   changes?: TaskAuditLogChangeDTO[] | Record<string, unknown> | null;
 }>;
+
+export type TaskCreatedForwardPayload = TaskForwardPayload;
+
+export type TaskUpdatedForwardPayload = TaskForwardPayload;
+
+export type TaskDeletedForwardPayload = TaskForwardPayload;

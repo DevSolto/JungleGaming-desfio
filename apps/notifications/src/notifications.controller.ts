@@ -4,12 +4,16 @@ import { AppLoggerService } from '@repo/logger';
 import type {
   PaginatedNotifications,
   TaskCommentCreatedPayload,
+  TaskCreatedForwardPayload,
+  TaskDeletedForwardPayload,
   TaskUpdatedForwardPayload,
 } from '@repo/types';
 
 import {
   NOTIFICATIONS_MESSAGE_PATTERNS,
   TASKS_COMMENT_CREATED_PATTERN,
+  TASKS_CREATED_PATTERN,
+  TASKS_DELETED_PATTERN,
   TASKS_UPDATED_PATTERN,
 } from './notifications.constants';
 import { NotificationsService } from './notifications.service';
@@ -60,5 +64,23 @@ export class NotificationsController {
   ): Promise<void> {
     this.logger.debug(`📥 Received event pattern ${TASKS_UPDATED_PATTERN}`);
     await this.notificationsService.handleTaskUpdated(payload, context);
+  }
+
+  @EventPattern(TASKS_CREATED_PATTERN)
+  async handleTaskCreated(
+    @Payload() payload: TaskCreatedForwardPayload,
+    @Ctx() context: RmqContext,
+  ): Promise<void> {
+    this.logger.debug(`📥 Received event pattern ${TASKS_CREATED_PATTERN}`);
+    await this.notificationsService.handleTaskCreated(payload, context);
+  }
+
+  @EventPattern(TASKS_DELETED_PATTERN)
+  async handleTaskDeleted(
+    @Payload() payload: TaskDeletedForwardPayload,
+    @Ctx() context: RmqContext,
+  ): Promise<void> {
+    this.logger.debug(`📥 Received event pattern ${TASKS_DELETED_PATTERN}`);
+    await this.notificationsService.handleTaskDeleted(payload, context);
   }
 }
