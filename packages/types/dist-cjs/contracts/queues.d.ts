@@ -4,3 +4,4 @@ export declare const NOTIFICATIONS_EVENTS_QUEUE = "notifications.events";
 export declare const NOTIFICATIONS_SERVICE_QUEUE = "notifications.events";
 export declare const NOTIFICATIONS_RPC_QUEUE = "notifications.rpc";
 export declare const NOTIFICATIONS_GATEWAY_QUEUE = "gateway.events";
+export declare const USERS_RPC_QUEUE = "users.rpc";
