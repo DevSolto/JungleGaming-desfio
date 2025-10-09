@@ -17,6 +17,7 @@ describe('NotificationsPersistenceService', () => {
       save: jest.fn(),
       findOne: jest.fn(),
       find: jest.fn(),
+      createQueryBuilder: jest.fn(),
     };
 
     scopedLogger = {
@@ -198,6 +199,96 @@ describe('NotificationsPersistenceService', () => {
       expect.objectContaining({
         recipientId: 'user-10',
         notificationCount: notifications.length,
+      }),
+    );
+  });
+
+  it('realiza busca paginada aplicando filtros quando disponíveis', async () => {
+    const notifications: Notification[] = [
+      {
+        id: 'notification-20',
+        recipientId: 'user-42',
+        channel: 'in_app',
+        status: 'sent',
+        message: 'Alerta crítico resolvido',
+        metadata: { taskId: 'task-123' },
+        createdAt: new Date('2024-05-01T12:00:00Z'),
+        sentAt: new Date('2024-05-01T12:05:00Z'),
+      },
+    ];
+
+    const queryBuilder = {
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      skip: jest.fn().mockReturnThis(),
+      take: jest.fn().mockReturnThis(),
+      getManyAndCount: jest.fn().mockResolvedValue([notifications, 7]),
+    };
+
+    repository.createQueryBuilder!.mockReturnValue(queryBuilder as never);
+
+    const result = await service.findPaginatedByRecipient({
+      recipientId: 'user-42',
+      status: 'sent',
+      channel: 'in_app',
+      search: '  crítico ',
+      from: new Date('2024-04-30T00:00:00Z'),
+      to: new Date('2024-05-02T00:00:00Z'),
+      taskId: 'task-123',
+      page: 2,
+      limit: 5,
+    });
+
+    expect(repository.createQueryBuilder).toHaveBeenCalledWith('notification');
+    expect(queryBuilder.where).toHaveBeenCalledWith(
+      'notification.recipientId = :recipientId',
+      { recipientId: 'user-42' },
+    );
+    expect(queryBuilder.andWhere).toHaveBeenNthCalledWith(1,
+      'notification.status = :status',
+      { status: 'sent' },
+    );
+    expect(queryBuilder.andWhere).toHaveBeenNthCalledWith(2,
+      'notification.channel = :channel',
+      { channel: 'in_app' },
+    );
+    expect(queryBuilder.andWhere).toHaveBeenNthCalledWith(3,
+      'notification.message ILIKE :search',
+      { search: '%crítico%' },
+    );
+    expect(queryBuilder.andWhere).toHaveBeenNthCalledWith(4,
+      'notification.createdAt >= :from',
+      { from: new Date('2024-04-30T00:00:00Z') },
+    );
+    expect(queryBuilder.andWhere).toHaveBeenNthCalledWith(5,
+      'notification.createdAt <= :to',
+      { to: new Date('2024-05-02T00:00:00Z') },
+    );
+    expect(queryBuilder.andWhere).toHaveBeenNthCalledWith(6,
+      "notification.metadata ->> 'taskId' = :taskId",
+      { taskId: 'task-123' },
+    );
+    expect(queryBuilder.orderBy).toHaveBeenCalledWith(
+      'notification.createdAt',
+      'DESC',
+    );
+    expect(queryBuilder.skip).toHaveBeenCalledWith(5);
+    expect(queryBuilder.take).toHaveBeenCalledWith(5);
+    expect(result).toEqual({
+      data: notifications,
+      total: 7,
+      page: 2,
+      limit: 5,
+    });
+    expect(scopedLogger.debug).toHaveBeenCalledWith(
+      'Retrieved paginated notifications for recipient.',
+      expect.objectContaining({
+        recipientId: 'user-42',
+        notificationCount: notifications.length,
+        total: 7,
+        page: 2,
+        limit: 5,
       }),
     );
   });

@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import {
   Ctx,
   EventPattern,
+  MessagePattern,
   Payload,
   RmqContext,
   RmqRecord,
@@ -9,7 +10,10 @@ import {
 } from '@nestjs/microservices';
 import {
   NOTIFICATION_CHANNELS,
+  NOTIFICATIONS_MESSAGE_PATTERNS,
   type NotificationChannel,
+  type NotificationDTO,
+  type PaginatedNotifications,
   type TaskCommentCreatedPayload,
   type TaskUpdatedForwardPayload,
 } from '@repo/types';
@@ -27,7 +31,13 @@ import {
   TASKS_UPDATED_PATTERN,
   TASK_UPDATED_EVENT,
 } from './notifications.constants';
-import { NotificationsPersistenceService } from './notifications/persistence/notifications-persistence.service';
+import {
+  NotificationsPersistenceService,
+  type FindNotificationsOptions,
+} from './notifications/persistence/notifications-persistence.service';
+import { ListNotificationsPayloadDto } from './notifications/dto/list-notifications-payload.dto';
+import { transformPayload, toRpcException } from './common/rpc.utils';
+import type { Notification } from './notifications/notification.entity';
 
 type AcknowledgeMessage = {
   content: Buffer;
@@ -64,6 +74,33 @@ export class NotificationsService {
     appLogger: AppLoggerService,
   ) {
     this.logger = appLogger.withContext({ context: NotificationsService.name });
+  }
+
+  @MessagePattern(NOTIFICATIONS_MESSAGE_PATTERNS.FIND_ALL)
+  async findAll(
+    @Payload() payload: unknown,
+    @Ctx() context: RmqContext,
+  ): Promise<PaginatedNotifications> {
+    try {
+      const dto = transformPayload(ListNotificationsPayloadDto, payload ?? {});
+      const requestId = this.resolveRequestId(dto, context);
+      const filters = this.normalizeListNotificationsPayload(dto);
+
+      const result = await this.withRequestContext(requestId, () =>
+        this.notificationsPersistence.findPaginatedByRecipient(filters),
+      );
+
+      return {
+        data: result.data.map((notification) =>
+          this.toNotificationDto(notification),
+        ),
+        total: result.total,
+        page: result.page,
+        limit: result.limit,
+      };
+    } catch (error) {
+      throw toRpcException(error);
+    }
   }
 
   @EventPattern(TASKS_COMMENT_CREATED_PATTERN)
@@ -302,6 +339,57 @@ export class NotificationsService {
         requestId,
       ),
     );
+  }
+
+  private normalizeListNotificationsPayload(
+    dto: ListNotificationsPayloadDto,
+  ): FindNotificationsOptions {
+    const page = dto.page && dto.page > 0 ? dto.page : 1;
+    const limit = dto.limit && dto.limit > 0 ? dto.limit : 10;
+
+    return {
+      recipientId: dto.recipientId,
+      status: dto.status,
+      channel: dto.channel,
+      search: this.normalizeSearch(dto.search),
+      from: this.normalizeDate(dto.from),
+      to: this.normalizeDate(dto.to),
+      taskId: dto.taskId,
+      page,
+      limit,
+    } satisfies FindNotificationsOptions;
+  }
+
+  private normalizeSearch(search?: string): string | undefined {
+    if (typeof search !== 'string') {
+      return undefined;
+    }
+
+    const trimmed = search.trim();
+
+    return trimmed.length > 0 ? trimmed : undefined;
+  }
+
+  private normalizeDate(value?: string): Date | undefined {
+    if (typeof value !== 'string' || value.trim().length === 0) {
+      return undefined;
+    }
+
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? undefined : parsed;
+  }
+
+  private toNotificationDto(notification: Notification): NotificationDTO {
+    return {
+      id: notification.id,
+      recipientId: notification.recipientId,
+      channel: notification.channel,
+      status: notification.status,
+      message: notification.message,
+      metadata: notification.metadata ?? null,
+      createdAt: notification.createdAt.toISOString(),
+      sentAt: notification.sentAt ? notification.sentAt.toISOString() : null,
+    } satisfies NotificationDTO;
   }
 
   private extractNotificationIds(

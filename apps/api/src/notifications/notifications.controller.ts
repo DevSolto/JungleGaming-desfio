@@ -44,6 +44,7 @@ export class NotificationsController {
       to: query.to,
       page: query.page ?? 1,
       limit: query.limit ?? 10,
+      taskId: query.taskId,
     };
 
     const result = await this.notificationsService.findAll(

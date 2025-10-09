@@ -30,6 +30,7 @@ export interface NotificationListFiltersDTO {
     to?: string;
     page?: number;
     limit?: number;
+    taskId?: string;
 }
 export type NotificationListFilters = NotificationListFiltersDTO;
 export interface PaginatedNotificationsDTO {
@@ -50,6 +51,7 @@ export declare class ListNotificationsQueryDto implements NotificationListFilter
     to?: string;
     page?: number;
     limit?: number;
+    taskId?: string;
 }
 export declare class NotificationStatusUpdateDto implements NotificationStatusUpdateDTO {
     status: NotificationStatus;

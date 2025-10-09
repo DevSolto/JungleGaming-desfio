@@ -27,6 +27,7 @@ import {
   type ApiResponse,
   type PaginatedResponse,
   type Comment,
+  type Notification,
   type TaskAuditLog,
   type Task,
   type TaskActor,
@@ -36,6 +37,7 @@ import type {
   ListTaskAuditLogsFilters,
   ListTaskCommentsFilters,
 } from './tasks.service';
+import { NotificationsService as ApiNotificationsService } from '../notifications/notifications.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import {
   CurrentUser,
@@ -47,7 +49,10 @@ import {
 @ApiTags('tasks')
 @Controller('tasks')
 export class TasksController {
-  constructor(private readonly tasksService: TasksService) {}
+  constructor(
+    private readonly tasksService: TasksService,
+    private readonly notificationsService: ApiNotificationsService,
+  ) {}
 
   @Get()
   @ApiOkResponse({ description: 'List tasks with pagination' })
@@ -178,6 +183,25 @@ export class TasksController {
     });
 
     return this.toItemResponse(comment);
+  }
+
+  @Get(':id/notifications')
+  @ApiOkResponse({
+    description: 'List notifications related to a task for the current user',
+  })
+  async listTaskNotifications(
+    @Param() params: TaskIdParamDto,
+    @CurrentUser() user: CurrentUserPayload | undefined,
+  ): Promise<ApiResponse<Notification[]>> {
+    const currentUser = this.ensureAuthenticatedUser(user);
+
+    const result = await this.notificationsService.findAll(currentUser.sub, {
+      taskId: params.id,
+      page: 1,
+      limit: 50,
+    });
+
+    return this.toItemResponse(result.data);
   }
 
   private ensureAuthenticatedUser(
