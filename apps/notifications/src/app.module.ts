@@ -6,6 +6,7 @@ import {
   NOTIFICATIONS_GATEWAY_CLIENT,
   NOTIFICATIONS_GATEWAY_QUEUE,
 } from './notifications.constants';
+import { HealthModule } from './health/health.module';
 import { NotificationsService } from './notifications.service';
 
 @Module({
@@ -36,6 +37,7 @@ import { NotificationsService } from './notifications.service';
         }),
       },
     ]),
+    HealthModule,
   ],
   providers: [NotificationsService],
 })
