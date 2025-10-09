@@ -90,6 +90,7 @@ services:
       PORT: ${API_PORT:-3001}
       AUTH_SERVICE_HOST: auth-service
       AUTH_SERVICE_PORT: 4010
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-admin}:${RABBITMQ_PASS:-admin}@rabbitmq:5672
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
     depends_on:
       db:
