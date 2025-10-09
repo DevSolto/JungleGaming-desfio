@@ -1,17 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
-import {
-  Ctx,
-  EventPattern,
-  MessagePattern,
-  Payload,
-  RmqContext,
-  RmqRecord,
-  RmqRecordBuilder,
-} from '@nestjs/microservices';
+import { RmqContext, RmqRecord, RmqRecordBuilder } from '@nestjs/microservices';
 import {
   ListNotificationsPayloadDto,
   NOTIFICATION_CHANNELS,
-  NOTIFICATIONS_MESSAGE_PATTERNS,
   type NotificationChannel,
   type NotificationDTO,
   type PaginatedNotifications,
@@ -76,11 +67,7 @@ export class NotificationsService {
     this.logger = appLogger.withContext({ context: NotificationsService.name });
   }
 
-  @MessagePattern(NOTIFICATIONS_MESSAGE_PATTERNS.FIND_ALL)
-  async findAll(
-    @Payload() payload: unknown,
-    @Ctx() context: RmqContext,
-  ): Promise<PaginatedNotifications> {
+  async findAll(payload: unknown, context: RmqContext): Promise<PaginatedNotifications> {
     try {
       const dto = transformPayload(ListNotificationsPayloadDto, payload ?? {});
       const requestId = this.resolveRequestId(dto, context);
@@ -103,10 +90,9 @@ export class NotificationsService {
     }
   }
 
-  @EventPattern(TASKS_COMMENT_CREATED_PATTERN)
   async handleNewComment(
-    @Payload() payload: TaskCommentCreatedPayload,
-    @Ctx() context: RmqContext,
+    payload: TaskCommentCreatedPayload,
+    context: RmqContext,
   ): Promise<void> {
     const channelRef = context.getChannelRef() as unknown;
     const messageRef = context.getMessage() as unknown;
@@ -172,10 +158,9 @@ export class NotificationsService {
     });
   }
 
-  @EventPattern(TASKS_UPDATED_PATTERN)
   async handleTaskUpdated(
-    @Payload() payload: TaskUpdatedForwardPayload,
-    @Ctx() context: RmqContext,
+    payload: TaskUpdatedForwardPayload,
+    context: RmqContext,
   ): Promise<void> {
     const channelRef = context.getChannelRef() as unknown;
     const messageRef = context.getMessage() as unknown;
