@@ -3,3 +3,4 @@ export * from "./task.js";
 export * from "./task-audit-log.js";
 export * from "./comment.js";
 export * from "./notification.js";
+export * from "./user.js";

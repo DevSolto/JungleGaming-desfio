@@ -30,6 +30,14 @@ export class UsersController {
       filters.search = search;
     }
 
+    if (typeof query.page === 'number') {
+      filters.page = query.page;
+    }
+
+    if (typeof query.limit === 'number') {
+      filters.limit = query.limit;
+    }
+
     const users = await this.usersService.findAll(filters);
     return { data: users };
   }

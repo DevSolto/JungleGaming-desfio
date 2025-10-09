@@ -46,6 +46,8 @@ export class TaskIdParamDto extends TaskIdDto {
 export class TaskAssigneeDto {
     id;
     username;
+    name;
+    email;
 }
 __decorate([
     IsUUID(),
@@ -57,6 +59,18 @@ __decorate([
     IsNotEmpty(),
     __metadata("design:type", String)
 ], TaskAssigneeDto.prototype, "username", void 0);
+__decorate([
+    IsOptional(),
+    ValidateIf((_, value) => value !== null),
+    IsString(),
+    __metadata("design:type", Object)
+], TaskAssigneeDto.prototype, "name", void 0);
+__decorate([
+    IsOptional(),
+    ValidateIf((_, value) => value !== null),
+    IsEmail(),
+    __metadata("design:type", Object)
+], TaskAssigneeDto.prototype, "email", void 0);
 export class CreateTaskDto {
     title;
     description;
@@ -248,6 +262,7 @@ export class ListTasksQueryDto {
     status;
     priority;
     search;
+    assigneeId;
     dueDate;
 }
 __decorate([
@@ -279,6 +294,11 @@ __decorate([
     IsString(),
     __metadata("design:type", String)
 ], ListTasksQueryDto.prototype, "search", void 0);
+__decorate([
+    IsOptional(),
+    IsUUID(),
+    __metadata("design:type", String)
+], ListTasksQueryDto.prototype, "assigneeId", void 0);
 __decorate([
     IsOptional(),
     IsDateString(),

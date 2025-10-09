@@ -4,5 +4,5 @@ export * from "./task-audit-log.js";
 export * from "./comment.js";
 export * from "./notification.js";
 export type * from "./tokens.js";
-export type * from "./user.js";
+export * from "./user.js";
 export type * from "./http.js";
