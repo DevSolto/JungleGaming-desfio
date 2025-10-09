@@ -21,13 +21,15 @@ export type TaskCommentCreatedEventPayload = CorrelatedMessage<{
 }>;
 export declare const TASK_FORWARDING_PATTERNS: {
     readonly COMMENT_CREATED: "tasks.comment.created";
+    readonly CREATED: "tasks.created";
     readonly UPDATED: "tasks.updated";
+    readonly DELETED: "tasks.deleted";
 };
 export type TaskForwardingPattern = (typeof TASK_FORWARDING_PATTERNS)[keyof typeof TASK_FORWARDING_PATTERNS];
 export type TaskCommentCreatedPayload = CorrelatedMessage<TaskCommentCreatedEventPayload & {
     recipients: string[];
 }>;
-export type TaskUpdatedForwardPayload = CorrelatedMessage<{
+type TaskForwardPayload = CorrelatedMessage<{
     task: TaskDTO | {
         id: string;
         [key: string]: unknown;
@@ -36,4 +38,8 @@ export type TaskUpdatedForwardPayload = CorrelatedMessage<{
     actor?: TaskAuditLogActorDTO | null;
     changes?: TaskAuditLogChangeDTO[] | Record<string, unknown> | null;
 }>;
+export type TaskCreatedForwardPayload = TaskForwardPayload;
+export type TaskUpdatedForwardPayload = TaskForwardPayload;
+export type TaskDeletedForwardPayload = TaskForwardPayload;
+export {};
 //# sourceMappingURL=tasks.d.ts.map

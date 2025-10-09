@@ -9,5 +9,7 @@ exports.TASK_EVENT_PATTERNS = {
 };
 exports.TASK_FORWARDING_PATTERNS = {
     COMMENT_CREATED: "tasks.comment.created",
+    CREATED: "tasks.created",
     UPDATED: "tasks.updated",
+    DELETED: "tasks.deleted",
 };

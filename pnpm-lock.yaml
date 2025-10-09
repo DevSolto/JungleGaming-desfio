@@ -361,6 +361,12 @@ importers:
       '@repo/types':
         specifier: workspace:*
         version: link:../../packages/types
+      class-transformer:
+        specifier: ^0.5.1
+        version: 0.5.1
+      class-validator:
+        specifier: ^0.14.2
+        version: 0.14.2
       pg:
         specifier: ^8.16.3
         version: 8.16.3

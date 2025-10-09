@@ -8,7 +8,6 @@
 Sistema colaborativo para planejamento e acompanhamento de tarefas, com autenticação segura, mensageria assíncrona e atualização em tempo real.
 
 <!-- Atualize o link do GIF após gravar a demo -->
-![Fluxo completo (login → tarefa → notificação)](docs/assets/demo.gif)
 
 ## Sumário
 - [Visão Geral](#visão-geral)

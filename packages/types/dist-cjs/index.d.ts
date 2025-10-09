@@ -5,7 +5,7 @@ export * from "./enums/auth.js";
 export * from "./contracts/rpc/tasks.js";
 export * from "./contracts/rpc/users.js";
 export { TASK_EVENT_PATTERNS, TASK_FORWARDING_PATTERNS, } from "./contracts/events/tasks.js";
-export type { TaskEventPattern, TaskEventPayload, TaskCommentCreatedEventPayload, TaskForwardingPattern, TaskCommentCreatedPayload, TaskUpdatedForwardPayload, } from "./contracts/events/tasks.js";
+export type { TaskEventPattern, TaskEventPayload, TaskCommentCreatedEventPayload, TaskForwardingPattern, TaskCommentCreatedPayload, TaskCreatedForwardPayload, TaskUpdatedForwardPayload, TaskDeletedForwardPayload, } from "./contracts/events/tasks.js";
 export * from "./dto/task.js";
 export * from "./dto/task-audit-log.js";
 export * from "./enums/task.js";
