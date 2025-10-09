@@ -16,6 +16,8 @@ import { validationExceptionFactory } from '../src/common/pipes/validation-excep
 import { TASKS_MESSAGE_PATTERNS } from '@repo/types';
 import {
   createCreateTaskDtoFixture,
+  createPaginatedAuditLogsFixture,
+  createTaskAuditLogFixture,
   createTaskFixture,
   createUpdateTaskDtoFixture,
 } from './__mocks__/tasks.fixtures';
@@ -459,6 +461,90 @@ describe('AppController (e2e)', () => {
       TASKS_MESSAGE_PATTERNS.COMMENT_FIND_ALL,
       expect.objectContaining({ taskId }),
     );
+  });
+
+  it('GET /tasks/:id/audit-log returns paginated audit logs when authorized', async () => {
+    const taskId = '2f1b7b58-9d1f-4a7e-8f6a-2c5d12345678';
+    const auditLogs = createPaginatedAuditLogsFixture({
+      page: 2,
+      limit: 5,
+      total: 13,
+      data: [
+        createTaskAuditLogFixture({
+          id: 'log-2',
+          taskId,
+          createdAt: '2024-05-21T12:00:00.000Z',
+        }),
+      ],
+    });
+
+    tasksClient.send.mockReturnValueOnce(of(auditLogs));
+
+    await request(app.getHttpServer())
+      .get(`/tasks/${taskId}/audit-log`)
+      .set('Authorization', MOCK_AUTHORIZATION_HEADER)
+      .query({ page: auditLogs.page, limit: auditLogs.limit })
+      .expect(HttpStatus.OK)
+      .expect(({ body }) => {
+        expect(body).toEqual({
+          data: auditLogs.data,
+          meta: {
+            page: auditLogs.page,
+            size: auditLogs.limit,
+            total: auditLogs.total,
+            totalPages: Math.ceil(auditLogs.total / auditLogs.limit),
+          },
+        });
+      });
+
+    expect(tasksClient.send).toHaveBeenCalledTimes(1);
+    const [pattern, payload] = tasksClient.send.mock.calls[0];
+    expect(pattern).toBe(TASKS_MESSAGE_PATTERNS.AUDIT_FIND_ALL);
+    expect(payload.taskId).toBe(taskId);
+    expect(Number(payload.page)).toBe(auditLogs.page);
+    expect(Number(payload.limit)).toBe(auditLogs.limit);
+  });
+
+  it('GET /tasks/:id/audit-log returns 401 without Authorization header', async () => {
+    await request(app.getHttpServer())
+      .get('/tasks/2f1b7b58-9d1f-4a7e-8f6a-2c5d12345678/audit-log')
+      .expect(HttpStatus.UNAUTHORIZED)
+      .expect(({ body }) => {
+        expect(body.statusCode).toBe(HttpStatus.UNAUTHORIZED);
+        expect(body.message).toBe('Access token is required.');
+      });
+
+    expect(tasksClient.send).not.toHaveBeenCalled();
+  });
+
+  it('GET /tasks/:id/audit-log maps RPC errors to HTTP responses', async () => {
+    const taskId = '2f1b7b58-9d1f-4a7e-8f6a-2c5d12345678';
+
+    tasksClient.send.mockReturnValueOnce(
+      throwError(
+        () =>
+          new RpcException({
+            statusCode: HttpStatus.BAD_REQUEST,
+            message: 'Invalid pagination parameters',
+          }),
+      ),
+    );
+
+    await request(app.getHttpServer())
+      .get(`/tasks/${taskId}/audit-log`)
+      .set('Authorization', MOCK_AUTHORIZATION_HEADER)
+      .expect(HttpStatus.BAD_REQUEST)
+      .expect(({ body }) => {
+        expect(body.statusCode).toBe(HttpStatus.BAD_REQUEST);
+        expect(body.message).toBe('Invalid pagination parameters');
+      });
+
+    expect(tasksClient.send).toHaveBeenCalledTimes(1);
+    const [pattern, payload] = tasksClient.send.mock.calls[0];
+    expect(pattern).toBe(TASKS_MESSAGE_PATTERNS.AUDIT_FIND_ALL);
+    expect(payload.taskId).toBe(taskId);
+    expect(Number(payload.page)).toBe(1);
+    expect(Number(payload.limit)).toBe(10);
   });
 
   it('POST /tasks/:id/comments creates a comment and returns the created entity', async () => {

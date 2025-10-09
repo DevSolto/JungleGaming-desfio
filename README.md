@@ -14,6 +14,12 @@ Monorepo Turborepo com os serviços do JungleGaming (gateway HTTP, auth, tasks, 
 - A documentação interativa está em `http://localhost:3000/api/docs`. Use o botão **Authorize** e informe `Bearer <accessToken>` para testar requisições autenticadas.
 - Tokens podem ser renovados com `POST /auth/refresh`, que lê o `refreshToken` HTTP-only configurado no login.
 
+## Histórico de tarefas
+- O microserviço de tarefas grava logs de auditoria para criações, atualizações e exclusões, incluindo diffs normalizados dos campos alterados.
+- O gateway HTTP expõe `GET /tasks/:id/audit-log`, exigindo JWT válido, para consultar o histórico paginado.
+- Cada resposta retorna `data` com a lista de eventos e `meta` com `page`, `size`, `total` e `totalPages`; combine com os filtros `page` e `limit` para navegar.
+- Em ambientes operacionais, monitore o volume de auditoria: o armazenamento cresce conforme o número de mudanças realizadas nas tarefas.
+
 ## Estrutura
 - `apps/api`: API Gateway com JWT guard e documentação Swagger.
 - `apps/auth`: serviço de autenticação responsável pela emissão e rotação de tokens.

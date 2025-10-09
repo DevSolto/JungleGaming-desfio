@@ -90,3 +90,46 @@ curl -X POST \
 ```
 
 O corpo deve conter somente o campo `message` (máximo de 500 caracteres). O gateway atribui o autor com base no usuário autenticado e, ao salvar, o serviço publica `tasks.comment.created`, que o próprio gateway retransmite para os clientes WebSocket como `comment:new`.
+
+## Histórico (audit log) de tarefas
+
+Logs de criação, atualização e exclusão ficam disponíveis via `GET /tasks/:id/audit-log`. O endpoint exige `Authorization: Bearer <accessToken>` e aceita os parâmetros opcionais `page` e `limit`.
+
+```bash
+curl -H "Authorization: Bearer $ACCESS_TOKEN" \
+     "http://localhost:3000/tasks/<TASK_ID>/audit-log?page=1&limit=20"
+```
+
+Resposta simplificada:
+
+```json
+{
+  "data": [
+    {
+      "id": "log-123",
+      "taskId": "<TASK_ID>",
+      "action": "task.updated",
+      "actor": {
+        "id": "user-1",
+        "displayName": "Player One"
+      },
+      "changes": [
+        {
+          "field": "status",
+          "previousValue": "todo",
+          "currentValue": "in_progress"
+        }
+      ],
+      "createdAt": "2024-06-02T12:34:56.000Z"
+    }
+  ],
+  "meta": {
+    "page": 1,
+    "size": 20,
+    "total": 3,
+    "totalPages": 1
+  }
+}
+```
+
+O volume de registros cresce conforme as tarefas são alteradas; ajuste `limit` para controlar a quantidade retornada por página e monitore o tamanho da tabela `task_audit_logs` nas operações de produção.
