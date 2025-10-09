@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 
 import { TaskDetailsPage } from '@/features/tasks/pages/TaskDetailsPage'
 
-export const Route = createFileRoute('/tasks/$taskId')({
+export const Route = createFileRoute('/tasks/$taskId/')({
   component: TaskDetailsRoute,
 })
 

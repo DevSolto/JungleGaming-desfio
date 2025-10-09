@@ -9,7 +9,7 @@ import {
   TaskPriority,
   TaskStatus,
 } from '@repo/types'
-import { Bell, CalendarDays, MessageSquare, Users } from 'lucide-react'
+import { Bell, CalendarDays, History, MessageSquare, Users } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 
 import { Button } from '@/components/ui/button'
@@ -304,6 +304,19 @@ export function TaskDetailsPage({ taskId }: TaskDetailsPageProps) {
         </div>
 
         <div className="flex flex-col gap-2 sm:flex-row">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() =>
+              void router.navigate({
+                to: '/tasks/$taskId/history',
+                params: { taskId },
+              })
+            }
+          >
+            <History className="size-4" aria-hidden="true" />
+            Histórico
+          </Button>
           <Button type="button" variant="outline" onClick={() => setIsEditing(true)}>
             Editar tarefa
           </Button>
