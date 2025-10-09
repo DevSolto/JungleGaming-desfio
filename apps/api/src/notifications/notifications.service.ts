@@ -6,6 +6,7 @@ import {
   HttpStatus,
   Inject,
   Injectable,
+  Logger,
   NotFoundException,
   UnauthorizedException,
   UnprocessableEntityException,
@@ -28,6 +29,8 @@ export type PaginatedNotificationResult = PaginatedNotifications;
 
 @Injectable()
 export class NotificationsService {
+  private readonly logger = new Logger(NotificationsService.name);
+
   constructor(
     @Inject(NOTIFICATIONS_RPC_CLIENT)
     private readonly client: ClientProxy,
@@ -53,9 +56,12 @@ export class NotificationsService {
     payload: unknown,
   ): Promise<TResponse> {
     try {
+      this.logger.debug(`📤 Sending RPC request (pattern=${pattern})`);
       return await lastValueFrom(this.client.send<TResponse>(pattern, payload));
     } catch (error) {
       throw this.toHttpException(error);
+    } finally {
+      this.logger.debug(`📥 Completed RPC request (pattern=${pattern})`);
     }
   }
 
