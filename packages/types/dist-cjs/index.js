@@ -14,6 +14,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.TASK_FORWARDING_PATTERNS = exports.TASK_EVENT_PATTERNS = void 0;
 // Auth
 __exportStar(require("./contracts/rpc/auth.js"), exports);
 __exportStar(require("./contracts/auth/index.js"), exports);
@@ -21,7 +22,9 @@ __exportStar(require("./dto/auth.js"), exports);
 __exportStar(require("./enums/auth.js"), exports);
 // Tasks
 __exportStar(require("./contracts/rpc/tasks.js"), exports);
-__exportStar(require("./contracts/events/tasks.js"), exports);
+var tasks_js_1 = require("./contracts/events/tasks.js");
+Object.defineProperty(exports, "TASK_EVENT_PATTERNS", { enumerable: true, get: function () { return tasks_js_1.TASK_EVENT_PATTERNS; } });
+Object.defineProperty(exports, "TASK_FORWARDING_PATTERNS", { enumerable: true, get: function () { return tasks_js_1.TASK_FORWARDING_PATTERNS; } });
 __exportStar(require("./dto/task.js"), exports);
 __exportStar(require("./dto/task-audit-log.js"), exports);
 __exportStar(require("./enums/task.js"), exports);
