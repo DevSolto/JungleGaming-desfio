@@ -6,7 +6,8 @@ import { AppModule } from './app.module';
 import {
   COMMENT_NEW_EVENT,
   NOTIFICATIONS_GATEWAY_QUEUE,
-  NOTIFICATIONS_SERVICE_QUEUE,
+  NOTIFICATIONS_RPC_QUEUE,
+  TASKS_EVENTS_QUEUE,
   TASK_UPDATED_EVENT,
 } from './notifications.constants';
 import { AppLoggerService, createAppLogger } from '@repo/logger';
@@ -14,7 +15,8 @@ import { RpcContextInterceptor } from './common/logging/rpc-context.interceptor'
 
 /**
  * Messaging topology shared with the API Gateway:
- * - Notifications service consumes domain events from `NOTIFICATIONS_SERVICE_QUEUE`.
+ * - Notifications service consumes domain events from `TASKS_EVENTS_QUEUE`.
+ * - RPC requests are handled through `NOTIFICATIONS_RPC_QUEUE`.
  * - Forwarded WebSocket events are published to `NOTIFICATIONS_GATEWAY_QUEUE`
  *   using the `COMMENT_NEW_EVENT` and `TASK_UPDATED_EVENT` topics.
  */
@@ -49,9 +51,13 @@ async function bootstrap() {
     'RABBITMQ_URL',
     'amqp://admin:admin@localhost:5672',
   );
-  const queue = configService.get<string>(
-    'RABBITMQ_QUEUE',
-    NOTIFICATIONS_SERVICE_QUEUE,
+  const eventsQueue = configService.get<string>(
+    'TASKS_EVENTS_QUEUE',
+    TASKS_EVENTS_QUEUE,
+  );
+  const rpcQueue = configService.get<string>(
+    'NOTIFICATIONS_RPC_QUEUE',
+    NOTIFICATIONS_RPC_QUEUE,
   );
   const prefetch = parseNumberEnv(
     configService.get<string>('RABBITMQ_PREFETCH'),
@@ -77,7 +83,7 @@ async function bootstrap() {
   const allowAllOrigins =
     parsedOrigins.length === 0 || parsedOrigins.includes('*');
 
-  const microserviceOptions: MicroserviceOptions = {
+  const createMicroserviceOptions = (queue: string): MicroserviceOptions => ({
     transport: Transport.RMQ,
     options: {
       urls: [rabbitMqUrl],
@@ -87,7 +93,7 @@ async function bootstrap() {
       },
       prefetchCount: prefetch,
     },
-  };
+  });
 
   let attempt = 0;
   // eslint-disable-next-line no-constant-condition
@@ -112,39 +118,61 @@ async function bootstrap() {
     const rpcContextInterceptor = app.get(RpcContextInterceptor);
     app.useLogger(appLogger);
 
-    const microservice = app.connectMicroservice<MicroserviceOptions>(
-      microserviceOptions,
-    );
+    const microservices = [
+      {
+        type: 'events' as const,
+        queue: eventsQueue,
+        logger: appLogger.withContext({
+          context: 'rmq-events-microservice',
+        }),
+        instance: app.connectMicroservice<MicroserviceOptions>(
+          createMicroserviceOptions(eventsQueue),
+        ),
+      },
+      {
+        type: 'rpc' as const,
+        queue: rpcQueue,
+        logger: appLogger.withContext({
+          context: 'rmq-rpc-microservice',
+        }),
+        instance: app.connectMicroservice<MicroserviceOptions>(
+          createMicroserviceOptions(rpcQueue),
+        ),
+      },
+    ];
 
-    const microserviceLogger = appLogger.withContext({
-      context: 'rmq-microservice',
+    microservices.forEach(({ instance, logger }) => {
+      instance.useLogger(logger);
+      instance.useGlobalInterceptors(rpcContextInterceptor);
     });
-    microservice.useLogger(microserviceLogger);
-    microservice.useGlobalInterceptors(rpcContextInterceptor);
 
     try {
       await app.startAllMicroservices();
       await app.listen(httpPort);
-      microserviceLogger.log('Notifications microservice connected to RabbitMQ.', {
-        rabbitMqUrl,
-        queue,
-        prefetch,
-        attempts: attempt,
-        gatewayQueue: NOTIFICATIONS_GATEWAY_QUEUE,
-        events: [COMMENT_NEW_EVENT, TASK_UPDATED_EVENT],
-        httpPort,
+      microservices.forEach(({ queue, type, logger }) => {
+        logger.log('Notifications microservice connected to RabbitMQ.', {
+          rabbitMqUrl,
+          queue,
+          prefetch,
+          attempts: attempt,
+          gatewayQueue: NOTIFICATIONS_GATEWAY_QUEUE,
+          events: [COMMENT_NEW_EVENT, TASK_UPDATED_EVENT],
+          httpPort,
+          connectionType: type,
+        });
       });
       break;
     } catch (error) {
       await Promise.allSettled([
-        microservice.close(),
+        ...microservices.map(({ instance }) => instance.close()),
         app.close(),
       ]);
 
       if (!isConnectionRefused(error)) {
         attemptLogger.error('Failed to bootstrap notifications service.', error, {
           rabbitMqUrl,
-          queue,
+          eventsQueue,
+          rpcQueue,
           prefetch,
           httpPort,
         });
@@ -158,7 +186,10 @@ async function bootstrap() {
       attemptLogger.error('RabbitMQ connection attempt failed. Retrying.', error, {
         delayMs: delay,
         rabbitMqUrl,
-        queue,
+        queues: {
+          events: eventsQueue,
+          rpc: rpcQueue,
+        },
         prefetch,
       });
       await new Promise((resolve) => setTimeout(resolve, delay));

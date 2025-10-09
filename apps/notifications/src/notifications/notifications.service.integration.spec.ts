@@ -26,6 +26,16 @@ const createAckContext = () => {
   return { context, channel, message };
 };
 
+const createRpcContext = (headers: Record<string, unknown> = {}) => {
+  const getMessage = jest.fn().mockReturnValue({
+    properties: { headers },
+  });
+
+  const context = { getMessage } as unknown as RmqContext;
+
+  return { context, getMessage };
+};
+
 describe('NotificationsService (integração)', () => {
   let moduleRef: TestingModule;
   let service: NotificationsService;
@@ -258,5 +268,50 @@ describe('NotificationsService (integração)', () => {
     expect(channel.ack).not.toHaveBeenCalled();
     expect(channel.nack).toHaveBeenCalledTimes(1);
     expect(await repository.count()).toBe(1);
+  });
+
+  it('retorna notificações via RPC', async () => {
+    const recipientId = randomUUID();
+    const anotherRecipientId = randomUUID();
+
+    await repository.save([
+      repository.create({
+        recipientId,
+        channel: 'in_app',
+        status: 'pending',
+        message: 'Uma notificação',
+        metadata: { taskId: 'task-1' },
+      }),
+      repository.create({
+        recipientId,
+        channel: 'in_app',
+        status: 'pending',
+        message: 'Outra notificação',
+        metadata: { taskId: 'task-2' },
+      }),
+      repository.create({
+        recipientId: anotherRecipientId,
+        channel: 'in_app',
+        status: 'pending',
+        message: 'Ignorada',
+      }),
+    ]);
+
+    const { context, getMessage } = createRpcContext({
+      'x-request-id': 'rpc-test',
+    });
+
+    const result = await service.findAll(
+      { recipientId, page: 1, limit: 10 },
+      context,
+    );
+
+    expect(result.total).toBe(2);
+    expect(result.data).toHaveLength(2);
+    expect(result.data.map((notification) => notification.recipientId)).toEqual(
+      expect.arrayContaining([recipientId]),
+    );
+    expect(result.data.every((notification) => notification.metadata)).toBe(true);
+    expect(getMessage).toHaveBeenCalledTimes(1);
   });
 });
