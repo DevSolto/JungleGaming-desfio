@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import type { CommentDTO, Task, TaskEventPayload } from '@repo/types'
+import type { CommentDTO, PaginatedResponse, Task, TaskEventPayload } from '@repo/types'
 
 import { Button } from '@/components/ui/button'
 import { toast } from '@/components/ui/use-toast'
@@ -48,7 +48,7 @@ export function TasksPage() {
     queryFn: () => getTasks(filters),
   })
 
-  const tasks = tasksQuery.data ?? []
+  const tasks = tasksQuery.data?.data ?? []
   const isPending = tasksQuery.isPending
   const isFetching = tasksQuery.isFetching
   const isLoading = isPending || (isFetching && tasks.length === 0)
@@ -89,16 +89,19 @@ export function TasksPage() {
         return
       }
 
-      queryClient.setQueriesData<Task[] | undefined>(
+      queryClient.setQueriesData<PaginatedResponse<Task> | undefined>(
         { queryKey: ['tasks'] },
         (oldTasks) => {
           if (!oldTasks) {
             return oldTasks
           }
 
-          return oldTasks.map((task) =>
-            task.id === updatedTask.id ? updatedTask : task,
-          )
+          return {
+            ...oldTasks,
+            data: oldTasks.data.map((task) =>
+              task.id === updatedTask.id ? updatedTask : task,
+            ),
+          }
         },
       )
 
