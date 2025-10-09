@@ -6,13 +6,23 @@ jest.mock('@repo/logger', () => ({
 import type { ClientProxy } from '@nestjs/microservices';
 import { of } from 'rxjs';
 import { DataSource, Repository } from 'typeorm';
-import { TaskPriority, TaskStatus, TASK_EVENT_PATTERNS } from '@repo/types';
+import {
+  TaskPriority,
+  TaskStatus,
+  TASK_EVENT_PATTERNS,
+  TASK_FORWARDING_PATTERNS,
+} from '@repo/types';
 import { resetDefaultTaskTimezoneCache } from '@repo/types/utils/datetime';
 import { Task } from './task.entity';
 import { TasksService } from './tasks.service';
 import { createTestDataSource } from '../testing/database';
 import { TaskAuditLog } from './task-audit-log.entity';
 import { TaskAuditLogsService } from './task-audit-logs.service';
+
+const logger = jest.requireMock('@repo/logger') as {
+  getCurrentRequestContext: jest.Mock;
+  runWithRequestContext: jest.Mock;
+};
 
 describe('TasksService', () => {
   const originalTimezone = process.env.TASKS_TIMEZONE;
@@ -38,6 +48,7 @@ describe('TasksService', () => {
 
   afterEach(async () => {
     emitMock.mockClear();
+    logger.getCurrentRequestContext.mockReturnValue(undefined);
     await auditLogsRepository
       .createQueryBuilder()
       .delete()
@@ -351,6 +362,10 @@ describe('TasksService', () => {
       email: 'alice@example.com',
     };
 
+    logger.getCurrentRequestContext.mockReturnValue({
+      requestId: 'update-request',
+    });
+
     await service.update(
       task.id,
       {
@@ -410,7 +425,15 @@ describe('TasksService', () => {
 
     expect(updatedCall).toBeDefined();
 
-    const [, updatedRecord] = updatedCall!;
+    const [, updatedRecordRaw] = updatedCall!;
+    const updatedRecord = updatedRecordRaw as {
+      data: {
+        recipients: string[];
+        requestId?: string;
+      };
+      options?: { headers?: Record<string, string> };
+    };
+
     expect(updatedRecord).toEqual(
       expect.objectContaining({
         data: expect.objectContaining({
@@ -423,9 +446,22 @@ describe('TasksService', () => {
             displayName: 'Alice',
           },
           recipients: ['a1b2c3'],
+          requestId: 'update-request',
+        }),
+        options: expect.objectContaining({
+          headers: expect.objectContaining({ 'x-request-id': 'update-request' }),
         }),
       }),
     );
+
+    const forwardedCall = emitMock.mock.calls.find(
+      ([pattern]) => pattern === TASK_FORWARDING_PATTERNS.UPDATED,
+    );
+
+    expect(forwardedCall).toBeDefined();
+
+    const [, forwardedRecord] = forwardedCall!;
+    expect(forwardedRecord).toEqual(updatedRecord);
   });
 
   it('tracks assignee updates and emits recipients when responsibles change', async () => {
@@ -562,6 +598,14 @@ describe('TasksService', () => {
         email: 'charlie@example.com',
       },
     ]);
+
+    const forwardedEvent = emitMock.mock.calls.find(
+      ([pattern]) => pattern === TASK_FORWARDING_PATTERNS.UPDATED,
+    );
+
+    expect(forwardedEvent).toBeDefined();
+    const [, forwardedRecord] = forwardedEvent!;
+    expect(forwardedRecord).toEqual(updatedRecord);
   });
 
   it('filters tasks by assignee id using normalized filters', async () => {

@@ -7,6 +7,7 @@ import { Task } from './task.entity';
 import { TASKS_EVENTS_CLIENT } from './tasks.constants';
 import {
   TASK_EVENT_PATTERNS,
+  TASK_FORWARDING_PATTERNS,
   type TaskActor,
   type TaskAuditLogActorDTO,
   type TaskAuditLogChangeDTO,
@@ -203,15 +204,15 @@ export class TasksService {
       changes: normalizedChanges,
     });
 
-    await this.emitEvent(
-      TASK_EVENT_PATTERNS.UPDATED,
-      this.createEventPayload(
-        saved,
-        auditActor,
-        normalizedChanges,
-        this.getAssigneeRecipients(saved.assignees),
-      ),
+    const payload = this.createEventPayload(
+      saved,
+      auditActor,
+      normalizedChanges,
+      this.getAssigneeRecipients(saved.assignees),
     );
+
+    await this.emitEvent(TASK_EVENT_PATTERNS.UPDATED, payload);
+    await this.emitEvent(TASK_FORWARDING_PATTERNS.UPDATED, payload);
 
     return saved;
   }
