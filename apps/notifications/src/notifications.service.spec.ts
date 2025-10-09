@@ -2,6 +2,8 @@ import { of, throwError } from 'rxjs'
 import type { ClientProxy, RmqContext } from '@nestjs/microservices'
 import type {
   TaskCommentCreatedPayload,
+  TaskCreatedForwardPayload,
+  TaskDeletedForwardPayload,
   TaskUpdatedForwardPayload,
 } from '@repo/types'
 import type { AppLoggerService } from '@repo/logger'
@@ -388,6 +390,82 @@ describe('NotificationsService', () => {
           actorId: 'actor-1',
           actorDisplayName: 'Ana',
           changes: payload.changes,
+        }),
+      }),
+    )
+    expect(emitMock).toHaveBeenCalledTimes(1)
+    expect(channel.ack).toHaveBeenCalledTimes(1)
+    expect(channel.nack).not.toHaveBeenCalled()
+  })
+
+  it('persists task creation notifications with metadata before forwarding', async () => {
+    const { context, channel } = createContext()
+    const payload: TaskCreatedForwardPayload = {
+      task: {
+        id: 'task-30',
+        title: ' Nova tarefa ',
+      },
+      recipients: ['user-30'],
+      actor: {
+        id: 'actor-30',
+        displayName: '  Carlos  ',
+      },
+    }
+
+    createNotificationMock.mockResolvedValue(undefined)
+    emitMock.mockReturnValue(of(undefined))
+
+    await service.handleTaskCreated(payload, context)
+
+    expect(createNotificationMock).toHaveBeenCalledTimes(1)
+    expect(createNotificationMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        recipientId: 'user-30',
+        message: 'Carlos criou a tarefa Nova tarefa',
+        metadata: expect.objectContaining({
+          taskId: 'task-30',
+          taskTitle: 'Nova tarefa',
+          actorId: 'actor-30',
+          actorDisplayName: 'Carlos',
+          changes: null,
+        }),
+      }),
+    )
+    expect(emitMock).toHaveBeenCalledTimes(1)
+    expect(channel.ack).toHaveBeenCalledTimes(1)
+    expect(channel.nack).not.toHaveBeenCalled()
+  })
+
+  it('persists task deletion notifications with metadata before forwarding', async () => {
+    const { context, channel } = createContext()
+    const payload: TaskDeletedForwardPayload = {
+      task: {
+        id: 'task-40',
+        title: ' Tarefa antiga ',
+      },
+      recipients: ['user-40'],
+      actor: {
+        id: 'actor-40',
+        displayName: '  Bianca  ',
+      },
+    }
+
+    createNotificationMock.mockResolvedValue(undefined)
+    emitMock.mockReturnValue(of(undefined))
+
+    await service.handleTaskDeleted(payload, context)
+
+    expect(createNotificationMock).toHaveBeenCalledTimes(1)
+    expect(createNotificationMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        recipientId: 'user-40',
+        message: 'Bianca removeu a tarefa Tarefa antiga',
+        metadata: expect.objectContaining({
+          taskId: 'task-40',
+          taskTitle: 'Tarefa antiga',
+          actorId: 'actor-40',
+          actorDisplayName: 'Bianca',
+          changes: null,
         }),
       }),
     )

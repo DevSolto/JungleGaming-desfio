@@ -7,6 +7,8 @@ import {
   type NotificationDTO,
   type PaginatedNotifications,
   type TaskCommentCreatedPayload,
+  type TaskCreatedForwardPayload,
+  type TaskDeletedForwardPayload,
   type TaskUpdatedForwardPayload,
 } from '@repo/types';
 import { ClientProxy } from '@nestjs/microservices';
@@ -20,8 +22,12 @@ import {
   COMMENT_NEW_EVENT,
   NOTIFICATIONS_GATEWAY_CLIENT,
   TASKS_COMMENT_CREATED_PATTERN,
+  TASKS_CREATED_PATTERN,
+  TASKS_DELETED_PATTERN,
   TASKS_UPDATED_PATTERN,
+  TASK_CREATED_EVENT,
   TASK_UPDATED_EVENT,
+  TASK_DELETED_EVENT,
 } from './notifications.constants';
 import {
   NotificationsPersistenceService,
@@ -162,6 +168,59 @@ export class NotificationsService {
     payload: TaskUpdatedForwardPayload,
     context: RmqContext,
   ): Promise<void> {
+    await this.handleTaskEvent(payload, context, {
+      pattern: TASKS_UPDATED_PATTERN,
+      persist: (data, requestId) =>
+        this.persistTaskUpdateNotifications(data, requestId),
+      persistErrorMessage: 'Failed to persist notifications for task update.',
+      forwardEvent: TASK_UPDATED_EVENT,
+      forwardSuccessMessage: 'Forwarded task update to gateway.',
+      forwardErrorMessage: 'Failed to forward task update to gateway.',
+    });
+  }
+
+  async handleTaskCreated(
+    payload: TaskCreatedForwardPayload,
+    context: RmqContext,
+  ): Promise<void> {
+    await this.handleTaskEvent(payload, context, {
+      pattern: TASKS_CREATED_PATTERN,
+      persist: (data, requestId) =>
+        this.persistTaskCreatedNotifications(data, requestId),
+      persistErrorMessage: 'Failed to persist notifications for task creation.',
+      forwardEvent: TASK_CREATED_EVENT,
+      forwardSuccessMessage: 'Forwarded task creation to gateway.',
+      forwardErrorMessage: 'Failed to forward task creation to gateway.',
+    });
+  }
+
+  async handleTaskDeleted(
+    payload: TaskDeletedForwardPayload,
+    context: RmqContext,
+  ): Promise<void> {
+    await this.handleTaskEvent(payload, context, {
+      pattern: TASKS_DELETED_PATTERN,
+      persist: (data, requestId) =>
+        this.persistTaskDeletedNotifications(data, requestId),
+      persistErrorMessage: 'Failed to persist notifications for task deletion.',
+      forwardEvent: TASK_DELETED_EVENT,
+      forwardSuccessMessage: 'Forwarded task deletion to gateway.',
+      forwardErrorMessage: 'Failed to forward task deletion to gateway.',
+    });
+  }
+
+  private async handleTaskEvent<TPayload extends TaskUpdatedForwardPayload>(
+    payload: TPayload,
+    context: RmqContext,
+    options: {
+      pattern: string;
+      persist: (payload: TPayload, requestId?: string) => Promise<void>;
+      persistErrorMessage: string;
+      forwardEvent: string;
+      forwardSuccessMessage: string;
+      forwardErrorMessage: string;
+    },
+  ): Promise<void> {
     const channelRef = context.getChannelRef() as unknown;
     const messageRef = context.getMessage() as unknown;
     const requestId = this.resolveRequestId(payload, context);
@@ -173,26 +232,24 @@ export class NotificationsService {
       this.logger.error(
         'Received invalid RabbitMQ context while processing task event.',
         undefined,
-        this.buildLogContext({ pattern: TASKS_UPDATED_PATTERN }, requestId),
+        this.buildLogContext({ pattern: options.pattern }, requestId),
       );
       return;
     }
 
     const channel = channelRef;
     const originalMessage = messageRef;
+    const taskId = this.extractTaskId(payload);
 
     await this.withRequestContext(requestId, async () => {
       try {
-        await this.persistTaskUpdateNotifications(payload, requestId);
+        await options.persist(payload, requestId);
       } catch (error) {
         this.logger.error(
-          'Failed to persist notifications for task update.',
+          options.persistErrorMessage,
           error,
           this.buildLogContext(
-            {
-              taskId: this.extractTaskId(payload),
-              pattern: TASKS_UPDATED_PATTERN,
-            },
+            { pattern: options.pattern, taskId },
             requestId,
           ),
         );
@@ -202,22 +259,22 @@ export class NotificationsService {
 
       try {
         const record = this.createGatewayRecord(payload, requestId);
-        await firstValueFrom(this.gatewayClient.emit(TASK_UPDATED_EVENT, record));
+        await firstValueFrom(
+          this.gatewayClient.emit(options.forwardEvent, record),
+        );
         channel.ack(originalMessage);
-        this.logger.debug('Forwarded task update to gateway.', {
-          ...this.buildLogContext({}, requestId),
-          taskId: payload.task?.id ?? null,
-          event: TASK_UPDATED_EVENT,
+        this.logger.debug(options.forwardSuccessMessage, {
+          ...this.buildLogContext(
+            { pattern: options.pattern, taskId, event: options.forwardEvent },
+            requestId,
+          ),
         });
       } catch (error) {
         this.logger.error(
-          'Failed to forward task update to gateway.',
+          options.forwardErrorMessage,
           error,
           this.buildLogContext(
-            {
-              taskId: payload.task?.id ?? null,
-              event: TASK_UPDATED_EVENT,
-            },
+            { pattern: options.pattern, taskId, event: options.forwardEvent },
             requestId,
           ),
         );
@@ -279,7 +336,7 @@ export class NotificationsService {
     payload: TaskUpdatedForwardPayload,
     requestId?: string,
   ): Promise<void> {
-    const recipients = this.resolveTaskUpdateRecipients(payload);
+    const recipients = this.resolveTaskRecipients(payload);
 
     if (recipients.length === 0) {
       return;
@@ -317,6 +374,108 @@ export class NotificationsService {
       this.buildLogContext(
         {
           pattern: TASKS_UPDATED_PATTERN,
+          taskId,
+          recipientsCount: recipients.length,
+          notificationIds: this.extractNotificationIds(persistedNotifications),
+        },
+        requestId,
+      ),
+    );
+  }
+
+  private async persistTaskCreatedNotifications(
+    payload: TaskCreatedForwardPayload,
+    requestId?: string,
+  ): Promise<void> {
+    const recipients = this.resolveTaskRecipients(payload);
+
+    if (recipients.length === 0) {
+      return;
+    }
+
+    const taskId = this.extractTaskId(payload);
+    const taskTitle = this.extractTaskTitle(payload);
+    const actorDisplayName = this.normalizeText(payload.actor?.displayName);
+
+    const message = `${actorDisplayName ?? 'Sistema'} criou a tarefa ${
+      taskTitle ?? taskId ?? 'desconhecida'
+    }`;
+
+    const metadata = {
+      taskId: taskId ?? null,
+      taskTitle: taskTitle ?? null,
+      actorId: payload.actor?.id ?? null,
+      actorDisplayName,
+      changes: payload.changes ?? null,
+    } satisfies Record<string, unknown>;
+
+    const persistedNotifications = await Promise.all(
+      recipients.map((recipientId) =>
+        this.notificationsPersistence.createNotification({
+          recipientId,
+          channel: this.inAppChannel,
+          message,
+          metadata,
+        }),
+      ),
+    );
+
+    this.logger.debug(
+      'Persisted task creation notifications in storage.',
+      this.buildLogContext(
+        {
+          pattern: TASKS_CREATED_PATTERN,
+          taskId,
+          recipientsCount: recipients.length,
+          notificationIds: this.extractNotificationIds(persistedNotifications),
+        },
+        requestId,
+      ),
+    );
+  }
+
+  private async persistTaskDeletedNotifications(
+    payload: TaskDeletedForwardPayload,
+    requestId?: string,
+  ): Promise<void> {
+    const recipients = this.resolveTaskRecipients(payload);
+
+    if (recipients.length === 0) {
+      return;
+    }
+
+    const taskId = this.extractTaskId(payload);
+    const taskTitle = this.extractTaskTitle(payload);
+    const actorDisplayName = this.normalizeText(payload.actor?.displayName);
+
+    const message = `${actorDisplayName ?? 'Sistema'} removeu a tarefa ${
+      taskTitle ?? taskId ?? 'desconhecida'
+    }`;
+
+    const metadata = {
+      taskId: taskId ?? null,
+      taskTitle: taskTitle ?? null,
+      actorId: payload.actor?.id ?? null,
+      actorDisplayName,
+      changes: payload.changes ?? null,
+    } satisfies Record<string, unknown>;
+
+    const persistedNotifications = await Promise.all(
+      recipients.map((recipientId) =>
+        this.notificationsPersistence.createNotification({
+          recipientId,
+          channel: this.inAppChannel,
+          message,
+          metadata,
+        }),
+      ),
+    );
+
+    this.logger.debug(
+      'Persisted task deletion notifications in storage.',
+      this.buildLogContext(
+        {
+          pattern: TASKS_DELETED_PATTERN,
           taskId,
           recipientsCount: recipients.length,
           notificationIds: this.extractNotificationIds(persistedNotifications),
@@ -540,7 +699,7 @@ export class NotificationsService {
     return Array.from(recipients);
   }
 
-  private resolveTaskUpdateRecipients(
+  private resolveTaskRecipients(
     payload: TaskUpdatedForwardPayload,
   ): string[] {
     const recipients = new Set(
