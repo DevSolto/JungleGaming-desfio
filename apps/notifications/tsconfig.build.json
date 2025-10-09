@@ -4,8 +4,8 @@
     "paths": {
       "@repo/types": ["../../packages/types/dist/index.d.ts"],
       "@repo/types/*": ["../../packages/types/dist/*.d.ts"],
-      "@repo/logger": ["../../packages/logger/src/index.ts"],
-      "@repo/logger/*": ["../../packages/logger/src/*.ts"]
+      "@repo/logger": ["../../packages/logger/dist/index.js", "../../packages/logger/dist/index.d.ts"],
+      "@repo/logger/*": ["../../packages/logger/dist/*.js", "../../packages/logger/dist/*.d.ts"]
     }
   },
   "exclude": ["node_modules", "test", "dist", "**/*spec.ts"]
