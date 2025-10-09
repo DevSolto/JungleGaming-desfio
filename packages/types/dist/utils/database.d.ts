@@ -1,15 +1,11 @@
-export interface LoggerLike {
-    log(message: string): void;
-    warn(message: string): void;
-    error(message: string, error?: unknown): void;
-}
+import { type StructuredLogger } from "@repo/logger";
 export interface WaitForDatabaseOptions {
     connectionString: string;
     initialDelayMs?: number;
     maxDelayMs?: number;
     maxAttempts?: number;
     connectionTimeoutMs?: number;
-    logger?: LoggerLike;
+    logger?: StructuredLogger;
 }
 export type ResolvedWaitForDatabaseOptions = Omit<WaitForDatabaseOptions, "logger">;
 export declare const parsePositiveInt: (value: string | undefined, fallback: number) => number;
