@@ -9,6 +9,7 @@ import {
 } from './notifications.constants';
 import { HealthModule } from './health/health.module';
 import { NotificationsService } from './notifications.service';
+import { Notification } from './notifications/notification.entity';
 
 const validateEnv = (config: Record<string, unknown>) => {
   const databaseUrl = config['DATABASE_URL'];
@@ -35,6 +36,7 @@ const validateEnv = (config: Record<string, unknown>) => {
         url: configService.getOrThrow<string>('DATABASE_URL'),
         autoLoadEntities: true,
         synchronize: true,
+        entities: [Notification],
       }),
     }),
     ClientsModule.registerAsync([
