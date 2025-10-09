@@ -71,6 +71,10 @@
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
     },
+    "moduleNameMapper": {
+      "^@repo/logger$": "<rootDir>/__mocks__/@repo/logger.ts",
+      "^@repo/logger/(.*)$": "<rootDir>/__mocks__/@repo/logger.ts"
+    },
     "collectCoverageFrom": [
       "**/*.(t|j)s"
     ],

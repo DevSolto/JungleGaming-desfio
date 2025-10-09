@@ -4,6 +4,7 @@ import type {
   TaskCommentCreatedPayload,
   TaskUpdatedForwardPayload,
 } from '@repo/types'
+import type { AppLoggerService } from '@repo/logger'
 
 import { NotificationsService } from './notifications.service'
 import type { NotificationsPersistenceService } from './notifications/persistence/notifications-persistence.service'
@@ -14,6 +15,8 @@ describe('NotificationsService', () => {
   let createNotificationMock: jest.Mock
   let gatewayClient: ClientProxy
   let notificationsPersistence: NotificationsPersistenceService
+  let loggerFactory: { withContext: jest.Mock }
+  let scopedLogger: { debug: jest.Mock; error: jest.Mock }
 
   const createContext = () => {
     const ack = jest.fn()
@@ -30,14 +33,38 @@ describe('NotificationsService', () => {
 
   beforeEach(() => {
     emitMock = jest.fn()
-    createNotificationMock = jest.fn()
+    createNotificationMock = jest.fn().mockImplementation(({ recipientId, message }) =>
+      Promise.resolve({
+        id: `notification-${recipientId}`,
+        recipientId,
+        channel: 'in_app',
+        status: 'pending',
+        message,
+        metadata: null,
+        createdAt: new Date(),
+        sentAt: null,
+      }),
+    )
 
     gatewayClient = { emit: emitMock } as unknown as ClientProxy
     notificationsPersistence = {
       createNotification: createNotificationMock,
     } as unknown as NotificationsPersistenceService
 
-    service = new NotificationsService(gatewayClient, notificationsPersistence)
+    scopedLogger = {
+      debug: jest.fn(),
+      error: jest.fn(),
+    }
+
+    loggerFactory = {
+      withContext: jest.fn().mockReturnValue(scopedLogger),
+    }
+
+    service = new NotificationsService(
+      gatewayClient,
+      notificationsPersistence,
+      loggerFactory as unknown as AppLoggerService,
+    )
   })
 
   afterEach(() => {
@@ -59,7 +86,18 @@ describe('NotificationsService', () => {
       recipients: ['user-1', 'user-2', 'user-1'],
     }
 
-    createNotificationMock.mockResolvedValue(undefined)
+    createNotificationMock.mockImplementation(({ recipientId, message }) =>
+      Promise.resolve({
+        id: `notification-${recipientId}`,
+        recipientId,
+        channel: 'in_app',
+        status: 'pending',
+        message,
+        metadata: null,
+        createdAt: new Date(),
+        sentAt: null,
+      }),
+    )
     emitMock.mockReturnValue(of(undefined))
 
     await service.handleNewComment(payload, context)
@@ -127,7 +165,18 @@ describe('NotificationsService', () => {
       recipients: ['user-4'],
     }
 
-    createNotificationMock.mockResolvedValue(undefined)
+    createNotificationMock.mockImplementation(({ recipientId, message }) =>
+      Promise.resolve({
+        id: `notification-${recipientId}`,
+        recipientId,
+        channel: 'in_app',
+        status: 'pending',
+        message,
+        metadata: null,
+        createdAt: new Date(),
+        sentAt: null,
+      }),
+    )
     emitMock.mockReturnValue(throwError(() => new Error('gateway error')))
 
     await service.handleNewComment(payload, context)
