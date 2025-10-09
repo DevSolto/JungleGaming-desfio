@@ -12,6 +12,8 @@ import { toast } from '@/components/ui/use-toast'
 import { socket } from '@/lib/ws-client'
 import { router } from '@/router'
 
+import { NotificationsPopover } from '../../notifications/components/NotificationsPopover'
+
 import { getTasks, type GetTasksFilters } from '../api/getTasks'
 import { CardsView } from '../components/CardsView'
 import { KanbanView } from '../components/KanbanView'
@@ -99,6 +101,7 @@ export function TasksPage() {
   useEffect(() => {
     const handleTaskCreated = (_payload?: TaskEventPayload) => {
       void queryClient.invalidateQueries({ queryKey: ['tasks'] })
+      void queryClient.invalidateQueries({ queryKey: ['notifications'] })
     }
 
     const handleTaskUpdated = (payload: Task | TaskEventPayload) => {
@@ -127,6 +130,7 @@ export function TasksPage() {
       )
 
       queryClient.setQueryData<Task>(['task', updatedTask.id], updatedTask)
+      void queryClient.invalidateQueries({ queryKey: ['notifications'] })
     }
 
     const handleCommentNew = (comment: CommentDTO) => {
@@ -141,6 +145,8 @@ export function TasksPage() {
       void queryClient.invalidateQueries({
         queryKey: ['task', comment.taskId],
       })
+
+      void queryClient.invalidateQueries({ queryKey: ['notifications'] })
 
       toast({
         title: 'Novo comentário',
@@ -261,7 +267,10 @@ export function TasksPage() {
           onSearchTermChange={handleSearchTermChange}
         />
 
-        <ViewSwitcher className="md:self-end" />
+        <div className="flex items-center justify-end gap-2 md:self-end">
+          <NotificationsPopover />
+          <ViewSwitcher />
+        </div>
       </div>
 
       {errorMessage ? (
