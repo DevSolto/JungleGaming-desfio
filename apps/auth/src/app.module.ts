@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './users/users.module';
 import { User } from './users/entities/user.entity';
 import { AuthModule } from './auth/auth.module';
+import { LoggingModule } from './common/logging/logging.module';
 
 const validateEnv = (config: Record<string, unknown>) => {
   const databaseUrl = config['DATABASE_URL'];
@@ -18,6 +19,7 @@ const validateEnv = (config: Record<string, unknown>) => {
 
 @Module({
   imports: [
+    LoggingModule,
     HealthModule,
     ConfigModule.forRoot({
       isGlobal: true,

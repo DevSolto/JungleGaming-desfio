@@ -5,6 +5,7 @@ import { HealthModule } from './health/health.module';
 import { TasksModule } from './tasks/tasks.module';
 import { Task } from './tasks/task.entity';
 import { Comment } from './comments/comment.entity';
+import { LoggingModule } from './common/logging/logging.module';
 
 const validateEnv = (config: Record<string, unknown>) => {
   const databaseUrl = config['DATABASE_URL'];
@@ -18,6 +19,7 @@ const validateEnv = (config: Record<string, unknown>) => {
 
 @Module({
   imports: [
+    LoggingModule,
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: ['.env'],
