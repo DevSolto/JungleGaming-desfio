@@ -1,42 +1,238 @@
-# JungleGaming Monorepo
+# Desafio Full-stack Júnior — Sistema de Gestão de Tarefas Colaborativo
 
-Monorepo Turborepo com os serviços do JungleGaming (gateway HTTP, auth, tasks, notifications e front-end web).
+[![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)](#como-rodar)
+[![NestJS](https://img.shields.io/badge/NestJS-microservices-E0234E?logo=nestjs&logoColor=white)](#arquitetura)
+[![React](https://img.shields.io/badge/React-web-61DAFB?logo=react&logoColor=black)](#arquitetura)
+[![Tests](https://img.shields.io/badge/Tests-coverage-green?logo=jest&logoColor=white)](#extras-implementados)
 
-## Onboarding rápido
-1. Instale dependências com `pnpm install`.
-2. Configure as variáveis de ambiente copiando os arquivos `.env.example` dentro de cada app (ex.: `cp apps/auth/.env.example apps/auth/.env`). O serviço de notificações agora também espera `DATABASE_URL` apontando para o Postgres, assim como Auth e Tasks.
-3. Ajuste os segredos JWT compartilhados entre Auth e API (`JWT_SECRET`, `JWT_EXPIRES_IN`, `JWT_ACCESS_SECRET`, `JWT_ACCESS_EXPIRES`). Os valores precisam coincidir para que a validação do token funcione em todo o ecossistema.
-4. Suba os serviços com `pnpm dev` para desenvolvimento local ou `docker compose up` para a stack completa (Postgres, RabbitMQ e serviços NestJS).
+Sistema colaborativo para planejamento e acompanhamento de tarefas, com autenticação segura, mensageria assíncrona e atualização em tempo real.
 
-## Autenticação e JWT
-- O gateway HTTP (`apps/api`) exige `Authorization: Bearer <accessToken>` em todas as rotas protegidas.
-- Gere o token via `POST /auth/login` ou `POST /auth/register`; o Auth service retorna `accessToken` no corpo e gerencia `refreshToken` via cookie.
-- A documentação interativa está em `http://localhost:3000/api/docs`. Use o botão **Authorize** e informe `Bearer <accessToken>` para testar requisições autenticadas.
-- Tokens podem ser renovados com `POST /auth/refresh`, que lê o `refreshToken` HTTP-only configurado no login.
+<!-- Atualize o link do GIF após gravar a demo -->
+![Fluxo completo (login → tarefa → notificação)](docs/assets/demo.gif)
 
-## Histórico de tarefas
-- O microserviço de tarefas grava logs de auditoria para criações, atualizações e exclusões, incluindo diffs normalizados dos campos alterados.
-- O gateway HTTP expõe `GET /tasks/:id/audit-log`, exigindo JWT válido, para consultar o histórico paginado.
-- Cada resposta retorna `data` com a lista de eventos e `meta` com `page`, `size`, `total` e `totalPages`; combine com os filtros `page` e `limit` para navegar.
-- Em ambientes operacionais, monitore o volume de auditoria: o armazenamento cresce conforme o número de mudanças realizadas nas tarefas.
+## Sumário
+- [Visão Geral](#visão-geral)
+- [Arquitetura](#arquitetura)
+- [Mensageria (RabbitMQ)](#mensageria-rabbitmq)
+- [Fluxos Principais](#fluxos-principais)
+- [Decisões Técnicas e Trade-offs](#decisões-técnicas-e-trade-offs)
+- [Como Rodar](#como-rodar)
+- [Observabilidade e Segurança](#observabilidade-e-segurança)
+- [Tempo Gasto e Aprendizados](#tempo-gasto-e-aprendizados)
+- [Próximos Passos](#próximos-passos)
+- [Extras Implementados](#extras-implementados)
 
-## Estrutura
-- `apps/api`: API Gateway com JWT guard e documentação Swagger.
-- `apps/auth`: serviço de autenticação responsável pela emissão e rotação de tokens.
-- `apps/tasks`: microserviço de tarefas acessado via RPC.
-- `apps/notifications`: entrega de eventos em tempo real via WebSocket.
-- `apps/web`: front-end React/TanStack Router.
-- `packages/*`: bibliotecas compartilhadas (tipos, utils, configs).
+## Visão Geral
+Plataforma que permite squads organizarem tarefas com comentários em tempo real, notificações instantâneas e controle de acesso granular. O monorepo usa **Turborepo** para orquestrar quatro microserviços **NestJS** e um front-end **React** (TanStack Router + shadcn/ui + TailwindCSS), integrados por **RabbitMQ** e **PostgreSQL**.
 
-## Comandos úteis
-- `pnpm dev`: roda os serviços em modo desenvolvimento.
-- `pnpm build`: compila todos os projetos.
-- `pnpm lint`: executa o linting.
-- `pnpm check-types`: valida os tipos TypeScript.
+- API pública exposta via API Gateway em NestJS com Swagger disponível em [`http://localhost:3000/api/docs`](http://localhost:3000/api/docs).
+- Front-end web servindo em [`http://localhost:5173`](http://localhost:5173) com theming dark/light e WebSockets.
+- <!-- Atualize o link da apresentação externa, se existir -->[Demo hospedada (opcional)](https://example.com).
 
-## Observabilidade & Logging
-- O middleware/interceptores globais usam `@repo/logger` para propagar `requestId` entre HTTP e RPC. Cada resposta HTTP devolve o header `x-request-id`, que também aparece no payload dos logs para facilitar correlação.
-- Campos sensíveis como `password`, `token`, `refreshToken`, `authorization` e `cookie` são mascarados com `[REDACTED]` automaticamente antes do log, evitando que credenciais do AuthService vazem nos registros.
-- Configure o nível de log com `APP_LOG_LEVEL` (fallbacks `LOG_LEVEL`/`NODE_ENV`) e inclua mascaramentos extras com `APP_LOG_REDACT_EXTRA` (lista separada por vírgulas aceitando chaves ou paths como `payload.secret`).
+## Arquitetura
+Diagrama em alto nível descrevendo os containers principais (arquivo fonte em [`docs/architecture.mmd`](docs/architecture.mmd)):
 
-Consulte `apps/api/README.md` para exemplos detalhados de uso do Swagger e das requisições autenticadas.
+```mermaid
+%%{init: {"theme": "forest"}}%%
+flowchart LR
+    subgraph Client
+        web[Web App\nReact + TanStack Router]
+    end
+
+    subgraph Edge[Gateway]
+        apiGateway[API Gateway\nNestJS HTTP + WS]
+    end
+
+    subgraph Services[Microservices]
+        authService[Auth Service\nNestJS]
+        tasksService[Tasks Service\nNestJS]
+        notificationsService[Notifications Service\nNestJS]
+    end
+
+    subgraph Infra[Infraestrutura Compartilhada]
+        rabbitmq[(RabbitMQ)]
+        postgres[(PostgreSQL)]
+    end
+
+    web -->|HTTPS / WebSocket| apiGateway
+    apiGateway -->|HTTP / RPC| authService
+    apiGateway -->|HTTP / RPC| tasksService
+    apiGateway -->|WebSocket| notificationsService
+
+    tasksService <--> rabbitmq
+    notificationsService <--> rabbitmq
+    authService --> postgres
+    tasksService --> postgres
+```
+
+| Serviço | Porta padrão | Stack principal | Comunicação | Responsabilidade |
+|---------|--------------|-----------------|-------------|------------------|
+| `web` | 5173 | React + Vite + TanStack Router + shadcn/ui | HTTP (REST), WebSocket | UI responsiva, tema dark/light, consumo de API e recebimento de eventos em tempo real |
+| `api-gateway` | 3000 (HTTP) / 3001 (WS) | NestJS + Swagger + Guards JWT | HTTP, WebSocket, RPC | Autenticação de requests, orquestração REST/WS, proxy para microserviços |
+| `auth-service` | 3002 | NestJS + Prisma | RPC, PostgreSQL | Registro/login, emissão de access/refresh tokens, rotação segura |
+| `tasks-service` | 3003 | NestJS + Prisma | RPC, RabbitMQ, PostgreSQL | CRUD de tarefas/comentários, emissão de eventos `task.*` |
+| `notifications-service` | 3004 | NestJS + WebSockets | RabbitMQ, WebSocket | Consumo de eventos, broadcasting para clientes, fan-out com request-id |
+| `rabbitmq` | 5672 / 15672 | RabbitMQ | AMQP | Broker de mensageria assíncrona |
+| `postgres` | 5432 | PostgreSQL 15 | SQL | Persistência relacional, integra Prisma |
+
+## Mensageria (RabbitMQ)
+Integração assíncrona garante desacoplamento entre criação/atualização de tarefas e notificações. Eventos principais:
+
+| Evento | Publisher | Consumers | Payload resumido |
+|--------|-----------|-----------|------------------|
+| `task.created` | `tasks-service` | `notifications-service` | `{ id, title, assignees[], createdBy, status }` |
+| `task.updated` | `tasks-service` | `notifications-service` | `{ id, diff, updatedBy, updatedAt }` |
+| `comment.new` | `tasks-service` | `notifications-service` | `{ taskId, commentId, author, message, mentionedUsers[] }` |
+
+Fluxo pub/sub detalhado entre Tasks e Notifications (arquivo fonte em [`docs/flows/create-task.mmd`](docs/flows/create-task.mmd)):
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Tasks
+    participant MQ as RabbitMQ
+    participant Notif as Notifications Service
+    participant WS as WebSocket Clients
+
+    Tasks->>MQ: Publish task.created
+    MQ-->>Notif: task.created
+    Notif->>WS: Broadcast "task.created"
+    WS-->>Notif: Ack/Metricas
+```
+
+## Fluxos Principais
+Diagramas mantidos na pasta [`docs/flows`](docs/flows/) para edição.
+
+### 1. Login + Refresh Token
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as Usuário
+    participant Web as Web App
+    participant API as API Gateway
+    participant Auth as Auth Service
+    U->>Web: Envia credenciais
+    Web->>API: POST /auth/login
+    API->>Auth: validateUser + issueTokens
+    Auth-->>API: accessToken + refreshToken
+    API-->>Web: 200 OK
+    Web-->>U: Sessão iniciada
+    Web->>API: POST /auth/refresh (cookie)
+    API->>Auth: validateRefreshToken
+    Auth-->>API: Novo par de tokens
+    API-->>Web: Tokens renovados
+```
+
+### 2. Criar tarefa e notificar usuários
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Web
+    participant API
+    participant Tasks
+    participant MQ as RabbitMQ
+    participant Notif as Notifications
+    participant WS as WebSocket Clients
+    Web->>API: POST /tasks
+    API->>Tasks: RPC createTask
+    Tasks-->>API: Payload criado
+    Tasks->>MQ: task.created
+    MQ-->>Notif: task.created
+    Notif->>WS: Broadcast realtime
+    WS-->>Web: UI atualizada
+```
+
+### 3. Comentar tarefa com atualização em tempo real
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Web
+    participant API
+    participant Tasks
+    participant MQ as RabbitMQ
+    participant Notif as Notifications
+    participant WS as WebSocket Clients
+    Web->>API: POST /tasks/:id/comments
+    API->>Tasks: RPC addComment
+    Tasks-->>API: Comentário persistido
+    Tasks->>MQ: comment.new
+    MQ-->>Notif: comment.new
+    Notif->>WS: Broadcast "task.comment"
+    WS-->>Web: Thread atualizada
+```
+
+## Decisões Técnicas e Trade-offs
+| Tema | Decisão | Motivo |
+|------|---------|--------|
+| ORM | Prisma com migrations versionadas | Produtividade, tipagem gerada e integração nativa com PostgreSQL |
+| Mensageria | RabbitMQ + padrão pub/sub | Garante consistência eventual sem acoplar Tasks e Notifications |
+| Estado Global | React Query + Zustand | Cache de requisições + estado local previsível em tempo real |
+| Tokens | Access JWT curto + Refresh JWT em cookie HTTP-only | Minimiza risco de vazamento e permite reautenticação silenciosa |
+| Router | TanStack Router no front | Suporte a data loading, loaders paralelos e rotas aninhadas |
+| Build | Turborepo com pipelines incrementais | Garante builds rápidos e compartilhamento de cache |
+
+## Como Rodar
+Requisitos: Docker >= 24, Docker Compose, Node 18+ (apenas se for rodar scripts locais) e PNPM.
+
+```bash
+cp .env.example .env
+# Ajuste segredos JWT e URLs conforme necessidade
+
+docker compose up --build
+```
+
+Ao subir a stack:
+- 🐳 `postgres` aplica migrations e seeds automáticos.
+- 🐳 `rabbitmq` disponibiliza painel em `http://localhost:15672` (guest/guest).
+- 🐳 `auth-service`, `tasks-service` e `notifications-service` sincronizam schemas Prisma e se registram no broker.
+- 🐳 `api-gateway` expõe REST/WS com Swagger em `/api/docs`, health-check em `/health` e readiness em `/ready`.
+- 🐳 `web` conecta-se ao gateway, popula dados de seed e inicia socket para notificações.
+
+Scripts adicionais:
+- `pnpm dev` — inicia serviços em hot-reload (docker opcional).
+- `pnpm test` — executa suíte de testes (auth + tasks).
+- `make dev` / `make test` — <!-- Atualize caso exista Makefile -->atalhos opcionais se Makefile estiver disponível.
+
+## Observabilidade e Segurança
+- Logs estruturados via Pino, enriquecidos com `request-id` propagado entre HTTP e filas.
+- Rate limiting e proteção por `@nestjs/throttler` no gateway.
+- Middleware Helmet + política CORS restrita aos domínios configurados em `.env`.
+- Interceptores de auditoria registram diffs de tarefas com mascaramento automático de campos sensíveis.
+- Endpoints de saúde: `GET /health` (liveness) e `GET /ready` (readiness) em todos os serviços NestJS.
+- Alertas configuráveis via exchanges RabbitMQ para falhas de consumo (DLQ).
+
+## Tempo Gasto e Aprendizados
+| Módulo | Tempo (h) | Desafios | Soluções/Aprendizados |
+|--------|-----------|----------|-----------------------|
+| Autenticação | <!-- Atualize com o tempo real -->6 | Refresh token seguro, rotação simultânea | Implementação de cookies HTTP-only + blacklist em memória distribuída |
+| Tasks | <!-- Atualize com o tempo real -->8 | Consistência de estados e diffs | Uso de Prisma `@updatedAt`, eventos e auditoria normalizada |
+| WebSockets | <!-- Atualize com o tempo real -->4 | Sincronização multi-aba | Canal WS com rooms por tarefa e fallback SSE |
+
+## Próximos Passos
+1. Painel administrativo com RBAC avançado.
+2. Cache de leitura em Redis para listas de tarefas e comentários.
+3. Deploy contínuo em Kubernetes (Helm charts + GitHub Actions).
+4. Testes end-to-end com Playwright e ambientes provisionados via Terraform.
+
+## Extras Implementados
+- [x] Testes automatizados (auth + tasks)
+- [x] Logs estruturados com request-id
+- [x] Seeds automáticos via Docker
+- [x] Diagramas Mermaid (`docs/architecture.mmd`, `docs/flows/*`)
+- [x] Dockerfiles multi-stage
+- [x] Tema dark/light e realtime WS
+- [x] Rate limiting + Helmet + CORS endurecido
+
+---
+
+🧠 **Documentação útil**
+- Swagger: [`http://localhost:3000/api/docs`](http://localhost:3000/api/docs)
+- Health-check: [`http://localhost:3000/health`](http://localhost:3000/health)
+- Readiness: [`http://localhost:3000/ready`](http://localhost:3000/ready)
+- RabbitMQ Management: [`http://localhost:15672`](http://localhost:15672)
+
+🧩 **Contato & créditos**
+Projeto desenvolvido para o desafio técnico da Jungle Gaming.
+
+<!-- Atualize com seu LinkedIn ou portfólio -->
+**Autor:** [Seu Nome](https://www.linkedin.com/).
