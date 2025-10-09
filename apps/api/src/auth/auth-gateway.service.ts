@@ -1,20 +1,18 @@
-import {
-  HttpException,
-  HttpStatus,
-  Inject,
-  Injectable,
-} from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { lastValueFrom } from 'rxjs';
 import { AUTH_SERVICE } from './auth.constants';
 import { LoginDto, RegisterDto } from './dto';
 import {
   AUTH_MESSAGE_PATTERNS,
+  USERS_MESSAGE_PATTERNS,
   type AuthLoginResponse,
   type AuthLogoutResponse,
   type AuthRefreshResponse,
   type AuthRegisterResponse,
   type AuthRefreshRequest,
+  type UserDTO,
+  type UserListFilters,
 } from '@repo/types';
 
 @Injectable()
@@ -22,7 +20,7 @@ export class AuthGatewayService {
   constructor(
     @Inject(AUTH_SERVICE)
     private readonly authClient: ClientProxy,
-  ) { }
+  ) {}
 
   async register(dto: RegisterDto): Promise<AuthRegisterResponse> {
     try {
@@ -66,6 +64,26 @@ export class AuthGatewayService {
     }
   }
 
+  async findAllUsers(filters: UserListFilters = {}): Promise<UserDTO[]> {
+    try {
+      return await lastValueFrom(
+        this.authClient.send(USERS_MESSAGE_PATTERNS.FIND_ALL, filters),
+      );
+    } catch (error) {
+      throw this.toHttpException(error);
+    }
+  }
+
+  async findUserById(id: string): Promise<UserDTO> {
+    try {
+      return await lastValueFrom(
+        this.authClient.send(USERS_MESSAGE_PATTERNS.FIND_BY_ID, { id }),
+      );
+    } catch (error) {
+      throw this.toHttpException(error);
+    }
+  }
+
   async ping() {
     try {
       return await lastValueFrom(
@@ -89,7 +107,11 @@ export class AuthGatewayService {
     // Sometimes microservices return plain objects (not RpcException instances)
     // when proxied through the client. Handle those shapes here so status codes
     // like 401/409 from the auth service are preserved instead of becoming 500.
-    if (typeof error === 'object' && error !== null && !(error instanceof Error)) {
+    if (
+      typeof error === 'object' &&
+      error !== null &&
+      !(error instanceof Error)
+    ) {
       const obj = error as Record<string, unknown>;
 
       // If the object looks like an HTTP/RPC error (has message/status/statusCode/code),
@@ -101,8 +123,12 @@ export class AuthGatewayService {
         'error' in obj ||
         'code' in obj
       ) {
-        const body = this.normalizeBody({ ...(obj as Record<string, unknown>) });
-        const statusCode = this.extractStatusCode(body.statusCode ?? body.status);
+        const body = this.normalizeBody({
+          ...obj,
+        });
+        const statusCode = this.extractStatusCode(
+          body.statusCode ?? body.status,
+        );
         return new HttpException(body, statusCode, { cause: error });
       }
     }
@@ -135,10 +161,10 @@ export class AuthGatewayService {
 
   private normalizeRpcException(error: RpcException):
     | {
-      statusCode: number;
-      body: Record<string, unknown>;
-      cause?: unknown;
-    }
+        statusCode: number;
+        body: Record<string, unknown>;
+        cause?: unknown;
+      }
     | undefined {
     const rpcError = error.getError();
 
@@ -194,7 +220,9 @@ export class AuthGatewayService {
     return undefined;
   }
 
-  private normalizeBody(source: Record<string, unknown>): Record<string, unknown> {
+  private normalizeBody(
+    source: Record<string, unknown>,
+  ): Record<string, unknown> {
     const body: Record<string, unknown> = { ...source };
 
     const statusCode = this.extractStatusCode(body.statusCode ?? body.status);

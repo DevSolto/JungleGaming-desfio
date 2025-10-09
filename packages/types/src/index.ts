@@ -6,6 +6,7 @@ export * from "./enums/auth.js";
 
 // Tasks
 export * from "./contracts/rpc/tasks.js";
+export * from "./contracts/rpc/users.js";
 export {
   TASK_EVENT_PATTERNS,
   TASK_FORWARDING_PATTERNS,

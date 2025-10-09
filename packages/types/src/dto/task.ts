@@ -21,6 +21,8 @@ import { CorrelatedDto } from "./correlation.js";
 export interface TaskAssigneeDTO {
   id: string;
   username: string;
+  name?: string | null;
+  email?: string | null;
 }
 
 export type TaskAssignee = TaskAssigneeDTO;
@@ -118,6 +120,16 @@ export class TaskAssigneeDto implements TaskAssigneeDTO {
   @IsString()
   @IsNotEmpty()
   username!: string;
+
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @IsString()
+  name?: string | null;
+
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @IsEmail()
+  email?: string | null;
 }
 
 export class CreateTaskDto implements CreateTaskDTO {
@@ -298,6 +310,10 @@ export class ListTasksQueryDto {
   @IsOptional()
   @IsString()
   search?: string;
+
+  @IsOptional()
+  @IsUUID()
+  assigneeId?: string;
 
   @IsOptional()
   @IsDateString()
