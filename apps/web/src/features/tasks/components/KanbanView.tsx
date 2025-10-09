@@ -67,7 +67,12 @@ export function KanbanView({
                 ))
               ) : columnTasks.length > 0 ? (
                 columnTasks.map((task) => (
-                  <TaskCard key={task.id} task={task} onSelect={onSelectTask} />
+                  <TaskCard
+                    key={task.id}
+                    task={task}
+                    onSelect={onSelectTask}
+                    truncateForBoard
+                  />
                 ))
               ) : (
                 <p className="rounded-lg border border-dashed border-border bg-background/40 p-6 text-center text-sm text-muted-foreground">

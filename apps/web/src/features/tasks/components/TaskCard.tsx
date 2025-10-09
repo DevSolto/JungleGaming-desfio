@@ -26,6 +26,7 @@ interface TaskCardProps {
   task: Task
   className?: string
   onSelect?: (task: Task) => void
+  truncateForBoard?: boolean
 }
 
 function formatDueDate(dueDate?: string | null) {
@@ -53,7 +54,7 @@ function getBadgeClassName(priority: TaskPriority) {
   )
 }
 
-export function TaskCard({ task, className, onSelect }: TaskCardProps) {
+export function TaskCard({ task, className, onSelect, truncateForBoard = false }: TaskCardProps) {
   const isInteractive = Boolean(onSelect)
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
@@ -81,9 +82,23 @@ export function TaskCard({ task, className, onSelect }: TaskCardProps) {
     >
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-2">
-          <h3 className="text-base font-semibold text-foreground">{task.title}</h3>
+          <h3
+            className={cn(
+              'text-base font-semibold text-foreground',
+              truncateForBoard && 'line-clamp-2',
+            )}
+          >
+            {task.title}
+          </h3>
           {task.description ? (
-            <p className="text-sm text-muted-foreground">{task.description}</p>
+            <p
+              className={cn(
+                'text-sm text-muted-foreground',
+                truncateForBoard && 'line-clamp-4',
+              )}
+            >
+              {task.description}
+            </p>
           ) : null}
         </div>
 
