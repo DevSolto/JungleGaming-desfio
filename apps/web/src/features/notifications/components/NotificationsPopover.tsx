@@ -10,7 +10,6 @@ import { router } from '@/router'
 
 import { getNotifications } from '../api/getNotifications'
 
-const REFRESH_INTERVAL_MS = 60_000
 const DEFAULT_LIMIT = 10
 
 const dateFormatter = new Intl.DateTimeFormat('pt-BR', {
@@ -79,6 +78,7 @@ interface NotificationsPopoverProps {
 
 export function NotificationsPopover({ className }: NotificationsPopoverProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const [lastSeenTotal, setLastSeenTotal] = useState<number | null>(null)
 
   const notificationsQuery = useQuery({
     queryKey: ['notifications', { limit: DEFAULT_LIMIT }],
@@ -88,25 +88,46 @@ export function NotificationsPopover({ className }: NotificationsPopoverProps) {
         limit: DEFAULT_LIMIT,
         page: 1,
       }),
-    staleTime: REFRESH_INTERVAL_MS,
-    refetchInterval: REFRESH_INTERVAL_MS,
     refetchOnWindowFocus: false,
   })
 
   const notifications = notificationsQuery.data?.data ?? []
   const totalNotifications = notificationsQuery.data?.meta.total ?? notifications.length
   const hasNotifications = totalNotifications > 0
+  useEffect(() => {
+    if (!notificationsQuery.isSuccess) {
+      return
+    }
+
+    if (lastSeenTotal === null) {
+      setLastSeenTotal(totalNotifications)
+      return
+    }
+
+    if (totalNotifications < lastSeenTotal) {
+      setLastSeenTotal(totalNotifications)
+    }
+  }, [notificationsQuery.isSuccess, totalNotifications, lastSeenTotal])
+
+  const newNotificationsCount = useMemo(() => {
+    if (!notificationsQuery.isSuccess || lastSeenTotal === null) {
+      return 0
+    }
+
+    return Math.max(0, totalNotifications - lastSeenTotal)
+  }, [notificationsQuery.isSuccess, lastSeenTotal, totalNotifications])
+
   const badgeCount = useMemo(() => {
-    if (!hasNotifications) {
+    if (newNotificationsCount === 0) {
       return null
     }
 
-    if (totalNotifications > 99) {
+    if (newNotificationsCount > 99) {
       return '99+'
     }
 
-    return totalNotifications.toString()
-  }, [hasNotifications, totalNotifications])
+    return newNotificationsCount.toString()
+  }, [newNotificationsCount])
 
   const errorMessage = notificationsQuery.isError
     ? notificationsQuery.error instanceof Error
@@ -122,6 +143,14 @@ export function NotificationsPopover({ className }: NotificationsPopoverProps) {
     void notificationsQuery.refetch()
   }, [isOpen, notificationsQuery])
 
+  useEffect(() => {
+    if (!isOpen || !notificationsQuery.isSuccess) {
+      return
+    }
+
+    setLastSeenTotal(totalNotifications)
+  }, [isOpen, notificationsQuery.isSuccess, totalNotifications])
+
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
@@ -131,9 +160,11 @@ export function NotificationsPopover({ className }: NotificationsPopoverProps) {
           size="icon"
           className={cn('relative', className)}
           aria-label={
-            hasNotifications
-              ? `Você tem ${totalNotifications} notificações`
-              : 'Nenhuma notificação disponível'
+            badgeCount
+              ? `Você tem ${badgeCount} novas notificações`
+              : hasNotifications
+                ? `Você tem ${totalNotifications} notificações`
+                : 'Nenhuma notificação disponível'
           }
         >
           <Bell aria-hidden="true" />
