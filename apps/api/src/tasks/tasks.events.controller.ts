@@ -1,6 +1,7 @@
-import { Controller, Logger } from '@nestjs/common';
+import { Controller } from '@nestjs/common';
 import { Ctx, EventPattern, Payload, RmqContext } from '@nestjs/microservices';
 import { TasksGateway } from './tasks.gateway';
+import { AppLoggerService } from '@repo/logger';
 
 type AcknowledgeMessage = { content: Buffer };
 
@@ -20,9 +21,16 @@ const isAcknowledgeMessage = (value: unknown): value is AcknowledgeMessage =>
 
 @Controller()
 export class TasksEventsController {
-  private readonly logger = new Logger(TasksEventsController.name);
+  private readonly logger: AppLoggerService;
 
-  constructor(private readonly tasksGateway: TasksGateway) {}
+  constructor(
+    private readonly tasksGateway: TasksGateway,
+    appLogger: AppLoggerService,
+  ) {
+    this.logger = appLogger.withContext({
+      context: TasksEventsController.name,
+    });
+  }
 
   @EventPattern('task.created')
   onTaskCreated(@Payload() task: unknown, @Ctx() context: RmqContext): void {
@@ -40,10 +48,7 @@ export class TasksEventsController {
   }
 
   @EventPattern('comment.new')
-  onCommentNew(
-    @Payload() comment: unknown,
-    @Ctx() context: RmqContext,
-  ): void {
+  onCommentNew(@Payload() comment: unknown, @Ctx() context: RmqContext): void {
     this.forwardEvent('comment:new', comment, context);
   }
 
@@ -75,7 +80,10 @@ export class TasksEventsController {
     const channel = context.getChannelRef() as unknown;
     const originalMessage = context.getMessage() as unknown;
 
-    if (!isAcknowledgeChannel(channel) || !isAcknowledgeMessage(originalMessage)) {
+    if (
+      !isAcknowledgeChannel(channel) ||
+      !isAcknowledgeMessage(originalMessage)
+    ) {
       this.logger.warn(
         'Received invalid RabbitMQ context while acknowledging event; message will not be acked.',
       );
