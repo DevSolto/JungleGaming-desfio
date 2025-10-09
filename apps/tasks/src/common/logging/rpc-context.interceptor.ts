@@ -54,8 +54,8 @@ const extractRequestContext = (message: unknown): RequestContext | undefined => 
 @Injectable()
 export class RpcContextInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
-    const contextType = context.getType<'rmq'>();
-    if (contextType !== 'rpc' && contextType !== 'rmq') {
+    const contextType = context.getType();
+    if (contextType !== 'rpc') {
       return next.handle();
     }
 

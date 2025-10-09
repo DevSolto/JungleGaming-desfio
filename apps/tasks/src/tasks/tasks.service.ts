@@ -1,6 +1,6 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ClientProxy, RmqRecordBuilder } from '@nestjs/microservices';
+import { ClientProxy, RmqRecord, RmqRecordBuilder } from '@nestjs/microservices';
 import { defaultIfEmpty, lastValueFrom } from 'rxjs';
 import { Repository, type DeepPartial } from 'typeorm';
 import { Task } from './task.entity';
@@ -234,9 +234,9 @@ export class TasksService {
 
   private createEventRecord<TPayload extends object>(
     payload: TPayload,
-  ): ReturnType<RmqRecordBuilder['build']> {
+  ): RmqRecord<TPayload> {
     const { correlatedPayload, requestId } = this.withRequestId(payload);
-    const builder = new RmqRecordBuilder(correlatedPayload);
+    const builder = new RmqRecordBuilder<TPayload>(correlatedPayload);
 
     if (requestId) {
       builder.setOptions({
