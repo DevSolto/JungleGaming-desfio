@@ -13,6 +13,7 @@ import { getNotifications } from '../api/getNotifications'
 import { getNotificationResponsibleName } from '../utils/getNotificationResponsibleName'
 
 const DEFAULT_LIMIT = 10
+const LAST_SEEN_TOTAL_STORAGE_KEY = 'notifications:lastSeenTotal'
 
 const dateFormatter = new Intl.DateTimeFormat('pt-BR', {
   dateStyle: 'short',
@@ -53,7 +54,27 @@ interface NotificationsPopoverProps {
 
 export function NotificationsPopover({ className }: NotificationsPopoverProps) {
   const [isOpen, setIsOpen] = useState(false)
-  const [lastSeenTotal, setLastSeenTotal] = useState<number | null>(null)
+  const [lastSeenTotal, setLastSeenTotal] = useState<number>(() => {
+    if (typeof window === 'undefined') {
+      return 0
+    }
+
+    const storedValue = window.localStorage.getItem(
+      LAST_SEEN_TOTAL_STORAGE_KEY,
+    )
+
+    if (!storedValue) {
+      return 0
+    }
+
+    const parsed = Number.parseInt(storedValue, 10)
+
+    if (Number.isNaN(parsed) || parsed < 0) {
+      return 0
+    }
+
+    return parsed
+  })
   const hasInitializedRef = useRef(false)
   const knownNotificationIdsRef = useRef(new Set<string>())
 
@@ -85,18 +106,24 @@ export function NotificationsPopover({ className }: NotificationsPopoverProps) {
       return
     }
 
-    if (lastSeenTotal === null) {
-      setLastSeenTotal(totalNotifications)
-      return
-    }
-
     if (totalNotifications < lastSeenTotal) {
       setLastSeenTotal(totalNotifications)
     }
   }, [isSuccess, totalNotifications, lastSeenTotal])
 
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    window.localStorage.setItem(
+      LAST_SEEN_TOTAL_STORAGE_KEY,
+      lastSeenTotal.toString(),
+    )
+  }, [lastSeenTotal])
+
   const newNotificationsCount = useMemo(() => {
-    if (!isSuccess || lastSeenTotal === null) {
+    if (!isSuccess) {
       return 0
     }
 
@@ -184,8 +211,8 @@ export function NotificationsPopover({ className }: NotificationsPopoverProps) {
           size="icon"
           className={cn('relative', className)}
           aria-label={
-            badgeCount
-              ? `Você tem ${badgeCount} novas notificações`
+            newNotificationsCount > 0
+              ? `Você tem ${newNotificationsCount} notificações não lidas`
               : hasNotifications
                 ? `Você tem ${totalNotifications} notificações`
                 : 'Nenhuma notificação disponível'
