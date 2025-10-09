@@ -90,6 +90,7 @@
     ],
     "moduleNameMapper": {
       "^(\\.{1,2}/.*)\\.js$": "$1",
+      "^@repo/logger$": "<rootDir>/../../../packages/logger/src/index.ts",
       "^@repo/types$": "<rootDir>/../../../packages/types/dist-cjs/index.js",
       "^@repo/types/(.*)$": "<rootDir>/../../../packages/types/dist-cjs/$1.js"
     }

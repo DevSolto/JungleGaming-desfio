@@ -87,10 +87,8 @@ function normalizeFieldValue(
       }
 
       return value
-        .map((assignee) => ({
-          id: assignee.id,
-          username: assignee.username,
-        }))
+        .filter((assignee) => assignee && typeof assignee.id === 'string')
+        .map(normalizeAssigneeForDiff)
         .sort((a, b) => a.id.localeCompare(b.id));
     case 'status':
     case 'priority':
@@ -100,4 +98,38 @@ function normalizeFieldValue(
     default:
       return typeof value === 'string' ? value : String(value);
   }
+}
+
+function normalizeAssigneeForDiff(assignee: TaskAssigneeDTO): TaskAssigneeDTO {
+  const normalized: TaskAssigneeDTO = {
+    id: typeof assignee.id === 'string' ? assignee.id.trim() : assignee.id,
+    username:
+      typeof assignee.username === 'string'
+        ? assignee.username.trim()
+        : assignee.username,
+  };
+
+  if (assignee.name === null) {
+    normalized.name = null;
+  } else if (typeof assignee.name === 'string') {
+    const trimmedName = assignee.name.trim();
+    if (trimmedName.length > 0) {
+      normalized.name = trimmedName;
+    } else {
+      normalized.name = null;
+    }
+  }
+
+  if (assignee.email === null) {
+    normalized.email = null;
+  } else if (typeof assignee.email === 'string') {
+    const trimmedEmail = assignee.email.trim();
+    if (trimmedEmail.length > 0) {
+      normalized.email = trimmedEmail;
+    } else {
+      normalized.email = null;
+    }
+  }
+
+  return normalized;
 }

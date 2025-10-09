@@ -1,3 +1,8 @@
+jest.mock('@repo/logger', () => ({
+  getCurrentRequestContext: jest.fn(() => undefined),
+  runWithRequestContext: jest.fn((_: unknown, handler: () => unknown) => handler()),
+}));
+
 import type { ClientProxy } from '@nestjs/microservices';
 import { randomUUID } from 'node:crypto';
 import { of } from 'rxjs';
@@ -84,25 +89,27 @@ describe('CommentsService', () => {
     expect(comment.authorName).toBe(authorName);
 
     expect(emitMock).toHaveBeenCalledTimes(2);
-    expect(emitMock).toHaveBeenNthCalledWith(
-      1,
-      TASK_EVENT_PATTERNS.COMMENT_CREATED,
+
+    const [firstPattern, firstRecord] = emitMock.mock.calls[0];
+    expect(firstPattern).toBe(TASK_EVENT_PATTERNS.COMMENT_CREATED);
+    expect(firstRecord).toEqual(
       expect.objectContaining({
-        comment: expect.objectContaining({
-          id: comment.id,
-          message: 'First comment',
-          authorName,
+        data: expect.objectContaining({
+          comment: expect.objectContaining({
+            id: comment.id,
+            message: 'First comment',
+            authorName,
+          }),
+          recipients: expect.arrayContaining([authorId, assigneeId]),
         }),
-        recipients: expect.arrayContaining([authorId, assigneeId]),
       }),
     );
-    expect(emitMock).toHaveBeenNthCalledWith(
-      2,
-      TASK_FORWARDING_PATTERNS.COMMENT_CREATED,
-      emitMock.mock.calls[0][1],
-    );
 
-    const payload = emitMock.mock.calls[0][1];
+    const [secondPattern, secondRecord] = emitMock.mock.calls[1];
+    expect(secondPattern).toBe(TASK_FORWARDING_PATTERNS.COMMENT_CREATED);
+    expect(secondRecord).toEqual(firstRecord);
+
+    const payload = (firstRecord as { data: { recipients: string[] } }).data;
     expect(new Set(payload.recipients).size).toBe(payload.recipients.length);
   });
 

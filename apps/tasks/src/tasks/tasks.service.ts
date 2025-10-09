@@ -12,6 +12,7 @@ import {
   type TaskAuditLogChangeDTO,
   type TaskDTO,
   type TaskEventPayload,
+  type TaskAssigneeDTO,
 } from '@repo/types';
 import {
   getDayRangeInTimezone,
@@ -56,8 +57,10 @@ export class TasksService {
   ) {}
 
   async create(dto: CreateTaskDTO, actor?: TaskActor | null): Promise<Task> {
+    const normalizedAssignees = this.normalizeAssignees(dto.assignees);
     const task = this.tasksRepository.create({
       ...dto,
+      assignees: normalizedAssignees,
       dueDate: dto.dueDate
         ? parseDateInTimezone(dto.dueDate, this.taskTimezone)
         : null,
@@ -75,7 +78,12 @@ export class TasksService {
 
     await this.emitEvent(
       TASK_EVENT_PATTERNS.CREATED,
-      this.createEventPayload(saved, auditActor),
+      this.createEventPayload(
+        saved,
+        auditActor,
+        null,
+        this.getAssigneeRecipients(saved.assignees),
+      ),
     );
 
     return saved;
@@ -105,9 +113,13 @@ export class TasksService {
     }
 
     if (filters.assigneeId) {
-      query.andWhere('task.assignees::jsonb @> :assignee', {
-        assignee: JSON.stringify([{ id: filters.assigneeId }]),
-      });
+      const trimmedAssigneeId = filters.assigneeId.trim();
+
+      if (trimmedAssigneeId.length > 0) {
+        query.andWhere('task.assignees::jsonb @> :assignee', {
+          assignee: JSON.stringify([{ id: trimmedAssigneeId }]),
+        });
+      }
     }
 
     if (filters.dueDate) {
@@ -160,7 +172,7 @@ export class TasksService {
     const task = await this.findById(id);
     const previousState = createTaskStateSnapshot(task);
 
-    const { dueDate, ...restDto } = dto;
+    const { dueDate, assignees, ...restDto } = dto;
     const updatePayload: Partial<Task> = {
       ...restDto,
       dueDate:
@@ -170,6 +182,10 @@ export class TasksService {
             : null
           : undefined,
     };
+
+    if (assignees !== undefined) {
+      updatePayload.assignees = this.normalizeAssignees(assignees);
+    }
 
     this.tasksRepository.merge(task, updatePayload);
 
@@ -189,7 +205,12 @@ export class TasksService {
 
     await this.emitEvent(
       TASK_EVENT_PATTERNS.UPDATED,
-      this.createEventPayload(saved, auditActor, normalizedChanges),
+      this.createEventPayload(
+        saved,
+        auditActor,
+        normalizedChanges,
+        this.getAssigneeRecipients(saved.assignees),
+      ),
     );
 
     return saved;
@@ -211,7 +232,12 @@ export class TasksService {
 
     await this.emitEvent(
       TASK_EVENT_PATTERNS.DELETED,
-      this.createEventPayload(removed, auditActor),
+      this.createEventPayload(
+        removed,
+        auditActor,
+        null,
+        this.getAssigneeRecipients(task.assignees),
+      ),
     );
 
     return removed;
@@ -319,10 +345,15 @@ export class TasksService {
     task: Task,
     actor: TaskAuditLogActorDTO | null,
     changes?: TaskAuditLogChangeDTO[] | null,
+    recipients?: string[] | null,
   ): TaskEventPayload {
     const payload: TaskEventPayload = {
       task: this.toTaskDto(task),
     };
+
+    payload.recipients = recipients?.length
+      ? [...recipients]
+      : [];
 
     if (actor) {
       payload.actor = actor;
@@ -337,10 +368,101 @@ export class TasksService {
 
   private toTaskDto(task: Task): TaskDTO {
     return {
-      ...task,
+      id: task.id,
+      title: task.title,
+      description: task.description ?? null,
+      status: task.status,
+      priority: task.priority,
       dueDate: task.dueDate ? task.dueDate.toISOString() : null,
+      assignees: Array.isArray(task.assignees)
+        ? task.assignees.map((assignee) => ({ ...assignee }))
+        : [],
       createdAt: task.createdAt.toISOString(),
       updatedAt: task.updatedAt.toISOString(),
     };
+  }
+
+  private normalizeAssignees(
+    assignees?: TaskAssigneeDTO[] | null,
+  ): TaskAssigneeDTO[] {
+    if (!Array.isArray(assignees) || assignees.length === 0) {
+      return [];
+    }
+
+    const unique = new Map<string, TaskAssigneeDTO>();
+
+    for (const candidate of assignees) {
+      if (!candidate || typeof candidate !== 'object') {
+        continue;
+      }
+
+      const rawId = candidate.id;
+      const id = typeof rawId === 'string' ? rawId.trim() : '';
+
+      if (!id) {
+        continue;
+      }
+
+      const rawUsername = candidate.username;
+      const username =
+        typeof rawUsername === 'string' ? rawUsername.trim() : '';
+
+      if (!username) {
+        continue;
+      }
+
+      const existing = unique.get(id);
+      const normalized: TaskAssigneeDTO = existing
+        ? { ...existing, id, username }
+        : { id, username };
+
+      if (candidate.name === null) {
+        normalized.name = null;
+      } else if (typeof candidate.name === 'string') {
+        const trimmedName = candidate.name.trim();
+        if (trimmedName.length > 0) {
+          normalized.name = trimmedName;
+        } else {
+          normalized.name = null;
+        }
+      }
+
+      if (candidate.email === null) {
+        normalized.email = null;
+      } else if (typeof candidate.email === 'string') {
+        const trimmedEmail = candidate.email.trim();
+        if (trimmedEmail.length > 0) {
+          normalized.email = trimmedEmail;
+        } else {
+          normalized.email = null;
+        }
+      }
+
+      unique.set(id, normalized);
+    }
+
+    return Array.from(unique.values()).sort((a, b) => a.id.localeCompare(b.id));
+  }
+
+  private getAssigneeRecipients(
+    ...groups: (TaskAssigneeDTO[] | null | undefined)[]
+  ): string[] {
+    const recipients = new Set<string>();
+
+    for (const group of groups) {
+      if (!Array.isArray(group)) {
+        continue;
+      }
+
+      for (const assignee of group) {
+        const id = typeof assignee?.id === 'string' ? assignee.id.trim() : '';
+
+        if (id) {
+          recipients.add(id);
+        }
+      }
+    }
+
+    return Array.from(recipients).sort((a, b) => a.localeCompare(b));
   }
 }

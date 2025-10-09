@@ -15,8 +15,17 @@ function createTask(overrides: Partial<Task> = {}): Task {
   task.priority = TaskPriority.MEDIUM;
   task.dueDate = new Date('2024-05-20T12:00:00.000Z');
   task.assignees = [
-    { id: 'b', username: 'beta' },
-    { id: 'a', username: 'alpha' },
+    {
+      id: 'b',
+      username: 'beta',
+      name: 'Beta Explorer',
+      email: 'beta@example.com',
+    },
+    {
+      id: 'a',
+      username: 'alpha',
+      name: null,
+    },
   ];
 
   Object.assign(task, overrides);
@@ -36,8 +45,17 @@ describe('task-diff.util', () => {
       priority: TaskPriority.MEDIUM,
       dueDate: new Date('2024-05-20T12:00:00.000Z'),
       assignees: [
-        { id: 'b', username: 'beta' },
-        { id: 'a', username: 'alpha' },
+        {
+          id: 'b',
+          username: 'beta',
+          name: 'Beta Explorer',
+          email: 'beta@example.com',
+        },
+        {
+          id: 'a',
+          username: 'alpha',
+          name: null,
+        },
       ],
     });
 
@@ -79,8 +97,8 @@ describe('task-diff.util', () => {
 
   it('ignores identical states and sorts assignees deterministically', () => {
     const assignees: TaskAssigneeDTO[] = [
-      { id: 'b', username: 'beta' },
-      { id: 'a', username: 'alpha' },
+      { id: 'b', username: 'beta', name: 'Beta Explorer' },
+      { id: 'a', username: 'alpha', name: null },
     ];
 
     const previous: TaskState = {
