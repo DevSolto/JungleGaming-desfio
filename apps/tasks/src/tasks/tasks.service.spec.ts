@@ -1,3 +1,8 @@
+jest.mock('@repo/logger', () => ({
+  getCurrentRequestContext: jest.fn(() => undefined),
+  runWithRequestContext: jest.fn((_: unknown, handler: () => unknown) => handler()),
+}));
+
 import type { ClientProxy } from '@nestjs/microservices';
 import { of } from 'rxjs';
 import { DataSource, Repository } from 'typeorm';
@@ -58,10 +63,20 @@ describe('TasksService', () => {
     });
 
     expect(task.dueDate?.toISOString()).toBe('2024-03-10T03:00:00.000Z');
-    expect(emitMock).toHaveBeenCalledWith(
-      TASK_EVENT_PATTERNS.CREATED,
+
+    const createdCall = emitMock.mock.calls.find(
+      ([pattern]) => pattern === TASK_EVENT_PATTERNS.CREATED,
+    );
+
+    expect(createdCall).toBeDefined();
+
+    const [, createdRecord] = createdCall!;
+    expect(createdRecord).toEqual(
       expect.objectContaining({
-        task: expect.objectContaining({ id: task.id }),
+        data: expect.objectContaining({
+          task: expect.objectContaining({ id: task.id }),
+          recipients: [],
+        }),
       }),
     );
 
@@ -104,14 +119,96 @@ describe('TasksService', () => {
       metadata: null,
     });
 
-    expect(emitMock).toHaveBeenCalledWith(
-      TASK_EVENT_PATTERNS.CREATED,
+    const createdCall = emitMock.mock.calls.find(
+      ([pattern]) => pattern === TASK_EVENT_PATTERNS.CREATED,
+    );
+
+    expect(createdCall).toBeDefined();
+
+    const [, createdRecord] = createdCall!;
+    expect(createdRecord).toEqual(
       expect.objectContaining({
-        task: expect.objectContaining({ id: task.id }),
-        actor: {
-          id: actor.id,
-          displayName: 'Explorer One',
+        data: expect.objectContaining({
+          task: expect.objectContaining({ id: task.id }),
+          actor: {
+            id: actor.id,
+            displayName: 'Explorer One',
+          },
+          recipients: [],
+        }),
+      }),
+    );
+  });
+
+  it('normalizes assignees data and populates recipients when creating tasks', async () => {
+    const task = await service.create({
+      title: 'Task with assignees',
+      description: null,
+      status: TaskStatus.TODO,
+      priority: TaskPriority.MEDIUM,
+      dueDate: null,
+      assignees: [
+        {
+          id: ' 33333333-3333-3333-3333-333333333333 ',
+          username: '  Explorer  ',
+          name: '  Explorer  ',
+          email: '  explorer@example.com  ',
         },
+        {
+          id: '33333333-3333-3333-3333-333333333333',
+          username: 'Explorer',
+          name: 'Explorer   ',
+          email: ' explorer@example.com ',
+        },
+        {
+          id: '11111111-1111-1111-1111-111111111111',
+          username: 'alpha',
+          name: ' Alpha ',
+          email: '',
+        },
+      ],
+    });
+
+    expect(task.assignees).toEqual([
+      {
+        id: '11111111-1111-1111-1111-111111111111',
+        username: 'alpha',
+        name: 'Alpha',
+        email: null,
+      },
+      {
+        id: '33333333-3333-3333-3333-333333333333',
+        username: 'Explorer',
+        name: 'Explorer',
+        email: 'explorer@example.com',
+      },
+    ]);
+
+    const createdEvent = emitMock.mock.calls.find(
+      ([pattern]) => pattern === TASK_EVENT_PATTERNS.CREATED,
+    );
+
+    expect(createdEvent).toBeDefined();
+
+    const createdRecord = createdEvent![1] as { data: Record<string, unknown> };
+    const createdData = createdRecord.data as Record<string, unknown>;
+
+    expect(createdData).toEqual(
+      expect.objectContaining({
+        recipients: [
+          '11111111-1111-1111-1111-111111111111',
+          '33333333-3333-3333-3333-333333333333',
+        ],
+        task: expect.objectContaining({
+          assignees: [
+            expect.objectContaining({
+              id: '11111111-1111-1111-1111-111111111111',
+            }),
+            expect.objectContaining({
+              id: '33333333-3333-3333-3333-333333333333',
+            }),
+          ],
+        }),
       }),
     );
   });
@@ -221,19 +318,61 @@ describe('TasksService', () => {
       ]),
     );
 
-    expect(emitMock).toHaveBeenCalledWith(
-      TASK_EVENT_PATTERNS.UPDATED,
+    const updatedCall = emitMock.mock.calls.find(
+      ([pattern]) => pattern === TASK_EVENT_PATTERNS.UPDATED,
+    );
+
+    expect(updatedCall).toBeDefined();
+
+    const [, updatedRecord] = updatedCall!;
+    expect(updatedRecord).toEqual(
       expect.objectContaining({
-        task: expect.objectContaining({ id: task.id }),
-        changes: expect.arrayContaining([
-          expect.objectContaining({ field: 'status' }),
-        ]),
-        actor: {
-          id: actor.id,
-          displayName: 'Alice',
-        },
+        data: expect.objectContaining({
+          task: expect.objectContaining({ id: task.id }),
+          changes: expect.arrayContaining([
+            expect.objectContaining({ field: 'status' }),
+          ]),
+          actor: {
+            id: actor.id,
+            displayName: 'Alice',
+          },
+          recipients: ['a1b2c3'],
+        }),
       }),
     );
+  });
+
+  it('filters tasks by assignee id using normalized filters', async () => {
+    const matching = await service.create({
+      title: 'Matches assignee filter',
+      description: null,
+      status: TaskStatus.TODO,
+      priority: TaskPriority.MEDIUM,
+      dueDate: null,
+      assignees: [
+        { id: 'assignee-1', username: 'owner1' },
+        { id: 'assignee-2', username: 'owner2' },
+      ],
+    });
+
+    await service.create({
+      title: 'Different assignee',
+      description: null,
+      status: TaskStatus.TODO,
+      priority: TaskPriority.MEDIUM,
+      dueDate: null,
+      assignees: [{ id: 'assignee-3', username: 'owner3' }],
+    });
+
+    const result = await service.findAll({ assigneeId: '  assignee-2  ' });
+
+    expect(result.total).toBe(1);
+    expect(result.data).toHaveLength(1);
+    expect(result.data[0].id).toBe(matching.id);
+    expect(result.data[0].assignees).toEqual([
+      { id: 'assignee-1', username: 'owner1' },
+      { id: 'assignee-2', username: 'owner2' },
+    ]);
   });
 
   it('registers deletion audit logs with actor information and emits events', async () => {
@@ -271,14 +410,23 @@ describe('TasksService', () => {
       changes: null,
     });
 
-    expect(emitMock).toHaveBeenCalledWith(
-      TASK_EVENT_PATTERNS.DELETED,
+    const deletedCall = emitMock.mock.calls.find(
+      ([pattern]) => pattern === TASK_EVENT_PATTERNS.DELETED,
+    );
+
+    expect(deletedCall).toBeDefined();
+
+    const [, deletedRecord] = deletedCall!;
+    expect(deletedRecord).toEqual(
       expect.objectContaining({
-        task: expect.objectContaining({ id: taskId }),
-        actor: {
-          id: actor.id,
-          displayName: 'deleter@example.com',
-        },
+        data: expect.objectContaining({
+          task: expect.objectContaining({ id: taskId }),
+          actor: {
+            id: actor.id,
+            displayName: 'deleter@example.com',
+          },
+          recipients: [],
+        }),
       }),
     );
   });
