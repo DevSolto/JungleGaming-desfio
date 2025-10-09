@@ -7,13 +7,12 @@ import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { TASKS_EVENTS_QUEUE } from './tasks/tasks.constants';
+import { NOTIFICATIONS_EVENTS_QUEUE } from './notifications/notifications.constants';
 import { HttpExceptionCodeFilter } from './common/filters/http-exception-code.filter';
 import { validationExceptionFactory } from './common/pipes/validation-exception.factory';
 import { AppLoggerService } from '@repo/logger';
 import { LoggingInterceptor } from './common/logging/logging.interceptor';
 import { RequestContextMiddleware } from './common/logging/request-context.middleware';
-
-const NOTIFICATIONS_EVENTS_QUEUE = 'notifications.events';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {

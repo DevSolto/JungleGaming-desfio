@@ -8,6 +8,7 @@ import { HealthModule } from './health/health.module';
 import { AuthModule } from './auth/auth.module';
 import { TasksModule } from './tasks/tasks.module';
 import { LoggingModule } from './common/logging/logging.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { LoggingModule } from './common/logging/logging.module';
     }),
     AuthModule,
     TasksModule,
+    NotificationsModule,
     HealthModule,
     LoggingModule,
   ],

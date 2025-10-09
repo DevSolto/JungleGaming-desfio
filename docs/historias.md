@@ -34,6 +34,7 @@
 * [x] Como usuário atribuído a uma tarefa recém-criada, quero receber **`task:created`**, para ser avisado imediatamente. — feita
 * [x] Como usuário envolvido numa tarefa, quero receber **`task:updated`** quando o status mudar, para acompanhar o progresso. — feita
 * [x] Como participante/comentado de uma tarefa, quero receber **`comment:new`**, para não perder discussões importantes. _(Observação: a criação de comentários agora dispara `tasks.comment.created` no serviço de tarefas, que é encaminhado pelo gateway como `comment:new`, atualizando a lista e exibindo toast no front-end.)_
+* [ ] Como usuário, quero **consultar o histórico de notificações persistidas** para acompanhar alertas anteriores. _(Observação: o gateway documenta `GET /notifications` no Swagger, permitindo paginação, filtro por status/canal e servindo de contrato para a futura integração RPC com o serviço de notificações.)_
 
 # Épico: Front-end (React + TanStack Router + shadcn/ui)
 

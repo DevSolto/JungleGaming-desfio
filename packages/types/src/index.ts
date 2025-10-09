@@ -23,6 +23,7 @@ export * from "./dto/task-audit-log.js";
 export * from "./enums/task.js";
 
 // Notifications
+export * from "./contracts/rpc/notifications.js";
 export * from "./dto/notification.js";
 export * from "./enums/notification.js";
 
