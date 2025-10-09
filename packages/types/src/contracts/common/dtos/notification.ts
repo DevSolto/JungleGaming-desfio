@@ -1,6 +1,8 @@
 export {
   type Notification,
   type NotificationDTO,
+  type NotificationCreateDTO,
+  type NotificationStatusUpdateDTO,
 } from "../../../dto/notification.js";
 export {
   type NotificationChannel,

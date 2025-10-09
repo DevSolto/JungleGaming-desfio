@@ -10,6 +10,7 @@ import {
 import { HealthModule } from './health/health.module';
 import { NotificationsService } from './notifications.service';
 import { Notification } from './notifications/notification.entity';
+import { NotificationsPersistenceModule } from './notifications/persistence/notifications-persistence.module';
 
 const validateEnv = (config: Record<string, unknown>) => {
   const databaseUrl = config['DATABASE_URL'];
@@ -65,6 +66,7 @@ const validateEnv = (config: Record<string, unknown>) => {
       },
     ]),
     HealthModule,
+    NotificationsPersistenceModule,
   ],
   providers: [NotificationsService],
 })
