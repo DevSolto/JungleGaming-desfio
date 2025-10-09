@@ -1,3 +1,4 @@
+import { createAppLogger, type StructuredLogger } from "@repo/logger";
 import { Client } from "pg";
 import type { ClientConfig } from "pg";
 
@@ -6,19 +7,13 @@ const DEFAULT_MAX_DELAY_MS = 5_000;
 const DEFAULT_MAX_ATTEMPTS = 10;
 const DEFAULT_CONNECTION_TIMEOUT_MS = 3_000;
 
-export interface LoggerLike {
-  log(message: string): void;
-  warn(message: string): void;
-  error(message: string, error?: unknown): void;
-}
-
 export interface WaitForDatabaseOptions {
   connectionString: string;
   initialDelayMs?: number;
   maxDelayMs?: number;
   maxAttempts?: number;
   connectionTimeoutMs?: number;
-  logger?: LoggerLike;
+  logger?: StructuredLogger;
 }
 
 export type ResolvedWaitForDatabaseOptions = Omit<
@@ -31,18 +26,9 @@ const isPgClientConstructor = (value: unknown): value is new (
 ) => { connect(): Promise<void>; end(): Promise<void> } =>
   typeof value === "function";
 
-const defaultLogger: LoggerLike = {
-  log: (message) => console.log(message),
-  warn: (message) => console.warn(message),
-  error: (message, error) => {
-    if (error !== undefined) {
-      console.error(message, error);
-      return;
-    }
-
-    console.error(message);
-  },
-};
+const defaultLogger = createAppLogger({ name: "database-bootstrap" }).withContext({
+  scope: "waitForDatabase",
+});
 
 export const parsePositiveInt = (
   value: string | undefined,
@@ -95,18 +81,29 @@ export const waitForDatabase = async ({
       await client.connect();
       await client.end();
 
-      logger.log(`Successfully connected to PostgreSQL on attempt ${attempt}.`);
+      logger.log("Successfully connected to PostgreSQL.", {
+        attempt,
+      });
       return;
     } catch (error) {
       if (attempt >= maxAttempts) {
-        logger.error("Exhausted all attempts to reach PostgreSQL.", error);
+        logger.error(
+          "Exhausted all attempts to reach PostgreSQL.",
+          error,
+          {
+            attempt,
+            maxAttempts,
+          },
+        );
         throw error;
       }
 
-      const message = error instanceof Error ? error.message : String(error);
-      logger.warn(
-        `Attempt ${attempt} to connect to PostgreSQL failed (${message}). Retrying in ${delayMs}ms...`,
-      );
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.warn("PostgreSQL connection attempt failed.", {
+        attempt,
+        delayMs,
+        errorMessage,
+      });
 
       await delay(delayMs);
       delayMs = Math.min(delayMs * 2, maxDelayMs);
