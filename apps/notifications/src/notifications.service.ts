@@ -9,6 +9,7 @@ import {
   RmqRecordBuilder,
 } from '@nestjs/microservices';
 import {
+  ListNotificationsPayloadDto,
   NOTIFICATION_CHANNELS,
   NOTIFICATIONS_MESSAGE_PATTERNS,
   type NotificationChannel,
@@ -35,7 +36,6 @@ import {
   NotificationsPersistenceService,
   type FindNotificationsOptions,
 } from './notifications/persistence/notifications-persistence.service';
-import { ListNotificationsPayloadDto } from './notifications/dto/list-notifications-payload.dto';
 import { transformPayload, toRpcException } from './common/rpc.utils';
 import type { Notification } from './notifications/notification.entity';
 

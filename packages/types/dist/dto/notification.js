@@ -18,7 +18,7 @@ __decorate([
     IsNotEmpty(),
     __metadata("design:type", String)
 ], NotificationIdParamDto.prototype, "id", void 0);
-export class ListNotificationsQueryDto {
+export class NotificationListFiltersDto {
     status;
     channel;
     search;
@@ -32,49 +32,51 @@ __decorate([
     IsOptional(),
     IsEnum(NOTIFICATION_STATUSES),
     __metadata("design:type", String)
-], ListNotificationsQueryDto.prototype, "status", void 0);
+], NotificationListFiltersDto.prototype, "status", void 0);
 __decorate([
     IsOptional(),
     IsEnum(NOTIFICATION_CHANNELS),
     __metadata("design:type", String)
-], ListNotificationsQueryDto.prototype, "channel", void 0);
+], NotificationListFiltersDto.prototype, "channel", void 0);
 __decorate([
     IsOptional(),
     ValidateIf((_, value) => value !== null),
     IsString(),
     __metadata("design:type", String)
-], ListNotificationsQueryDto.prototype, "search", void 0);
+], NotificationListFiltersDto.prototype, "search", void 0);
 __decorate([
     IsOptional(),
     ValidateIf((_, value) => value !== null),
     IsDateString(),
     __metadata("design:type", String)
-], ListNotificationsQueryDto.prototype, "from", void 0);
+], NotificationListFiltersDto.prototype, "from", void 0);
 __decorate([
     IsOptional(),
     ValidateIf((_, value) => value !== null),
     IsDateString(),
     __metadata("design:type", String)
-], ListNotificationsQueryDto.prototype, "to", void 0);
+], NotificationListFiltersDto.prototype, "to", void 0);
 __decorate([
     IsOptional(),
     Type(() => Number),
     IsInt(),
     Min(1),
     __metadata("design:type", Number)
-], ListNotificationsQueryDto.prototype, "page", void 0);
+], NotificationListFiltersDto.prototype, "page", void 0);
 __decorate([
     IsOptional(),
     Type(() => Number),
     IsInt(),
     Min(1),
     __metadata("design:type", Number)
-], ListNotificationsQueryDto.prototype, "limit", void 0);
+], NotificationListFiltersDto.prototype, "limit", void 0);
 __decorate([
     IsOptional(),
     IsUUID(),
     __metadata("design:type", String)
-], ListNotificationsQueryDto.prototype, "taskId", void 0);
+], NotificationListFiltersDto.prototype, "taskId", void 0);
+export class ListNotificationsQueryDto extends NotificationListFiltersDto {
+}
 export class NotificationStatusUpdateDto {
     status;
     sentAt;
@@ -89,3 +91,18 @@ __decorate([
     IsDateString(),
     __metadata("design:type", Object)
 ], NotificationStatusUpdateDto.prototype, "sentAt", void 0);
+export class ListNotificationsPayloadDto extends NotificationListFiltersDto {
+    recipientId;
+    requestId;
+}
+__decorate([
+    IsUUID(),
+    IsNotEmpty(),
+    __metadata("design:type", String)
+], ListNotificationsPayloadDto.prototype, "recipientId", void 0);
+__decorate([
+    IsOptional(),
+    ValidateIf((_, value) => value !== null),
+    IsString(),
+    __metadata("design:type", Object)
+], ListNotificationsPayloadDto.prototype, "requestId", void 0);

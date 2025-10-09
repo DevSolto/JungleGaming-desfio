@@ -18,6 +18,7 @@ import {
   NOTIFICATION_CHANNELS,
   NOTIFICATION_STATUSES,
 } from "../enums/notification.js";
+import type { NotificationsFindAllPayload } from "../contracts/rpc/notifications.js";
 
 export interface NotificationCreateDTO {
   recipientId: string;
@@ -74,7 +75,7 @@ export class NotificationIdParamDto {
   id!: string;
 }
 
-export class ListNotificationsQueryDto
+export class NotificationListFiltersDto
   implements NotificationListFiltersDTO
 {
   @IsOptional()
@@ -117,6 +118,11 @@ export class ListNotificationsQueryDto
   taskId?: string;
 }
 
+export class ListNotificationsQueryDto
+  extends NotificationListFiltersDto
+  implements NotificationListFiltersDTO
+{}
+
 export class NotificationStatusUpdateDto
   implements NotificationStatusUpdateDTO
 {
@@ -127,4 +133,18 @@ export class NotificationStatusUpdateDto
   @ValidateIf((_, value) => value !== null)
   @IsDateString()
   sentAt?: string | null;
+}
+
+export class ListNotificationsPayloadDto
+  extends NotificationListFiltersDto
+  implements NotificationsFindAllPayload
+{
+  @IsUUID()
+  @IsNotEmpty()
+  recipientId!: string;
+
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @IsString()
+  requestId?: string | null;
 }
