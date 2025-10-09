@@ -8,6 +8,7 @@ import {
   NOTIFICATIONS_GATEWAY_QUEUE,
 } from './notifications.constants';
 import { HealthModule } from './health/health.module';
+import { NotificationsController } from './notifications.controller';
 import { NotificationsService } from './notifications.service';
 import { Notification } from './notifications/notification.entity';
 import { NotificationsPersistenceModule } from './notifications/persistence/notifications-persistence.module';
@@ -70,6 +71,7 @@ const validateEnv = (config: Record<string, unknown>) => {
     HealthModule,
     NotificationsPersistenceModule,
   ],
+  controllers: [NotificationsController],
   providers: [NotificationsService],
 })
 export class AppModule {}

@@ -19,7 +19,7 @@ export const taskAuditLogSchema = z.object({
   actorDisplayName: z.string().nullish(),
   actor: taskAuditLogActorSchema.nullish(),
   changes: z.array(taskAuditLogChangeSchema).nullish(),
-  metadata: z.record(z.unknown()).nullish(),
+  metadata: z.record(z.string(), z.unknown()).nullish(),
   createdAt: z.string(),
 })
 

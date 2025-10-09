@@ -6,7 +6,7 @@ export const notificationSchema = z.object({
   channel: z.string(),
   status: z.string(),
   message: z.string(),
-  metadata: z.record(z.unknown()).nullish(),
+  metadata: z.record(z.string(), z.unknown()).nullish(),
   createdAt: z.string(),
   sentAt: z.string().nullish(),
 })
