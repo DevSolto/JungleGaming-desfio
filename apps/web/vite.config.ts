@@ -29,6 +29,9 @@ export default defineConfig({
       '@grpc/proto-loader': fileURLToPath(
         new URL('./src/shims/empty-module.ts', import.meta.url),
       ),
+      '@repo/types/dist/contracts/rpc/users.js': fileURLToPath(
+        new URL('./src/shims/empty-module.ts', import.meta.url),
+      ),
     },
   },
   optimizeDeps: {

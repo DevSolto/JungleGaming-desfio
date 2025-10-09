@@ -8,6 +8,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { useTasksFilters } from '../../store/useTasksFilters'
 import { useTasksPagination } from '../../store/useTasksPagination'
 import { getTasks } from '../../api/getTasks'
+import { getUsers } from '@/features/users/api/getUsers'
 
 vi.mock('@/lib/ws-client', () => ({
   socket: {
@@ -115,9 +116,14 @@ vi.mock('../../api/getTasks', () => ({
   getTasks: vi.fn(),
 }))
 
+vi.mock('@/features/users/api/getUsers', () => ({
+  getUsers: vi.fn(),
+}))
+
 const { TasksPage } = await import('../TasksPage')
 
 const getTasksMock = getTasks as unknown as vi.MockedFunction<typeof getTasks>
+const getUsersMock = getUsers as unknown as vi.MockedFunction<typeof getUsers>
 
 const createdClients: QueryClient[] = []
 
@@ -177,11 +183,26 @@ beforeEach(() => {
     }
   })
 
+  getUsersMock.mockResolvedValue([
+    {
+      id: 'user-1',
+      name: 'Usuário 1',
+      email: 'user1@example.com',
+    },
+    {
+      id: 'user-2',
+      name: 'Usuário 2',
+      email: 'user2@example.com',
+    },
+  ])
+
   useTasksFilters.setState({
     searchTerm: '',
     status: 'ALL',
     priority: 'ALL',
     dueDate: null,
+    assigneeId: null,
+    assigneeName: null,
   })
 
   useTasksPagination.setState({
@@ -192,11 +213,37 @@ beforeEach(() => {
 
 afterEach(() => {
   getTasksMock.mockReset()
+  getUsersMock.mockReset()
   createdClients.forEach((client) => client.clear())
   createdClients.length = 0
 })
 
 const SEARCH_DEBOUNCE_MS = 500
+
+it('propaga o filtro de responsável na listagem', async () => {
+  renderTasksPage()
+
+  await waitFor(() => {
+    expect(getTasksMock).toHaveBeenCalled()
+  })
+
+  act(() => {
+    useTasksFilters.getState().setAssignee({
+      id: 'user-1',
+      name: 'Usuário 1',
+    })
+    useTasksPagination.getState().resetPagination()
+  })
+
+  await waitFor(() => {
+    expect(
+      getTasksMock.mock.calls.some((call) => {
+        const args = call[0] as Record<string, unknown> | undefined
+        return args?.assigneeId === 'user-1'
+      }),
+    ).toBe(true)
+  })
+})
 
 describe('TasksPage - paginação', () => {
   it('permite navegar entre páginas e alterar o tamanho', async () => {
@@ -215,7 +262,7 @@ describe('TasksPage - paginação', () => {
       expect(useTasksPagination.getState().page).toBe(2)
     })
 
-    const pageSizeTrigger = screen.getByLabelText('Itens por página')
+    const [pageSizeTrigger] = screen.getAllByLabelText('Itens por página')
     fireEvent.change(pageSizeTrigger, { target: { value: '20' } })
 
     await waitFor(() => {

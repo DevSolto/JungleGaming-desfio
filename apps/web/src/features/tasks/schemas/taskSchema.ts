@@ -7,6 +7,8 @@ export const taskPrioritySchema = z.nativeEnum(TaskPriority)
 export const taskAssigneeSchema = z.object({
   id: z.string(),
   username: z.string(),
+  name: z.string().nullish(),
+  email: z.string().nullish(),
 })
 
 export const taskSchema = z.object({

@@ -14,6 +14,7 @@ interface GetTasksFilters {
   priority?: TaskPriority | 'ALL'
   searchTerm?: string | null
   dueDate?: string | null
+  assigneeId?: string | null
   page?: number
   size?: number
 }
@@ -44,6 +45,11 @@ function buildTasksUrl(filters?: GetTasksFilters) {
 
   if (filters?.dueDate) {
     params.set('dueDate', filters.dueDate)
+  }
+
+  const assigneeId = filters?.assigneeId?.trim()
+  if (assigneeId) {
+    params.set('assigneeId', assigneeId)
   }
 
   const query = params.toString()

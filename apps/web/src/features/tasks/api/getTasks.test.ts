@@ -76,4 +76,25 @@ describe('getTasks', () => {
       method: 'GET',
     })
   })
+
+  it('inclui o filtro de responsável quando informado', async () => {
+    fetchWithAuthMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      statusText: 'OK',
+      json: vi.fn().mockResolvedValue({
+        data: [],
+        meta: { page: 1, size: 10, total: 0, totalPages: 0 },
+      }),
+    })
+
+    await getTasks({ assigneeId: '  user-123  ' })
+
+    expect(fetchWithAuthMock).toHaveBeenCalledWith(
+      '/api/tasks?assigneeId=user-123',
+      {
+        method: 'GET',
+      },
+    )
+  })
 })
