@@ -49,7 +49,7 @@
 * [x] Como time, quero **health/readiness checks** em todos os serviços, para monitorar disponibilidade. _(Observação: API, auth, tasks e notifications expõem `GET /health` via seus respectivos `HealthModule`, retornando status e timestamp.)_
 * [x] Como gateway, quero **rate limiting (10 req/s)**, **CORS** e **Helmet**, para mitigar abusos e reforçar segurança. _(Observação: o `ThrottlerModule` agora lê `RATE_LIMIT_TTL`/`RATE_LIMIT_LIMIT` com default `1s/10 req`, mantendo CORS e Helmet configurados.)_
 * [ ] Como time, quero **testes unitários** (auth, tasks) e **smoke e2e** (login → create task → comment), para garantir qualidade contínua. _(Observação: Auth e Tasks possuem suites unitárias abrangentes, mas ainda falta um fluxo e2e integrando login → criação de tarefa → comentário.)_
-* [ ] Como time, quero **logs estruturados** com correlação (request-id) e máscara de campos sensíveis, para facilitar troubleshooting seguro. _(Pendente: não há estruturação específica de logs ou correlação de requisições.)_
+* [x] Como time, quero **logs estruturados** com correlação (request-id) e máscara de campos sensíveis, para facilitar troubleshooting seguro. _(Concluído: todos os serviços usam `@repo/logger`, que injeta `requestId` nos logs via middleware/interceptores e aplica redaction padrão `[REDACTED]` para senhas, tokens, cookies e headers confidenciais. É possível correlacionar chamadas lendo o header `x-request-id` nas respostas HTTP ou mensagens RabbitMQ e consultar os mesmos IDs nos logs. Novos campos podem ser adicionados à máscara via variável `APP_LOG_REDACT_EXTRA`.)_
 
 # Épico: Infraestrutura & Entregabilidade (Docker/Turborepo)
 

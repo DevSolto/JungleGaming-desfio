@@ -21,7 +21,8 @@
     "watch": "tsc -p tsconfig.json --watch",
     "lint": "eslint . --ext .ts --max-warnings 0",
     "check-types": "tsc --noEmit",
-    "prepare": "pnpm run build"
+    "prepare": "pnpm run build",
+    "test": "vitest run"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -33,6 +34,7 @@
     "@types/node": "^22.15.3",
     "eslint": "^9.34.0",
     "pino-pretty": "^11.2.2",
-    "typescript": "5.9.2"
+    "typescript": "5.9.2",
+    "vitest": "^3.2.4"
   }
 }
