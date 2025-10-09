@@ -1,10 +1,11 @@
 # docker-compose.yml
-# 🐋 JungleGaming Full-stack Challenge — Ambiente de Desenvolvimento
+# 🐋 JungleGaming Full-stack Challenge — Ambiente de Desenvolvimento e Produção Lite
 # Stack: NestJS microservices + RabbitMQ + PostgreSQL + React (TanStack Router)
 
 services:
   # 🗄️ Banco de dados Postgres
   db:
+    profiles: ["dev", "prod-lite"]
     image: postgres:17.5-alpine3.21
     container_name: db-challenge-jungle-gaming
     restart: unless-stopped
@@ -26,6 +27,7 @@ services:
 
   # 🐇 Broker de Mensagens RabbitMQ
   rabbitmq:
+    profiles: ["dev", "prod-lite"]
     image: rabbitmq:3.13-management-alpine
     container_name: rabbitmq-challenge-jungle-gaming
     restart: unless-stopped
@@ -45,8 +47,9 @@ services:
       timeout: 5s
       retries: 5
 
-  # 🔐 Serviço de Autenticação
+  # 🔐 Serviço de Autenticação — Desenvolvimento
   auth-service:
+    profiles: ["dev"]
     build:
       context: .
       dockerfile: apps/auth/Dockerfile
@@ -75,8 +78,32 @@ services:
     networks:
       - challenge-network
 
-  # ⚙️ API Gateway
+  # 🔐 Serviço de Autenticação — Produção Lite
+  auth-service-lite:
+    profiles: ["prod-lite"]
+    build:
+      context: .
+      dockerfile: apps/auth/Dockerfile
+      target: runtime
+    container_name: auth-service-lite
+    environment:
+      NODE_ENV: production
+      AUTH_SERVICE_PORT: ${AUTH_SERVICE_PORT:-4010}
+      DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@db:5432/${POSTGRES_DB:-challenge_db}
+      JWT_SECRET: ${JWT_SECRET:-supersecret}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-15m}
+      BCRYPT_SALT_ROUNDS: ${BCRYPT_SALT_ROUNDS:-10}
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${AUTH_SERVICE_PORT:-4010}:4010"
+    networks:
+      - challenge-network
+
+  # ⚙️ API Gateway — Desenvolvimento
   api-gateway:
+    profiles: ["dev"]
     build:
       context: .
       dockerfile: apps/api/Dockerfile
@@ -107,8 +134,34 @@ services:
     networks:
       - challenge-network
 
-  # 🧩 Serviço de Tarefas
+  # ⚙️ API Gateway — Produção Lite
+  api-gateway-lite:
+    profiles: ["prod-lite"]
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: runtime
+    container_name: api-gateway-lite
+    environment:
+      NODE_ENV: production
+      PORT: ${API_PORT:-3001}
+      AUTH_SERVICE_HOST: auth-service-lite
+      AUTH_SERVICE_PORT: 4010
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-admin}:${RABBITMQ_PASS:-admin}@rabbitmq:5672
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
+    depends_on:
+      db:
+        condition: service_healthy
+      auth-service-lite:
+        condition: service_started
+    ports:
+      - "${API_PORT:-3001}:3001"
+    networks:
+      - challenge-network
+
+  # 🧩 Serviço de Tarefas — Desenvolvimento
   tasks-service:
+    profiles: ["dev"]
     build:
       context: .
       dockerfile: apps/tasks/Dockerfile
@@ -138,8 +191,33 @@ services:
     networks:
       - challenge-network
 
-  # 🔔 Serviço de Notificações
+  # 🧩 Serviço de Tarefas — Produção Lite
+  tasks-service-lite:
+    profiles: ["prod-lite"]
+    build:
+      context: .
+      dockerfile: apps/tasks/Dockerfile
+      target: runtime
+    container_name: tasks-service-lite
+    environment:
+      NODE_ENV: production
+      PORT: ${TASKS_PORT:-3003}
+      DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@db:5432/${POSTGRES_DB:-challenge_db}
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-admin}:${RABBITMQ_PASS:-admin}@rabbitmq:5672
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    ports:
+      - "${TASKS_PORT:-3003}:3003"
+    networks:
+      - challenge-network
+
+  # 🔔 Serviço de Notificações — Desenvolvimento
   notifications-service:
+    profiles: ["dev"]
     build:
       context: .
       dockerfile: apps/notifications/Dockerfile
@@ -169,8 +247,33 @@ services:
     networks:
       - challenge-network
 
-  # 🌐 Front-end React (TanStack Router + shadcn/ui)
+  # 🔔 Serviço de Notificações — Produção Lite
+  notifications-service-lite:
+    profiles: ["prod-lite"]
+    build:
+      context: .
+      dockerfile: apps/notifications/Dockerfile
+      target: runtime
+    container_name: notifications-service-lite
+    environment:
+      NODE_ENV: production
+      PORT: ${NOTIFICATIONS_PORT:-3005}
+      DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@db:5432/${POSTGRES_DB:-challenge_db}
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-admin}:${RABBITMQ_PASS:-admin}@rabbitmq:5672
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    ports:
+      - "${NOTIFICATIONS_PORT:-3005}:3005"
+    networks:
+      - challenge-network
+
+  # 🌐 Front-end React (TanStack Router + shadcn/ui) — Desenvolvimento
   web:
+    profiles: ["dev"]
     build:
       context: .
       dockerfile: apps/web/Dockerfile
@@ -193,6 +296,24 @@ services:
       - pnpm-store:/pnpm/store
       - root-node-modules:/workspace/node_modules
       - web-node-modules:/workspace/apps/web/node_modules
+    networks:
+      - challenge-network
+
+  # 🌐 Front-end React — Produção Lite
+  web-lite:
+    profiles: ["prod-lite"]
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: runtime
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001/api}
+    container_name: web-app-lite
+    depends_on:
+      api-gateway-lite:
+        condition: service_started
+    ports:
+      - "${WEB_PORT:-3000}:80"
     networks:
       - challenge-network
 
