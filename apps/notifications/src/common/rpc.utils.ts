@@ -32,9 +32,28 @@ export function toRpcException(error: unknown): RpcException {
   }
 
   if (error instanceof HttpException) {
+    const status = error.getStatus();
+    const response = error.getResponse();
+
+    if (typeof response === 'object' && response !== null) {
+      const payload = response as Record<string, unknown>;
+      const statusCodeCandidate = payload['statusCode'];
+      const statusCode =
+        typeof statusCodeCandidate === 'number'
+          ? statusCodeCandidate
+          : typeof statusCodeCandidate === 'string'
+            ? Number.parseInt(statusCodeCandidate, 10) || status
+            : status;
+
+      return new RpcException({
+        statusCode,
+        ...payload,
+      });
+    }
+
     return new RpcException({
-      status: error.getStatus(),
-      response: error.getResponse(),
+      statusCode: status,
+      message: response,
     });
   }
 
