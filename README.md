@@ -4,7 +4,7 @@ Monorepo Turborepo com os serviços do JungleGaming (gateway HTTP, auth, tasks, 
 
 ## Onboarding rápido
 1. Instale dependências com `pnpm install`.
-2. Configure as variáveis de ambiente copiando os arquivos `.env.example` dentro de cada app (ex.: `cp apps/auth/.env.example apps/auth/.env`).
+2. Configure as variáveis de ambiente copiando os arquivos `.env.example` dentro de cada app (ex.: `cp apps/auth/.env.example apps/auth/.env`). O serviço de notificações agora também espera `DATABASE_URL` apontando para o Postgres, assim como Auth e Tasks.
 3. Ajuste os segredos JWT compartilhados entre Auth e API (`JWT_SECRET`, `JWT_EXPIRES_IN`, `JWT_ACCESS_SECRET`, `JWT_ACCESS_EXPIRES`). Os valores precisam coincidir para que a validação do token funcione em todo o ecossistema.
 4. Suba os serviços com `pnpm dev` para desenvolvimento local ou `docker compose up` para a stack completa (Postgres, RabbitMQ e serviços NestJS).
 
