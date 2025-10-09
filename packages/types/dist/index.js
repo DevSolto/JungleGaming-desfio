@@ -7,6 +7,7 @@ export * from "./enums/auth.js";
 export * from "./contracts/rpc/tasks.js";
 export * from "./contracts/events/tasks.js";
 export * from "./dto/task.js";
+export * from "./dto/task-audit-log.js";
 export * from "./enums/task.js";
 // Notifications
 export * from "./dto/notification.js";

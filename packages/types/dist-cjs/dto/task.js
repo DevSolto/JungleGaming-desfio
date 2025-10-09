@@ -9,10 +9,33 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ListTasksQueryDto = exports.ListTasksDto = exports.UpdateTaskPayloadDto = exports.UpdateTaskDto = exports.CreateTaskDto = exports.TaskAssigneeDto = exports.TaskIdParamDto = exports.TaskIdDto = void 0;
+exports.ListTasksQueryDto = exports.ListTasksDto = exports.RemoveTaskPayloadDto = exports.UpdateTaskPayloadDto = exports.UpdateTaskDto = exports.CreateTaskPayloadDto = exports.CreateTaskDto = exports.TaskAssigneeDto = exports.TaskIdParamDto = exports.TaskIdDto = exports.TaskActorDto = void 0;
 const class_transformer_1 = require("class-transformer");
 const class_validator_1 = require("class-validator");
 const task_js_1 = require("../enums/task.js");
+class TaskActorDto {
+    id;
+    name;
+    email;
+}
+exports.TaskActorDto = TaskActorDto;
+__decorate([
+    (0, class_validator_1.IsUUID)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", String)
+], TaskActorDto.prototype, "id", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.ValidateIf)((_, value) => value !== null),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", Object)
+], TaskActorDto.prototype, "name", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.ValidateIf)((_, value) => value !== null),
+    (0, class_validator_1.IsEmail)(),
+    __metadata("design:type", Object)
+], TaskActorDto.prototype, "email", void 0);
 class TaskIdDto {
     id;
 }
@@ -80,6 +103,17 @@ __decorate([
     (0, class_transformer_1.Type)(() => TaskAssigneeDto),
     __metadata("design:type", Array)
 ], CreateTaskDto.prototype, "assignees", void 0);
+class CreateTaskPayloadDto extends CreateTaskDto {
+    actor;
+}
+exports.CreateTaskPayloadDto = CreateTaskPayloadDto;
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.ValidateIf)((_, value) => value !== null),
+    (0, class_validator_1.ValidateNested)(),
+    (0, class_transformer_1.Type)(() => TaskActorDto),
+    __metadata("design:type", Object)
+], CreateTaskPayloadDto.prototype, "actor", void 0);
 class UpdateTaskDto {
     title;
     description;
@@ -127,6 +161,7 @@ __decorate([
 class UpdateTaskPayloadDto {
     id;
     data;
+    actor;
 }
 exports.UpdateTaskPayloadDto = UpdateTaskPayloadDto;
 __decorate([
@@ -140,6 +175,24 @@ __decorate([
     (0, class_transformer_1.Type)(() => UpdateTaskDto),
     __metadata("design:type", UpdateTaskDto)
 ], UpdateTaskPayloadDto.prototype, "data", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.ValidateIf)((_, value) => value !== null),
+    (0, class_validator_1.ValidateNested)(),
+    (0, class_transformer_1.Type)(() => TaskActorDto),
+    __metadata("design:type", Object)
+], UpdateTaskPayloadDto.prototype, "actor", void 0);
+class RemoveTaskPayloadDto extends TaskIdDto {
+    actor;
+}
+exports.RemoveTaskPayloadDto = RemoveTaskPayloadDto;
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.ValidateIf)((_, value) => value !== null),
+    (0, class_validator_1.ValidateNested)(),
+    (0, class_transformer_1.Type)(() => TaskActorDto),
+    __metadata("design:type", Object)
+], RemoveTaskPayloadDto.prototype, "actor", void 0);
 class ListTasksDto {
     status;
     priority;

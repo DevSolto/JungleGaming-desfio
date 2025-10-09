@@ -23,6 +23,7 @@ __exportStar(require("./enums/auth.js"), exports);
 __exportStar(require("./contracts/rpc/tasks.js"), exports);
 __exportStar(require("./contracts/events/tasks.js"), exports);
 __exportStar(require("./dto/task.js"), exports);
+__exportStar(require("./dto/task-audit-log.js"), exports);
 __exportStar(require("./enums/task.js"), exports);
 // Notifications
 __exportStar(require("./dto/notification.js"), exports);

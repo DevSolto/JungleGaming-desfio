@@ -191,7 +191,15 @@ export class UpdateTaskDto implements UpdateTaskDTO {
   assignees?: TaskAssigneeDto[];
 }
 
-export class UpdateTaskPayloadDto {
+export interface UpdateTaskPayloadDTO {
+  id: string;
+  data: UpdateTaskDTO;
+  actor?: TaskActorDTO | null;
+}
+
+export type UpdateTaskPayload = UpdateTaskPayloadDTO;
+
+export class UpdateTaskPayloadDto implements UpdateTaskPayloadDTO {
   @IsUUID()
   @IsNotEmpty()
   id!: string;
