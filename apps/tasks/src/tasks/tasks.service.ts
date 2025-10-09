@@ -192,12 +192,14 @@ export class TasksService {
 
   async remove(id: string, actor?: TaskActor | null): Promise<Task> {
     const task = await this.findById(id);
+    const taskId = task.id;
     const removed = await this.tasksRepository.remove(task);
+    removed.id = taskId;
 
     const auditActor = this.toAuditLogActor(actor);
 
     await this.auditLogsService.createLog({
-      taskId: removed.id,
+      taskId,
       action: TASK_EVENT_PATTERNS.DELETED,
       actor: auditActor,
     });

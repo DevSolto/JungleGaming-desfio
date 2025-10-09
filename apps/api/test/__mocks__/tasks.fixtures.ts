@@ -2,7 +2,9 @@ import {
   TaskPriority,
   TaskStatus,
   type CreateTask,
+  type PaginatedTaskAuditLogsDTO,
   type Task,
+  type TaskAuditLog,
   type UpdateTask,
 } from '@repo/types';
 
@@ -55,5 +57,39 @@ export const createUpdateTaskDtoFixture = (
       username: 'player.two',
     },
   ],
+  ...overrides,
+});
+
+export const createTaskAuditLogFixture = (
+  overrides: Partial<TaskAuditLog> = {},
+): TaskAuditLog => ({
+  id: 'log-1',
+  taskId: '2f1b7b58-9d1f-4a7e-8f6a-2c5d12345678',
+  action: 'task.updated',
+  actorId: 'user-1',
+  actorDisplayName: 'Player One',
+  actor: {
+    id: 'user-1',
+    displayName: 'Player One',
+  },
+  changes: [
+    {
+      field: 'status',
+      previousValue: TaskStatus.TODO,
+      currentValue: TaskStatus.IN_PROGRESS,
+    },
+  ],
+  metadata: null,
+  createdAt: '2024-05-21T10:00:00.000Z',
+  ...overrides,
+});
+
+export const createPaginatedAuditLogsFixture = (
+  overrides: Partial<PaginatedTaskAuditLogsDTO> = {},
+): PaginatedTaskAuditLogsDTO => ({
+  data: [createTaskAuditLogFixture()],
+  total: 1,
+  page: 1,
+  limit: 10,
   ...overrides,
 });

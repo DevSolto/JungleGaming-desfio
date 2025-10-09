@@ -15,7 +15,7 @@
 * [x] Como usuário, quero **excluir** uma tarefa, para remover itens obsoletos. — feita
 * [x] Como usuário, quero **atribuir/desatribuir** uma tarefa a **múltiplos usuários**, para distribuir o trabalho. — feita
 * [x] Como participante da tarefa, quero **comentar** e **ver comentários** com paginação, para colaborar no contexto da tarefa. _(Observação: o gateway agora expõe `GET /tasks/:id/comments` e `POST /tasks/:id/comments`, entregando respostas paginadas para a UI atualizar imediatamente a lista local.)_
-* [ ] Como sistema, quero **registrar histórico** (audit log) de alterações de tarefa, para rastrear quem mudou o quê e quando. _(Pendente: não há registro de audit log no serviço de tarefas.)_
+* [x] Como sistema, quero **registrar histórico** (audit log) de alterações de tarefa, para rastrear quem mudou o quê e quando. _(Observação: o serviço de tarefas agora persiste logs de criação, edição e exclusão com diffs normalizados e o gateway expõe `GET /tasks/:id/audit-log` para consulta paginada.)_
 
 # Épico: Integração entre Gateway e Microserviços
 
