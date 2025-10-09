@@ -47,33 +47,6 @@ function getTaskIdFromMetadata(notification: NotificationDTO) {
   return null
 }
 
-function formatChannel(channel: NotificationDTO['channel']) {
-  switch (channel) {
-    case 'in_app':
-      return 'In-app'
-    case 'sms':
-      return 'SMS'
-    case 'push':
-      return 'Push'
-    case 'email':
-    default:
-      return 'E-mail'
-  }
-}
-
-function formatStatus(status: NotificationDTO['status']) {
-  switch (status) {
-    case 'pending':
-      return 'Pendente'
-    case 'sent':
-      return 'Enviada'
-    case 'failed':
-      return 'Falhou'
-    default:
-      return status
-  }
-}
-
 interface NotificationsPopoverProps {
   className?: string
 }
@@ -280,13 +253,10 @@ export function NotificationsPopover({ className }: NotificationsPopoverProps) {
 
                 return (
                   <li key={notification.id} className="space-y-2 px-4 py-3 text-sm">
-                    <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-start gap-2">
                       <p className="font-medium text-foreground">
                         {notification.message}
                       </p>
-                      <span className="rounded-full bg-secondary px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-secondary-foreground">
-                        {formatChannel(notification.channel)}
-                      </span>
                     </div>
 
                     {responsibleName ? (
@@ -300,9 +270,6 @@ export function NotificationsPopover({ className }: NotificationsPopoverProps) {
 
                     <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                       <span>{formatDateTime(notification.createdAt)}</span>
-                      <span className="font-medium uppercase">
-                        {formatStatus(notification.status)}
-                      </span>
                     </div>
 
                     {taskId ? (
