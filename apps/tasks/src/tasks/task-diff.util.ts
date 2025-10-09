@@ -77,7 +77,10 @@ function normalizeFieldValue(
 
   switch (field) {
     case 'dueDate':
-      return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
+      const dateValue = value as Date | string;
+      return dateValue instanceof Date
+        ? dateValue.toISOString()
+        : new Date(dateValue).toISOString();
     case 'assignees':
       if (!Array.isArray(value)) {
         return [];
