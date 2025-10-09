@@ -37,7 +37,10 @@ import type {
   ListTaskCommentsFilters,
 } from './tasks.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { CurrentUser, type CurrentUserPayload } from '../auth/current-user.decorator';
+import {
+  CurrentUser,
+  type CurrentUserPayload,
+} from '../auth/current-user.decorator';
 
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
@@ -60,6 +63,7 @@ export class TasksController {
       status: query.status,
       priority: query.priority,
       search: query.search,
+      assigneeId: query.assigneeId,
       dueDate: query.dueDate,
     });
 
@@ -198,9 +202,12 @@ export class TasksController {
     return { data: item };
   }
 
-  private toPaginatedResponse<T>(
-    result: { data: T[]; total: number; page: number; limit: number },
-  ): PaginatedResponse<T> {
+  private toPaginatedResponse<T>(result: {
+    data: T[];
+    total: number;
+    page: number;
+    limit: number;
+  }): PaginatedResponse<T> {
     const totalPages =
       result.limit > 0 ? Math.ceil(result.total / result.limit) : 0;
 
