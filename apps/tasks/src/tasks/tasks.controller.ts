@@ -3,6 +3,7 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 import { TasksService, PaginatedTasks } from './tasks.service';
 import {
   CreateTaskPayloadDto,
+  ListTaskAuditLogsDto,
   ListTasksDto,
   RemoveTaskPayloadDto,
   TaskIdDto,
@@ -66,6 +67,16 @@ export class TasksController {
     try {
       const { id, actor } = transformPayload(RemoveTaskPayloadDto, payload);
       return await this.tasksService.remove(id, actor ?? null);
+    } catch (error) {
+      throw toRpcException(error);
+    }
+  }
+
+  @MessagePattern(TASKS_MESSAGE_PATTERNS.AUDIT_FIND_ALL)
+  async findAuditLogs(@Payload() payload: unknown) {
+    try {
+      const dto = transformPayload(ListTaskAuditLogsDto, payload);
+      return await this.tasksService.findAuditLogs(dto);
     } catch (error) {
       throw toRpcException(error);
     }
