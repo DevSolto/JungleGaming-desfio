@@ -21,11 +21,11 @@ flowchart LR
     end
 
     web -->|HTTPS / WebSocket| apiGateway
-    apiGateway -->|HTTP / RPC| authService
-    apiGateway -->|HTTP / RPC| tasksService
+    apiGateway -->|AMQP\nPublica comandos| rabbitmq
     apiGateway -->|WebSocket| notificationsService
 
-    tasksService <--> rabbitmq
-    notificationsService <--> rabbitmq
+    rabbitmq -->|Fila de Autenticação| authService
+    rabbitmq <-->|Filas de Tarefas| tasksService
+    rabbitmq -->|Fila de Notificações| notificationsService
     authService --> postgres
     tasksService --> postgres
