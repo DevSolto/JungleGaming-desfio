@@ -1,4 +1,5 @@
 import type { NotificationChannel, NotificationStatus } from "../enums/notification.js";
+import type { NotificationsFindAllPayload } from "../contracts/rpc/notifications.js";
 export interface NotificationCreateDTO {
     recipientId: string;
     channel: NotificationChannel;
@@ -43,7 +44,7 @@ export type PaginatedNotifications = PaginatedNotificationsDTO;
 export declare class NotificationIdParamDto {
     id: string;
 }
-export declare class ListNotificationsQueryDto implements NotificationListFiltersDTO {
+export declare class NotificationListFiltersDto implements NotificationListFiltersDTO {
     status?: NotificationStatus;
     channel?: NotificationChannel;
     search?: string;
@@ -53,8 +54,14 @@ export declare class ListNotificationsQueryDto implements NotificationListFilter
     limit?: number;
     taskId?: string;
 }
+export declare class ListNotificationsQueryDto extends NotificationListFiltersDto implements NotificationListFiltersDTO {
+}
 export declare class NotificationStatusUpdateDto implements NotificationStatusUpdateDTO {
     status: NotificationStatus;
     sentAt?: string | null;
+}
+export declare class ListNotificationsPayloadDto extends NotificationListFiltersDto implements NotificationsFindAllPayload {
+    recipientId: string;
+    requestId?: string | null;
 }
 //# sourceMappingURL=notification.d.ts.map
