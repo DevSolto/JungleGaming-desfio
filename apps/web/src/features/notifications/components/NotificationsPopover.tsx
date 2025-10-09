@@ -81,7 +81,15 @@ export function NotificationsPopover({ className }: NotificationsPopoverProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [lastSeenTotal, setLastSeenTotal] = useState<number | null>(null)
 
-  const notificationsQuery = useQuery({
+  const {
+    data: notificationsResponse,
+    error,
+    isError,
+    isFetching,
+    isPending,
+    isSuccess,
+    refetch,
+  } = useQuery({
     queryKey: ['notifications', { limit: DEFAULT_LIMIT }],
     queryFn: () =>
       getNotifications({
@@ -92,11 +100,12 @@ export function NotificationsPopover({ className }: NotificationsPopoverProps) {
     refetchOnWindowFocus: false,
   })
 
-  const notifications = notificationsQuery.data?.data ?? []
-  const totalNotifications = notificationsQuery.data?.meta.total ?? notifications.length
+  const notifications = notificationsResponse?.data ?? []
+  const totalNotifications =
+    notificationsResponse?.meta.total ?? notifications.length
   const hasNotifications = totalNotifications > 0
   useEffect(() => {
-    if (!notificationsQuery.isSuccess) {
+    if (!isSuccess) {
       return
     }
 
@@ -108,15 +117,15 @@ export function NotificationsPopover({ className }: NotificationsPopoverProps) {
     if (totalNotifications < lastSeenTotal) {
       setLastSeenTotal(totalNotifications)
     }
-  }, [notificationsQuery.isSuccess, totalNotifications, lastSeenTotal])
+  }, [isSuccess, totalNotifications, lastSeenTotal])
 
   const newNotificationsCount = useMemo(() => {
-    if (!notificationsQuery.isSuccess || lastSeenTotal === null) {
+    if (!isSuccess || lastSeenTotal === null) {
       return 0
     }
 
     return Math.max(0, totalNotifications - lastSeenTotal)
-  }, [notificationsQuery.isSuccess, lastSeenTotal, totalNotifications])
+  }, [isSuccess, lastSeenTotal, totalNotifications])
 
   const badgeCount = useMemo(() => {
     if (newNotificationsCount === 0) {
@@ -130,9 +139,9 @@ export function NotificationsPopover({ className }: NotificationsPopoverProps) {
     return newNotificationsCount.toString()
   }, [newNotificationsCount])
 
-  const errorMessage = notificationsQuery.isError
-    ? notificationsQuery.error instanceof Error
-      ? notificationsQuery.error.message
+  const errorMessage = isError
+    ? error instanceof Error
+      ? error.message
       : 'Não foi possível carregar as notificações. Tente novamente.'
     : null
 
@@ -141,16 +150,16 @@ export function NotificationsPopover({ className }: NotificationsPopoverProps) {
       return
     }
 
-    void notificationsQuery.refetch()
-  }, [isOpen, notificationsQuery])
+    void refetch()
+  }, [isOpen, refetch])
 
   useEffect(() => {
-    if (!isOpen || !notificationsQuery.isSuccess) {
+    if (!isOpen || !isSuccess) {
       return
     }
 
     setLastSeenTotal(totalNotifications)
-  }, [isOpen, notificationsQuery.isSuccess, totalNotifications])
+  }, [isOpen, isSuccess, totalNotifications])
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
@@ -185,7 +194,7 @@ export function NotificationsPopover({ className }: NotificationsPopoverProps) {
             <span>Notificações</span>
           </div>
 
-          {notificationsQuery.isFetching ? (
+          {isFetching ? (
             <span className="flex items-center gap-1 text-xs text-muted-foreground">
               <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
               Atualizando
@@ -196,7 +205,7 @@ export function NotificationsPopover({ className }: NotificationsPopoverProps) {
               variant="ghost"
               size="sm"
               className="-mr-2 text-xs"
-              onClick={() => notificationsQuery.refetch()}
+              onClick={() => refetch()}
             >
               Atualizar
             </Button>
@@ -204,7 +213,7 @@ export function NotificationsPopover({ className }: NotificationsPopoverProps) {
         </header>
 
         <div className="max-h-80 overflow-y-auto">
-          {notificationsQuery.isPending ? (
+          {isPending ? (
             <div className="flex flex-col items-center justify-center gap-2 px-4 py-8 text-sm text-muted-foreground">
               <Loader2 className="size-5 animate-spin" aria-hidden="true" />
               <span>Carregando notificações...</span>
@@ -216,7 +225,7 @@ export function NotificationsPopover({ className }: NotificationsPopoverProps) {
                 type="button"
                 size="sm"
                 variant="outline"
-                onClick={() => notificationsQuery.refetch()}
+                onClick={() => refetch()}
               >
                 Tentar novamente
               </Button>
