@@ -150,9 +150,12 @@ services:
     environment:
       NODE_ENV: development
       PORT: ${NOTIFICATIONS_PORT:-3005}
+      DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@db:5432/${POSTGRES_DB:-challenge_db}
       RABBITMQ_URL: amqp://${RABBITMQ_USER:-admin}:${RABBITMQ_PASS:-admin}@rabbitmq:5672
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
     depends_on:
+      db:
+        condition: service_healthy
       rabbitmq:
         condition: service_healthy
     ports:
