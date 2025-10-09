@@ -1,5 +1,6 @@
 import type { Repository } from 'typeorm';
 import { NOTIFICATION_STATUSES } from '@repo/types';
+import type { AppLoggerService } from '@repo/logger';
 
 import { Notification } from '../notification.entity';
 import { NotificationsPersistenceService } from './notifications-persistence.service';
@@ -7,6 +8,8 @@ import { NotificationsPersistenceService } from './notifications-persistence.ser
 describe('NotificationsPersistenceService', () => {
   let repository: jest.Mocked<Partial<Repository<Notification>>>;
   let service: NotificationsPersistenceService;
+  let loggerFactory: { withContext: jest.Mock };
+  let scopedLogger: { debug: jest.Mock; error: jest.Mock };
 
   beforeEach(() => {
     repository = {
@@ -16,8 +19,18 @@ describe('NotificationsPersistenceService', () => {
       find: jest.fn(),
     };
 
+    scopedLogger = {
+      debug: jest.fn(),
+      error: jest.fn(),
+    };
+
+    loggerFactory = {
+      withContext: jest.fn().mockReturnValue(scopedLogger),
+    };
+
     service = new NotificationsPersistenceService(
       repository as Repository<Notification>,
+      loggerFactory as unknown as AppLoggerService,
     );
   });
 
@@ -66,6 +79,13 @@ describe('NotificationsPersistenceService', () => {
     expect(repository.save).toHaveBeenCalledWith(createdNotification);
     expect(result.status).toBe('sent');
     expect(result.sentAt?.toISOString()).toBe(sentAtIso);
+    expect(scopedLogger.debug).toHaveBeenCalledWith(
+      'Notification persisted in database.',
+      expect.objectContaining({
+        notificationId: 'notification-1',
+        recipientId: 'user-1',
+      }),
+    );
   });
 
   it('atualiza o status e retorna null quando notificação não existe', async () => {
@@ -113,6 +133,10 @@ describe('NotificationsPersistenceService', () => {
     );
     expect(result?.status).toBe('sent');
     expect(result?.sentAt?.toISOString()).toBe('2024-02-16T10:30:00.000Z');
+    expect(scopedLogger.debug).toHaveBeenCalledWith(
+      'Notification status updated.',
+      expect.objectContaining({ notificationId: 'notification-2', status: 'sent' }),
+    );
   });
 
   it('limpa o sentAt quando explicitamente definido como null', async () => {
@@ -169,5 +193,12 @@ describe('NotificationsPersistenceService', () => {
       order: { createdAt: 'DESC' },
     });
     expect(result).toBe(notifications);
+    expect(scopedLogger.debug).toHaveBeenCalledWith(
+      'Retrieved notifications by recipient.',
+      expect.objectContaining({
+        recipientId: 'user-10',
+        notificationCount: notifications.length,
+      }),
+    );
   });
 });

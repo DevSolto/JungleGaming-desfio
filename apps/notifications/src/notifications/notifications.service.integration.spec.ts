@@ -10,6 +10,7 @@ import { NotificationsService } from '../notifications.service';
 import { Notification } from './notification.entity';
 import { NotificationsPersistenceService } from './persistence/notifications-persistence.service';
 import { NOTIFICATIONS_GATEWAY_CLIENT } from '../notifications.constants';
+import { LoggingModule } from '../common/logging/logging.module';
 
 const createAckContext = () => {
   const ack = jest.fn();
@@ -37,6 +38,7 @@ describe('NotificationsService (integração)', () => {
 
     moduleRef = await Test.createTestingModule({
       imports: [
+        LoggingModule,
         TypeOrmModule.forRootAsync({
           useFactory: async () => ({
             type: 'postgres',

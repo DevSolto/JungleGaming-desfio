@@ -91,7 +91,7 @@ export class NotificationsService {
 
     await this.withRequestContext(requestId, async () => {
       try {
-        await this.persistCommentNotifications(payload);
+        await this.persistCommentNotifications(payload, requestId);
       } catch (error) {
         this.logger.error(
           'Failed to persist notifications for comment.',
@@ -160,7 +160,7 @@ export class NotificationsService {
 
     await this.withRequestContext(requestId, async () => {
       try {
-        await this.persistTaskUpdateNotifications(payload);
+        await this.persistTaskUpdateNotifications(payload, requestId);
       } catch (error) {
         this.logger.error(
           'Failed to persist notifications for task update.',
@@ -205,6 +205,7 @@ export class NotificationsService {
 
   private async persistCommentNotifications(
     payload: TaskCommentCreatedPayload,
+    requestId?: string,
   ): Promise<void> {
     const recipients = this.normalizeRecipients(payload.recipients);
 
@@ -226,7 +227,7 @@ export class NotificationsService {
       commentCreatedAt: payload.comment?.createdAt ?? null,
     } satisfies Record<string, unknown>;
 
-    await Promise.all(
+    const persistedNotifications = await Promise.all(
       recipients.map((recipientId) =>
         this.notificationsPersistence.createNotification({
           recipientId,
@@ -236,10 +237,24 @@ export class NotificationsService {
         }),
       ),
     );
+
+    this.logger.debug(
+      'Persisted comment notifications in storage.',
+      this.buildLogContext(
+        {
+          pattern: TASKS_COMMENT_CREATED_PATTERN,
+          commentId: payload.comment?.id ?? null,
+          recipientsCount: recipients.length,
+          notificationIds: this.extractNotificationIds(persistedNotifications),
+        },
+        requestId,
+      ),
+    );
   }
 
   private async persistTaskUpdateNotifications(
     payload: TaskUpdatedForwardPayload,
+    requestId?: string,
   ): Promise<void> {
     const recipients = this.normalizeRecipients(payload.recipients);
 
@@ -263,7 +278,7 @@ export class NotificationsService {
       changes: payload.changes ?? null,
     } satisfies Record<string, unknown>;
 
-    await Promise.all(
+    const persistedNotifications = await Promise.all(
       recipients.map((recipientId) =>
         this.notificationsPersistence.createNotification({
           recipientId,
@@ -273,6 +288,29 @@ export class NotificationsService {
         }),
       ),
     );
+
+    this.logger.debug(
+      'Persisted task update notifications in storage.',
+      this.buildLogContext(
+        {
+          pattern: TASKS_UPDATED_PATTERN,
+          taskId,
+          recipientsCount: recipients.length,
+          notificationIds: this.extractNotificationIds(persistedNotifications),
+        },
+        requestId,
+      ),
+    );
+  }
+
+  private extractNotificationIds(
+    notifications: Array<{ id?: string | null }>,
+  ): string[] {
+    return notifications
+      .map((notification) =>
+        typeof notification?.id === 'string' ? notification.id : null,
+      )
+      .filter((id): id is string => !!id && id.trim().length > 0);
   }
 
   private resolveRequestId(
