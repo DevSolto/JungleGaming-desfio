@@ -26,6 +26,7 @@ export class ListNotificationsQueryDto {
     to;
     page;
     limit;
+    taskId;
 }
 __decorate([
     IsOptional(),
@@ -69,6 +70,11 @@ __decorate([
     Min(1),
     __metadata("design:type", Number)
 ], ListNotificationsQueryDto.prototype, "limit", void 0);
+__decorate([
+    IsOptional(),
+    IsUUID(),
+    __metadata("design:type", String)
+], ListNotificationsQueryDto.prototype, "taskId", void 0);
 export class NotificationStatusUpdateDto {
     status;
     sentAt;

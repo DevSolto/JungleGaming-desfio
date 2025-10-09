@@ -7,11 +7,13 @@ import { TasksController } from './tasks.controller';
 import { TasksGateway } from './tasks.gateway';
 import { TasksEventsController } from './tasks.events.controller';
 import { AuthModule } from '../auth/auth.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
     ConfigModule,
     AuthModule,
+    NotificationsModule,
     ClientsModule.registerAsync([
       {
         name: TASKS_RPC_CLIENT,

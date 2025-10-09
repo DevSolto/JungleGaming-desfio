@@ -54,6 +54,7 @@ export interface NotificationListFiltersDTO {
   to?: string;
   page?: number;
   limit?: number;
+  taskId?: string;
 }
 
 export type NotificationListFilters = NotificationListFiltersDTO;
@@ -110,6 +111,10 @@ export class ListNotificationsQueryDto
   @IsInt()
   @Min(1)
   limit?: number;
+
+  @IsOptional()
+  @IsUUID()
+  taskId?: string;
 }
 
 export class NotificationStatusUpdateDto
