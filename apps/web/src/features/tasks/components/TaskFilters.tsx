@@ -19,6 +19,7 @@ import {
   useTasksFilters,
 } from '../store/useTasksFilters'
 import { useTaskCreationModal } from '../store/useTaskCreationModal'
+import { useTasksPagination } from '../store/useTasksPagination'
 
 const statusLabels: Record<Exclude<StatusFilter, 'ALL'>, string> = {
   [TaskStatus.TODO]: 'A fazer',
@@ -59,18 +60,22 @@ export function TaskFilters({ className, onCreateTask }: TaskFiltersProps) {
   const { status, setStatus, priority, setPriority, dueDate, setDueDate } =
     useTasksFilters()
   const { open } = useTaskCreationModal()
+  const { resetPagination } = useTasksPagination()
 
   const handleStatusChange = (value: string) => {
     setStatus(value as StatusFilter)
+    resetPagination()
   }
 
   const handlePriorityChange = (value: string) => {
     setPriority(value as PriorityFilter)
+    resetPagination()
   }
 
   const handleDueDateChange = (event: ChangeEvent<HTMLInputElement>) => {
     const value = event.target.value.trim()
     setDueDate(value ? value : null)
+    resetPagination()
   }
 
   const handleCreateTaskClick = () => {

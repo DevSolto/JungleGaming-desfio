@@ -34,7 +34,14 @@ describe("@repo/types runtime contract", () => {
       }),
     );
 
-    expect(TASK_EVENT_PATTERNS.CREATED).toBe("task.created");
+    expect(TASK_EVENT_PATTERNS).toEqual(
+      expect.objectContaining({
+        CREATED: "task.created",
+        UPDATED: "task.updated",
+        DELETED: "task.deleted",
+        COMMENT_CREATED: "task.comment.created",
+      }),
+    );
     expect(TASK_FORWARDING_PATTERNS.UPDATED).toBe("tasks.updated");
   });
 

@@ -148,7 +148,7 @@ __decorate([
     Type(() => TaskAssigneeDto),
     __metadata("design:type", Array)
 ], UpdateTaskDto.prototype, "assignees", void 0);
-export class UpdateTaskPayloadDTO {
+export class UpdateTaskPayloadDto {
     id;
     data;
     actor;
@@ -157,7 +157,7 @@ __decorate([
     IsUUID(),
     IsNotEmpty(),
     __metadata("design:type", String)
-], UpdateTaskPayloadDTO.prototype, "id", void 0);
+], UpdateTaskPayloadDto.prototype, "id", void 0);
 __decorate([
     ValidateNested(),
     IsNotEmptyObject({ nullable: false }),

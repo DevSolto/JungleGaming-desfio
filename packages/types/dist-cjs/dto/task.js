@@ -158,17 +158,17 @@ __decorate([
     (0, class_transformer_1.Type)(() => TaskAssigneeDto),
     __metadata("design:type", Array)
 ], UpdateTaskDto.prototype, "assignees", void 0);
-class UpdateTaskPayloadDTO {
+class UpdateTaskPayloadDto {
     id;
     data;
     actor;
 }
-exports.UpdateTaskPayloadDTO = UpdateTaskPayloadDTO;
+exports.UpdateTaskPayloadDto = UpdateTaskPayloadDto;
 __decorate([
     (0, class_validator_1.IsUUID)(),
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
-], UpdateTaskPayloadDTO.prototype, "id", void 0);
+], UpdateTaskPayloadDto.prototype, "id", void 0);
 __decorate([
     (0, class_validator_1.ValidateNested)(),
     (0, class_validator_1.IsNotEmptyObject)({ nullable: false }),

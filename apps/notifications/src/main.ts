@@ -63,6 +63,14 @@ async function bootstrap() {
       30_000,
     ),
   );
+  const httpPort = parseNumberEnv(configService.get<string>('PORT'), 3005);
+  const rawOrigins = configService.get<string>('CORS_ORIGIN', '*');
+  const parsedOrigins = rawOrigins
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter((origin) => origin.length > 0);
+  const allowAllOrigins =
+    parsedOrigins.length === 0 || parsedOrigins.includes('*');
 
   const microserviceOptions: MicroserviceOptions = {
     transport: Transport.RMQ,
@@ -80,19 +88,30 @@ async function bootstrap() {
   // eslint-disable-next-line no-constant-condition
   while (true) {
     attempt += 1;
-    const app = await NestFactory.createMicroservice<MicroserviceOptions>(
-      AppModule,
+    const app = await NestFactory.create(AppModule);
+
+    app.enableCors({
+      origin: allowAllOrigins ? true : parsedOrigins,
+      methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+      credentials: true,
+    });
+
+    const microservice = app.connectMicroservice<MicroserviceOptions>(
       microserviceOptions,
     );
 
     try {
-      await app.listen();
+      await app.startAllMicroservices();
+      await app.listen(httpPort);
       logger.log(
-        `Notifications microservice connected to ${rabbitMqUrl} on queue "${queue}" (prefetch ${prefetch}) after ${attempt} attempt(s). Gateway consumes queue "${NOTIFICATIONS_GATEWAY_QUEUE}" for events "${COMMENT_NEW_EVENT}" and "${TASK_UPDATED_EVENT}".`,
+        `Notifications microservice connected to ${rabbitMqUrl} on queue "${queue}" (prefetch ${prefetch}) after ${attempt} attempt(s). Gateway consumes queue "${NOTIFICATIONS_GATEWAY_QUEUE}" for events "${COMMENT_NEW_EVENT}" and "${TASK_UPDATED_EVENT}". HTTP health endpoint available at http://localhost:${httpPort}/health.`,
       );
       break;
     } catch (error) {
-      await app.close().catch(() => undefined);
+      await Promise.allSettled([
+        microservice.close(),
+        app.close(),
+      ]);
 
       if (!isConnectionRefused(error)) {
         throw error;

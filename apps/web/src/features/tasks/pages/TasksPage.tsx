@@ -1,6 +1,11 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import type { CommentDTO, Task, TaskEventPayload } from '@repo/types'
+import type {
+  CommentDTO,
+  PaginatedResponse,
+  Task,
+  TaskEventPayload,
+} from '@repo/types'
 
 import { Button } from '@/components/ui/button'
 import { toast } from '@/components/ui/use-toast'
@@ -14,9 +19,11 @@ import { SearchBar } from '../components/SearchBar'
 import { TableView } from '../components/TableView'
 import { TaskFilters } from '../components/TaskFilters'
 import { TaskModal } from '../components/TaskModal'
+import { TasksPagination } from '../components/TasksPagination'
 import { ViewSwitcher } from '../components/ViewSwitcher'
 import { useTaskCreationModal } from '../store/useTaskCreationModal'
 import { useTasksFilters } from '../store/useTasksFilters'
+import { useTasksPagination } from '../store/useTasksPagination'
 import { useTasksView } from '../store/useTasksView'
 
 const containerClassName =
@@ -33,22 +40,36 @@ export function TasksPage() {
     searchTerm,
     setSearchTerm,
   } = useTasksFilters()
+  const { page, pageSize, setPage, setPageSize, resetPagination } =
+    useTasksPagination()
   const { viewMode } = useTasksView()
   const creationModal = useTaskCreationModal()
   const queryClient = useQueryClient()
   const wasDisconnectedRef = useRef(false)
 
-  const filters = useMemo<Pick<GetTasksFilters, 'status' | 'priority' | 'dueDate' | 'searchTerm'>>(
-    () => ({ status, priority, dueDate, searchTerm }),
-    [status, priority, dueDate, searchTerm],
+  const filters = useMemo<
+    Pick<GetTasksFilters, 'status' | 'priority' | 'dueDate' | 'searchTerm' | 'page' | 'size'>
+  >(
+    () => ({
+      status,
+      priority,
+      dueDate,
+      searchTerm,
+      page,
+      size: pageSize,
+    }),
+    [status, priority, dueDate, searchTerm, page, pageSize],
   )
 
   const tasksQuery = useQuery({
     queryKey: ['tasks', filters],
     queryFn: () => getTasks(filters),
+    keepPreviousData: true,
   })
 
-  const tasks = tasksQuery.data ?? []
+  const tasksResponse = tasksQuery.data
+  const tasks = tasksResponse?.data ?? []
+  const paginationMeta = tasksResponse?.meta
   const isPending = tasksQuery.isPending
   const isFetching = tasksQuery.isFetching
   const isLoading = isPending || (isFetching && tasks.length === 0)
@@ -89,16 +110,19 @@ export function TasksPage() {
         return
       }
 
-      queryClient.setQueriesData<Task[] | undefined>(
+      queryClient.setQueriesData<PaginatedResponse<Task> | undefined>(
         { queryKey: ['tasks'] },
         (oldTasks) => {
           if (!oldTasks) {
             return oldTasks
           }
 
-          return oldTasks.map((task) =>
-            task.id === updatedTask.id ? updatedTask : task,
-          )
+          return {
+            data: oldTasks.data.map((task) =>
+              task.id === updatedTask.id ? updatedTask : task,
+            ),
+            meta: oldTasks.meta,
+          }
         },
       )
 
@@ -174,6 +198,45 @@ export function TasksPage() {
     }
   }, [queryClient])
 
+  useEffect(() => {
+    if (!paginationMeta) {
+      return
+    }
+
+    const maxPage = Math.max(1, paginationMeta.totalPages)
+
+    if (page > maxPage) {
+      setPage(maxPage)
+    }
+  }, [page, paginationMeta, setPage])
+
+  const handleSearchTermChange = useCallback(
+    (term: string) => {
+      if (term === searchTerm) {
+        return
+      }
+
+      setSearchTerm(term)
+      resetPagination()
+    },
+    [resetPagination, searchTerm, setSearchTerm],
+  )
+
+  const handlePageChange = useCallback(
+    (newPage: number) => {
+      setPage(Math.max(1, newPage))
+    },
+    [setPage],
+  )
+
+  const handlePageSizeChange = useCallback(
+    (newPageSize: number) => {
+      setPageSize(newPageSize)
+      setPage(1)
+    },
+    [setPage, setPageSize],
+  )
+
   return (
     <main className={containerClassName}>
       <header className="space-y-2">
@@ -195,7 +258,7 @@ export function TasksPage() {
               params: { taskId },
             })
           }}
-          onSearchTermChange={setSearchTerm}
+          onSearchTermChange={handleSearchTermChange}
         />
 
         <ViewSwitcher className="md:self-end" />
@@ -243,6 +306,16 @@ export function TasksPage() {
           />
       )}
       </section>
+
+      <div className="flex justify-end">
+        <TasksPagination
+          page={page}
+          pageSize={pageSize}
+          meta={paginationMeta}
+          onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
+        />
+      </div>
 
       <TaskModal
         open={isModalOpen}

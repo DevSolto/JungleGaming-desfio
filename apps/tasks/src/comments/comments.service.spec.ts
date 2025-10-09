@@ -9,6 +9,7 @@ import { createTestDataSource } from '../testing/database';
 import {
   TaskPriority,
   TaskStatus,
+  TASK_EVENT_PATTERNS,
   TASK_FORWARDING_PATTERNS,
 } from '@repo/types';
 
@@ -52,7 +53,7 @@ describe('CommentsService', () => {
     ).rejects.toThrow('Task not found');
   });
 
-  it('creates a comment and emits a forwarding event with unique recipients', async () => {
+  it('creates a comment and emits comment events with unique recipients', async () => {
     const authorId = randomUUID();
     const assigneeId = randomUUID();
     const authorName = 'Author Example';
@@ -82,8 +83,10 @@ describe('CommentsService', () => {
     expect(comment.message).toBe('First comment');
     expect(comment.authorName).toBe(authorName);
 
-    expect(emitMock).toHaveBeenCalledWith(
-      TASK_FORWARDING_PATTERNS.COMMENT_CREATED,
+    expect(emitMock).toHaveBeenCalledTimes(2);
+    expect(emitMock).toHaveBeenNthCalledWith(
+      1,
+      TASK_EVENT_PATTERNS.COMMENT_CREATED,
       expect.objectContaining({
         comment: expect.objectContaining({
           id: comment.id,
@@ -92,6 +95,11 @@ describe('CommentsService', () => {
         }),
         recipients: expect.arrayContaining([authorId, assigneeId]),
       }),
+    );
+    expect(emitMock).toHaveBeenNthCalledWith(
+      2,
+      TASK_FORWARDING_PATTERNS.COMMENT_CREATED,
+      emitMock.mock.calls[0][1],
     );
 
     const payload = emitMock.mock.calls[0][1];

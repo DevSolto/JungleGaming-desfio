@@ -9,6 +9,7 @@ export const TASK_EVENT_PATTERNS = {
   CREATED: "task.created",
   UPDATED: "task.updated",
   DELETED: "task.deleted",
+  COMMENT_CREATED: "task.comment.created",
 } as const;
 
 export type TaskEventPattern =
@@ -21,6 +22,11 @@ export interface TaskEventPayload {
   changes?: TaskAuditLogChangeDTO[] | Record<string, unknown> | null;
 }
 
+export interface TaskCommentCreatedEventPayload
+  extends Pick<TaskEventPayload, "recipients"> {
+  comment: CommentDTO;
+}
+
 export const TASK_FORWARDING_PATTERNS = {
   COMMENT_CREATED: "tasks.comment.created",
   UPDATED: "tasks.updated",
@@ -29,8 +35,8 @@ export const TASK_FORWARDING_PATTERNS = {
 export type TaskForwardingPattern =
   (typeof TASK_FORWARDING_PATTERNS)[keyof typeof TASK_FORWARDING_PATTERNS];
 
-export interface TaskCommentCreatedPayload {
-  comment: CommentDTO;
+export interface TaskCommentCreatedPayload
+  extends TaskCommentCreatedEventPayload {
   recipients: string[];
 }
 
